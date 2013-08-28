@@ -38,7 +38,7 @@ from desktop.lib.django_util import login_notrequired, render_json, render
 from desktop.lib.i18n import smart_str
 from desktop.lib.paths import get_desktop_root
 from desktop.log.access import access_log_level, access_warn
-from desktop.models import UserPreferences, Settings
+from desktop.models import UserPreferences, Settings, Document, DocumentTag
 from desktop import appmanager
 import desktop.conf
 import desktop.log.log_buffer
@@ -46,11 +46,13 @@ import desktop.log.log_buffer
 
 LOG = logging.getLogger(__name__)
 
+
 @access_log_level(logging.WARN)
 def home(request):
-  apps = appmanager.get_apps(request.user)
-  apps = dict([(app.name, app) for app in apps])
-  return render('home.mako', request, dict(apps=apps))
+  return render('home.mako', request, {
+    'documents': Document.objects.filter(owner=request.user).order_by('-last_modified')[:100],
+    'tags': DocumentTag.objects.filter(owner=request.user),
+  })
 
 
 @access_log_level(logging.WARN)

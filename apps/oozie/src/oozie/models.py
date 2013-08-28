@@ -28,9 +28,11 @@ from string import Template
 from itertools import chain
 
 from django.db import models
+from django.db.models import Q
 from django.core.urlresolvers import reverse
 from django.core.validators import RegexValidator
 from django.contrib.auth.models import User
+from django.contrib.contenttypes import generic
 from django.forms.models import inlineformset_factory
 from django.utils.encoding import force_unicode
 from django.utils.translation import ugettext as _, ugettext_lazy as _t
@@ -39,6 +41,7 @@ from desktop.log.access import access_warn
 from desktop.lib import django_mako
 from desktop.lib.exceptions_renderable import PopupException
 from desktop.lib.json_utils import JSONEncoderForHTML
+from desktop.models import Document, DocumentTag
 from hadoop.fs.exceptions import WebHdfsException
 
 from hadoop.fs.hadoopfs import Hdfs
@@ -58,11 +61,36 @@ name_validator = RegexValidator(regex='[a-zA-Z_][\-_a-zA-Z0-9]{1,39}',
 
 
 class TrashManager(models.Manager):
-  def trashed(self):
-    return super(TrashManager, self).get_query_set().filter(is_trashed=True)
+  def trashed(self, user):    
+    tag = DocumentTag.get_trash_tag(user=user)
 
-  def available(self):
-    return super(TrashManager, self).get_query_set().filter(is_trashed=False)
+    #data = super(TrashManager, self).get_query_set().filter(managed=True).filter(doc__tags__in=[tag])
+    data = super(TrashManager, self).get_query_set().filter(managed=True)#.filter(doc__id=30)
+
+    for d in data:
+      try:
+        print [dd.id for dd in d.doc.all()]#get().tags.values('id')
+      except Exception, e:
+        print e
+    if not SHARE_JOBS.get() and not user.is_superuser:
+      data = data.filter(owner=user)
+    else:
+      data = data.filter(Q(is_shared=True) | Q(owner=user))
+  
+    return data.order_by('-last_modified')  
+
+  def available(self, user):
+    tag = DocumentTag.get_trash_tag(user=user)
+    data = super(TrashManager, self).get_query_set().filter(managed=True).exclude(name='pig-app-hue-script').exclude(doc__tags__in=[tag])
+  
+    if not SHARE_JOBS.get() and not user.is_superuser:
+      data = data.filter(owner=user)
+    else:
+      data = data.filter(Q(is_shared=True) | Q(owner=user))
+  
+    return data.order_by('-last_modified')  
+
+  
 
 
 """
@@ -106,9 +134,7 @@ class JobManager(models.Manager):
 
 class Job(models.Model):
   """
-  Base class for Workflows and Coordinators.
-
-  http://incubator.apache.org/oozie/docs/3.2.0-incubating/docs/index.html
+  Base class for Oozie Workflows, Coordinators and Bundles.
   """
   owner = models.ForeignKey(User, db_index=True, verbose_name=_t('Owner'), help_text=_t('Person who can modify the job.'))
   name = models.CharField(max_length=40, blank=False, validators=[name_validator],
@@ -127,6 +153,7 @@ class Job(models.Model):
                                 help_text=_t('Parameters used at the submission time (e.g. market=US, oozie.use.system.libpath=true).'))
   is_trashed = models.BooleanField(default=False, db_index=True, verbose_name=_t('Is trashed'),
                                    help_text=_t('If this job is trashed.'))
+  doc = generic.GenericRelation(Document, related_name='oozie_doc')
 
   objects = JobManager()
   unique_together = ('owner', 'name')
@@ -135,13 +162,11 @@ class Job(models.Model):
     if skip_trash:
       return super(Job, self).delete(*args, **kwargs)
     else:
-      self.is_trashed = True
-      self.save()
+      self.doc.get().send_to_trash()
       return self
 
   def restore(self):
-    self.is_trashed = False
-    self.save()
+    self.doc.restore_from_trash()
     return self
 
   def save(self):
@@ -242,6 +267,8 @@ class WorkflowManager(TrashManager):
     workflow.end = end
     workflow.save()
 
+    Document.objects.link(workflow, owner=workflow.owner, name=workflow.name, description=workflow.description)
+
     self.check_workspace(workflow, fs)
 
   def check_workspace(self, workflow, fs):
@@ -272,9 +299,6 @@ class WorkflowManager(TrashManager):
 
 
 class Workflow(Job):
-  """
-  http://incubator.apache.org/oozie/docs/3.2.0-incubating/docs/WorkflowFunctionalSpec.html
-  """
   is_single = models.BooleanField(default=False)
   start = models.ForeignKey('Start', related_name='start_workflow', blank=True, null=True)
   end  = models.ForeignKey('End', related_name='end_workflow',  blank=True, null=True)
@@ -300,6 +324,7 @@ class Workflow(Job):
   def clone(self, fs, new_owner=None):
     source_deployment_dir = self.deployment_dir # Needed
     nodes = self.node_set.all()
+    copy_doc = self.doc.get()
     links = Link.objects.filter(parent__workflow=self)
 
     copy = self
@@ -332,6 +357,12 @@ class Workflow(Job):
     copy.start = old_nodes_mapping[self.start.id]
     copy.end = old_nodes_mapping[self.end.id]
     copy.save()
+    
+    # Document model    
+    copy_doc.pk = None
+    copy_doc.id = None
+    copy_doc.save()
+    copy.doc.add(copy_doc)
 
     try:
       if copy.is_shared:

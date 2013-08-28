@@ -23,9 +23,12 @@ import posixpath
 
 from django.db import models
 from django.contrib.auth.models import User
+from django.contrib.contenttypes import generic
+from django.core.urlresolvers import reverse
 from django.utils.translation import ugettext as _, ugettext_lazy as _t
 
 from desktop.lib.exceptions_renderable import PopupException
+from desktop.models import Document as Doc
 from hadoop.fs.hadoopfs import Hdfs
 
 
@@ -57,6 +60,8 @@ class PigScript(Document):
       'hadoopProperties': []
   }))
 
+  doc = generic.GenericRelation(Document, related_name='pig_doc')
+
   def update_from_dict(self, attrs):
     data_dict = self.dict
 
@@ -70,6 +75,9 @@ class PigScript(Document):
   def dict(self):
     return json.loads(self.data)
 
+  def get_absolute_url(self):
+    return reverse('pig:index') + '#edit/%s' % self.id
+
 
 def create_or_update_script(id, name, script, user, parameters, resources, hadoopProperties, is_design=True):
   """This take care of security"""
@@ -78,6 +86,7 @@ def create_or_update_script(id, name, script, user, parameters, resources, hadoo
     pig_script.can_edit_or_exception(user)
   except:
     pig_script = PigScript.objects.create(owner=user, is_design=is_design)
+    Doc.objects.link(pig_script, owner=pig_script.owner, name=name)
 
   pig_script.update_from_dict({
       'name': name,

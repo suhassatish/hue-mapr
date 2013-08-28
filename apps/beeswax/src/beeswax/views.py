@@ -35,6 +35,7 @@ from desktop.lib.paginator import Paginator
 from desktop.lib.django_util import copy_query_dict, format_preserving_redirect, render
 from desktop.lib.django_util import login_notrequired, get_desktop_uri_prefix
 from desktop.lib.exceptions_renderable import PopupException
+from desktop.models import Document
 
 from jobsub.parameterization import find_variables, substitute_variables
 
@@ -110,6 +111,8 @@ def save_design(request, form, type, design, explicit_save):
   design.data = new_data
 
   design.save()
+
+  Document.objects.link(design, owner=design.owner, name=design.name)
 
   LOG.info('Saved %s design "%s" (id %s) for %s' %
            (explicit_save and '' or 'auto ', design.name, design.id, design.owner))

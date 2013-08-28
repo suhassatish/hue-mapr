@@ -273,7 +273,7 @@ class SubWorkflowForm(forms.ModelForm):
     user = kwargs.pop('user')
     workflow = kwargs.pop('workflow')
     super(SubWorkflowForm, self).__init__(*args, **kwargs)
-    choices=((wf.id, wf) for wf in Workflow.objects.available().filter(owner=user).exclude(id=workflow.id))
+    choices=((wf.id, wf) for wf in Workflow.objects.available(user=user).filter(owner=user).exclude(id=workflow.id))
     self.fields['sub_workflow'] = forms.ChoiceField(choices=choices, widget=forms.RadioSelect(attrs={'class':'radio'}))
 
   class Meta:

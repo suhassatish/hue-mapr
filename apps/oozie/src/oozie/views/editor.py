@@ -34,7 +34,6 @@ from django.utils.translation import ugettext as _, activate as activate_transla
 from desktop.lib.django_util import render, extract_field_data
 from desktop.lib.exceptions_renderable import PopupException
 from desktop.lib.rest.http_client import RestException
-from hadoop.fs.exceptions import WebHdfsException
 from liboozie.submittion import Submission
 
 from filebrowser.lib.archives import archive_factory
@@ -56,14 +55,14 @@ LOG = logging.getLogger(__name__)
 
 
 def list_workflows(request):
-  data = Workflow.objects.available().filter(managed=True)
+  data = Workflow.objects.available(user=request.user)#.filter(managed=True)
 
-  if not SHARE_JOBS.get() and not request.user.is_superuser:
-    data = data.filter(owner=request.user)
-  else:
-    data = data.filter(Q(is_shared=True) | Q(owner=request.user))
-
-  data = data.order_by('-last_modified')
+#  if not SHARE_JOBS.get() and not request.user.is_superuser:
+#    data = data.filter(owner=request.user)
+#  else:
+#    data = data.filter(Q(is_shared=True) | Q(owner=request.user))
+#
+#  data = data.order_by('-last_modified')
 
   return render('editor/list_workflows.mako', request, {
     'jobs': list(data),
@@ -72,14 +71,7 @@ def list_workflows(request):
 
 
 def list_trashed_workflows(request):
-  data = Workflow.objects.trashed().filter(managed=True)
-
-  if not SHARE_JOBS.get() and not request.user.is_superuser:
-    data = data.filter(owner=request.user)
-  else:
-    data = data.filter(Q(is_shared=True) | Q(owner=request.user))
-
-  data = data.order_by('-last_modified')
+  data = Workflow.objects.trashed(user=request.user)
 
   return render('editor/list_trashed_workflows.mako', request, {
     'jobs': list(data),
