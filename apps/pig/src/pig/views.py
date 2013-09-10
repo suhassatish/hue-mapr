@@ -184,6 +184,7 @@ def delete(request):
     try:
       pig_script = PigScript.objects.get(id=script_id)
       pig_script.can_edit_or_exception(request.user)
+      pig_script.doc.all().delete()
       pig_script.delete()
     except:
       None

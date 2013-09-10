@@ -42,11 +42,14 @@ ${ commonheader(_('Home'), "home", user) | n,unicode }
         <div class="card-body">
           <p>
           <ul>
-            % for tag in tags:
-            <li><span class="label label-info">${ tag.tag }</span></li>
+            % for tag in tags:            
+            <li>
+              <span class="label label-info">${ tag.tag }</span>
+              % if loop.first: 
+                (selected)
+              % endif
+            </li>
             % endfor
-            <li><span class="label label-info"><i class="icon-trash"></i> Trashed</span></li>
-            
           </ul>
           </p>
         </div>
@@ -62,8 +65,9 @@ ${ commonheader(_('Home'), "home", user) | n,unicode }
           <table>
             % for doc in documents:
               <tr>
-                <td>${ doc.id }</td>
-                <td><a href="${ doc.content_object.get_absolute_url() }">${ doc.content_object }</a></td>
+                <td>${ doc.content_type }</td>
+                <td><a href="${ doc.content_object.get_absolute_url() }">${ doc.name }</a></td>
+                <td>${ doc.description }</td>
                 <td class="span1">
                   % for tag in doc.tags.all():
                     <span class="label label-info">${ tag.tag }</span>

@@ -111,6 +111,7 @@ def save_design(request, form, type, design, explicit_save):
   design.data = new_data
 
   design.save()
+  design.doc.update(name=design.name, description=design.desc)
 
   Document.objects.link(design, owner=design.owner, name=design.name)
 
@@ -138,6 +139,7 @@ def save_design_properties(request):
     elif field == 'description':
       design.desc = request.POST.get('value')
     design.save()
+    design.doc.update(name=design.name, description=design.desc)
     response['status'] = 0
   except Exception, e:
     response['data'] = str(e)
@@ -156,9 +158,9 @@ def delete_design(request):
 
     for design in designs.values():
       if request.POST.get('skipTrash', 'false') == 'false':
-        design.is_trashed = True
-        design.save()
+        design.doc.get().send_to_trash()
       else:
+        design.doc.all().delete()
         design.delete()
     return redirect(reverse(get_app_name(request) + ':list_designs'))
   else:
@@ -175,8 +177,7 @@ def restore_design(request):
       return list_designs(request)
 
     for design in designs.values():
-      design.is_trashed = False
-      design.save()
+      design.doc.get().restore_from_trash()
     return redirect(reverse(get_app_name(request) + ':list_designs'))
   else:
     return render('confirm.html', request, dict(url=request.path, title=_('Restore design(s)?')))
@@ -195,6 +196,7 @@ def clone_design(request, design_id):
   copy.owner = request.user
   copy.save()
   messages.info(request, _('Copied design: %(name)s') % {'name': design.name})
+
   return format_preserving_redirect(
       request, reverse(get_app_name(request) + ':execute_query', kwargs={'design_id': copy.id}))
 

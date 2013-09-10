@@ -1,5 +1,5 @@
 # encoding: utf-8
-import datetime
+import datetime, logging
 from south.db import db
 from south.v2 import SchemaMigration
 from django.db import models
@@ -10,6 +10,30 @@ class Migration(SchemaMigration):
     
     def forwards(self, orm):
         
+        # Adding model 'DocumentPermission'
+        db.create_table('desktop_documentpermission', (
+            ('perms', self.gf('django.db.models.fields.TextField')(default='read')),
+            ('doc', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['desktop.Document'])),
+            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+        ))
+        db.send_create_signal('desktop', ['DocumentPermission'])
+
+        # Adding M2M table for field users on 'DocumentPermission'
+        db.create_table('desktop_documentpermission_users', (
+            ('id', models.AutoField(verbose_name='ID', primary_key=True, auto_created=True)),
+            ('documentpermission', models.ForeignKey(orm['desktop.documentpermission'], null=False)),
+            ('user', models.ForeignKey(orm['auth.user'], null=False))
+        ))
+        db.create_unique('desktop_documentpermission_users', ['documentpermission_id', 'user_id'])
+
+        # Adding M2M table for field groups on 'DocumentPermission'
+        db.create_table('desktop_documentpermission_groups', (
+            ('id', models.AutoField(verbose_name='ID', primary_key=True, auto_created=True)),
+            ('documentpermission', models.ForeignKey(orm['desktop.documentpermission'], null=False)),
+            ('group', models.ForeignKey(orm['auth.group'], null=False))
+        ))
+        db.create_unique('desktop_documentpermission_groups', ['documentpermission_id', 'group_id'])
+
         # Adding model 'DocumentTag'
         db.create_table('desktop_documenttag', (
             ('owner', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['auth.User'])),
@@ -18,6 +42,19 @@ class Migration(SchemaMigration):
         ))
         db.send_create_signal('desktop', ['DocumentTag'])
 
+        # Adding model 'Document'
+        db.create_table('desktop_document', (
+            ('description', self.gf('django.db.models.fields.TextField')(default='')),
+            ('object_id', self.gf('django.db.models.fields.PositiveIntegerField')()),
+            ('last_modified', self.gf('django.db.models.fields.DateTimeField')(auto_now=True, db_index=True, blank=True)),
+            ('content_type', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['contenttypes.ContentType'])),
+            ('version', self.gf('django.db.models.fields.SmallIntegerField')(default=1)),
+            ('owner', self.gf('django.db.models.fields.related.ForeignKey')(related_name='doc_owner', to=orm['auth.User'])),
+            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('name', self.gf('django.db.models.fields.TextField')(default='')),
+        ))
+        db.send_create_signal('desktop', ['Document'])
+
         # Adding M2M table for field tags on 'Document'
         db.create_table('desktop_document_tags', (
             ('id', models.AutoField(verbose_name='ID', primary_key=True, auto_created=True)),
@@ -25,14 +62,27 @@ class Migration(SchemaMigration):
             ('documenttag', models.ForeignKey(orm['desktop.documenttag'], null=False))
         ))
         db.create_unique('desktop_document_tags', ['document_id', 'documenttag_id'])
-        
-        Document.objects.sync()
     
+        logging.info('Creating document objects...')
+        Document.objects.sync()
+        logging.info('Documents created.')
     
     def backwards(self, orm):
         
+        # Deleting model 'DocumentPermission'
+        db.delete_table('desktop_documentpermission')
+
+        # Removing M2M table for field users on 'DocumentPermission'
+        db.delete_table('desktop_documentpermission_users')
+
+        # Removing M2M table for field groups on 'DocumentPermission'
+        db.delete_table('desktop_documentpermission_groups')
+
         # Deleting model 'DocumentTag'
         db.delete_table('desktop_documenttag')
+
+        # Deleting model 'Document'
+        db.delete_table('desktop_document')
 
         # Removing M2M table for field tags on 'Document'
         db.delete_table('desktop_document_tags')
@@ -54,7 +104,7 @@ class Migration(SchemaMigration):
         },
         'auth.user': {
             'Meta': {'object_name': 'User'},
-            'date_joined': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime(2013, 8, 29, 16, 47, 27, 631944)'}),
+            'date_joined': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime(2013, 9, 11, 14, 16, 3, 839060)'}),
             'email': ('django.db.models.fields.EmailField', [], {'max_length': '75', 'blank': 'True'}),
             'first_name': ('django.db.models.fields.CharField', [], {'max_length': '30', 'blank': 'True'}),
             'groups': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['auth.Group']", 'symmetrical': 'False', 'blank': 'True'}),
@@ -62,7 +112,7 @@ class Migration(SchemaMigration):
             'is_active': ('django.db.models.fields.BooleanField', [], {'default': 'True', 'blank': 'True'}),
             'is_staff': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'blank': 'True'}),
             'is_superuser': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'blank': 'True'}),
-            'last_login': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime(2013, 8, 29, 16, 47, 27, 631885)'}),
+            'last_login': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime(2013, 9, 11, 14, 16, 3, 838987)'}),
             'last_name': ('django.db.models.fields.CharField', [], {'max_length': '30', 'blank': 'True'}),
             'password': ('django.db.models.fields.CharField', [], {'max_length': '128'}),
             'user_permissions': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['auth.Permission']", 'symmetrical': 'False', 'blank': 'True'}),
@@ -84,9 +134,16 @@ class Migration(SchemaMigration):
             'name': ('django.db.models.fields.TextField', [], {'default': "''"}),
             'object_id': ('django.db.models.fields.PositiveIntegerField', [], {}),
             'owner': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'doc_owner'", 'to': "orm['auth.User']"}),
-            'status': ('django.db.models.fields.TextField', [], {'default': "'active'"}),
             'tags': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['desktop.DocumentTag']", 'db_index': 'True', 'symmetrical': 'False'}),
             'version': ('django.db.models.fields.SmallIntegerField', [], {'default': '1'})
+        },
+        'desktop.documentpermission': {
+            'Meta': {'object_name': 'DocumentPermission'},
+            'doc': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['desktop.Document']"}),
+            'groups': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['auth.Group']", 'db_index': 'True', 'symmetrical': 'False'}),
+            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'perms': ('django.db.models.fields.TextField', [], {'default': "'read'"}),
+            'users': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['auth.User']", 'db_index': 'True', 'symmetrical': 'False'})
         },
         'desktop.documenttag': {
             'Meta': {'object_name': 'DocumentTag'},
