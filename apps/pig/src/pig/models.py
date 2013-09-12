@@ -37,10 +37,10 @@ class Document(models.Model):
   is_design = models.BooleanField(default=True, db_index=True, verbose_name=_t('Is a user document, not a document submission.'),
                                      help_text=_t('If the document is not a submitted job but a real query, script, workflow.'))
 
-  def is_editable(self, user):
+  def is_editable(self, user): # Deprecated
     return user.is_superuser or self.owner == user
 
-  def can_edit_or_exception(self, user, exception_class=PopupException):
+  def can_edit_or_exception(self, user, exception_class=PopupException): # Deprecated
     if self.is_editable(user):
       return True
     else:
@@ -60,7 +60,7 @@ class PigScript(Document):
       'hadoopProperties': []
   }))
 
-  doc = generic.GenericRelation(Document, related_name='pig_doc')
+  doc = generic.GenericRelation(Doc, related_name='pig_doc')
 
   def update_from_dict(self, attrs):
     data_dict = self.dict
@@ -68,6 +68,9 @@ class PigScript(Document):
     for attr in PigScript._ATTRIBUTES:
       if attrs.get(attr) is not None:
         data_dict[attr] = attrs[attr]
+        
+    if 'name' in attrs:
+      self.doc.update(name=attrs['name'])
 
     self.data = json.dumps(data_dict)
 
@@ -80,10 +83,9 @@ class PigScript(Document):
 
 
 def create_or_update_script(id, name, script, user, parameters, resources, hadoopProperties, is_design=True):
-  """This take care of security"""
   try:
     pig_script = PigScript.objects.get(id=id)
-    pig_script.can_edit_or_exception(user)
+    pig_script.doc.get().can_read_or_exception(user)
   except:
     pig_script = PigScript.objects.create(owner=user, is_design=is_design)
     Doc.objects.link(pig_script, owner=pig_script.owner, name=name)
@@ -99,14 +101,15 @@ def create_or_update_script(id, name, script, user, parameters, resources, hadoo
   return pig_script
 
 
-def get_scripts(user, max_count=200, is_design=None):
-  scripts = []
-  objects = PigScript.objects.filter(owner__pk__in=[user.pk, 1100713])
+def get_scripts(user, is_design=None):
+  scripts = []  
+  data = Doc.objects.available(PigScript, user)
+  print data
 
   if is_design is not None:
-    objects = objects.filter(is_design=is_design)
+    data = [job for job in data if job.is_design]
 
-  for script in objects.order_by('-id')[:max_count]:
+  for script in data:
     data = script.dict
     massaged_script = {
       'id': script.id,

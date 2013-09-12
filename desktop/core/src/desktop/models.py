@@ -141,9 +141,6 @@ class DocumentManager(models.Manager):
     doc = Document.objects.get(object_id=doc_id, content_type=ct)
 
     return doc.is_accessible(user)
-
-  # can_read
-  # can_write
   
   def link(self, content_object, owner, name='', description=''):
     doc = Document.objects.create(
@@ -213,6 +210,15 @@ class Document(models.Model):
 
   def is_accessible(self, user):
     return user.is_superuser or self.owner == user or DocumentManager.get_doc(self.id, user) 
+
+  def can_read(self, user):
+    return user.is_superuser or self.owner == user or DocumentManager.get_doc(self.id, user)
+
+  def can_read_or_exception(self, user, exception_class=PopupException):
+    if self.can_read(user):
+      return True
+    else:
+      raise exception_class(_('Only superusers and %s are allowed to read this document.') % user)
 
   def copy(self):
     copy_doc = self
