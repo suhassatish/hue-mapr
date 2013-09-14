@@ -757,13 +757,13 @@ def test_fs_configuration(fs_config):
   fs.setuser(fs.superuser)
 
   # Access root
-  try:
-    statbuf = fs.stats('/')
-    if statbuf.user != 'hdfs':
-      return [(fs_config.WEBHDFS_URL, _("Filesystem root '/' should be owned by 'hdfs'"))]
-  except Exception, ex:
-    LOG.info("%s -- Validation error: %s" % (fs, ex))
-    return [(fs_config.WEBHDFS_URL, _('Failed to access filesystem root'))]
+##  try:
+##    statbuf = fs.stats('/')
+##    if statbuf.user != 'hdfs':
+##      return [(fs_config.WEBHDFS_URL, _("Filesystem root '/' should be owned by 'hdfs'"))]
+##  except Exception, ex:
+##    LOG.info("%s -- Validation error: %s" % (fs, ex))
+##    return [(fs_config.WEBHDFS_URL, _('Failed to access filesystem root'))]
 
   # Write a file
   tmpname = fs.mktemp(prefix='hue_config_validation')

@@ -39,12 +39,8 @@ APPS := about \
   jobsub \
   oozie \
   proxy \
-  shell \
   useradmin \
-  impala \
-  pig \
-  search \
-  hbase
+  pig 
 
 ################################################
 # Install all applications into the Desktop environment
@@ -111,13 +107,9 @@ I18N_APPS := about \
   filebrowser \
   jobbrowser \
   jobsub \
-  shell \
   useradmin \
   oozie \
-  impala \
-  pig \
-  search \
-  hbase
+  pig 
 
 COMPILE_LOCALE_TARGETS := $(I18N_APPS:%=.recursive-compile-locales/%)
 compile-locales: $(COMPILE_LOCALE_TARGETS)
