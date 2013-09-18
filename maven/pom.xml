@@ -20,9 +20,9 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
-    <groupId>com.cloudera</groupId>
-    <artifactId>parent</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <groupId>com.mapr</groupId>
+    <artifactId>mapr-root</artifactId>
+    <version>1.0</version>
   </parent>
 
   <groupId>com.cloudera.hue</groupId>
@@ -42,7 +42,8 @@
   </licenses>
 
   <properties>
-    <hadoop.version>1.0.1</hadoop.version>
+    <hadoop.version>3.0.2</hadoop.version>
+    <hadoop_test.version>1.0.3-mapr-3.0.1</hadoop_test.version>
     <hive.version>0.11-mapr</hive.version>
     <slf4j.version>1.6.1</slf4j.version>
     <commons-logging.version>1.0.4</commons-logging.version>
@@ -161,7 +162,7 @@
       <dependency>
         <groupId>org.apache.hadoop</groupId>
         <artifactId>hadoop-test</artifactId>
-        <version>${hadoop.version}</version>
+        <version>${hadoop_test.version}</version>
       </dependency>
       <dependency>
         <groupId>commons-logging</groupId>
@@ -203,22 +204,16 @@
   </dependencyManagement>
 
   <repositories>
-    <repository>
-      <id>mapr.releases</id>
-      <url>http://maven.corp.maprtech.com/nexus/content/repositories/releases</url>
-      <name>MapR Public Repositories</name>
-      <snapshots>
-        <enabled>false</enabled>
-      </snapshots>
+     <repository>
+      <id>mapr release</id>
+      <url>http://repository.mapr.com/maven/</url>
+      <snapshots><enabled>true</enabled></snapshots>
+      <releases><enabled>true</enabled></releases>
     </repository>
     <repository>
-      <id>mapr.snapshots</id>
-      <url>http://maven.corp.maprtech.com/nexus/content/repositories/snapshots</url>
-      <name>MapR Snapshots Repository</name>
-      <snapshots>
-        <enabled>true</enabled>
-      </snapshots>
-    </repository>
+       <id>apache release</id>
+       <url>https://repository.apache.org/content/repositories/releases/</url>
+     </repository>
   </repositories>
 
 
