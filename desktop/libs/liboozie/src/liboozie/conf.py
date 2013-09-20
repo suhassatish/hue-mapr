@@ -73,7 +73,7 @@ def config_validator(user):
     def get_fully_qualifying_key(self): return self.value
 
   for cluster in get_all_hdfs().values():
-    res.extend(validate_path(ConfigMock('/user/oozie/share/lib'), is_dir=True, fs=cluster,
+    res.extend(validate_path(ConfigMock('/oozie/share/lib'), is_dir=True, fs=cluster,
                              message=_('Oozie Share Lib not installed in default location.')))
 
   return res
