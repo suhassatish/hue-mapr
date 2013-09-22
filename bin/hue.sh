@@ -1,0 +1,84 @@
+#!/bin/bash 
+
+bin=`dirname "$0"`
+bin=`cd "$bin"; pwd`
+echo "bin = $bin"
+export HUE_HOME=${bin}/..
+# get arguments
+command=$1
+shift
+startStop=$1
+shift
+
+HUE_PID_DIR=$HUE_HOME/pids
+if [ "$HUE_IDENT_STRING" = "" ]; then
+  export HUE_IDENT_STRING=`id -nu`
+fi
+
+# get log directory
+if [ "$HUE_LOG_DIR" = "" ]; then
+  export HUE_LOG_DIR="$HUE_HOME/logs"
+fi
+mkdir -p "$HUE_LOG_DIR"
+
+if [ "$HUE_PID_DIR" = "" ]; then
+  export HUE_PID_DIR="$HUE_HOME/pids"
+fi
+mkdir -p "$HUE_PID_DIR"
+
+log=$HUE_LOG_DIR/hue-$HUE_IDENT_STRING-huewebserver-$HOSTNAME.out
+pid=$HUE_PID_DIR/hue-$HUE_IDENT_STRING-huewebserver.pid
+
+case $startStop in
+  (start)
+  echo "entering start"
+  if [ -f $pid ]; then
+    if kill -0 `cat $pid` > /dev/null 2>&1; then
+      echo Hue web server running as process `cat $pid`.  Stop it first.
+      exit 1
+    fi
+  fi
+  echo "\$@ = $@"
+  nohup $bin/hue $command "$@" >> "$log" 2>&1 < /dev/null &
+  echo $! > $pid
+  sleep 1; head "$log"
+  echo "`date` $command started, pid `cat $pid`" >> "$log" 2>&1 < /dev/null
+    ;;
+
+  (stop)
+  echo "entering stop"
+  if [ -f $pid ]; then
+    if kill -0 `cat $pid` > /dev/null 2>&1; then
+      echo stopping $command
+      kill `cat $pid`
+      echo "`date` $command stopped, pid `cat $pid`" >> "$log" 2>&1 < /dev/null
+    else
+      echo no $command to stop
+    fi
+  else
+    echo no $command to stop
+  fi
+    ;;
+
+  (status)
+  echo "entering status"
+  if [ -f $pid ]; then
+    if kill -0 `cat $pid`; then
+      echo $command  running as process `cat $pid`.
+      exit 0
+    fi
+    echo $pid exists with pid `cat $pid` but no $command.
+    exit 1
+  fi
+  echo $command not running.
+  exit 1
+
+  ;;
+
+  (*)
+    echo $usage
+    exit 1
+    ;;
+
+esac
+
