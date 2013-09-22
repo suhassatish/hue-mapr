@@ -2,7 +2,6 @@
 
 bin=`dirname "$0"`
 bin=`cd "$bin"; pwd`
-echo "bin = $bin"
 export HUE_HOME=${bin}/..
 # get arguments
 command=$1
@@ -31,22 +30,19 @@ pid=$HUE_PID_DIR/hue-$HUE_IDENT_STRING-huewebserver.pid
 
 case $startStop in
   (start)
-  echo "entering start"
   if [ -f $pid ]; then
     if kill -0 `cat $pid` > /dev/null 2>&1; then
       echo Hue web server running as process `cat $pid`.  Stop it first.
       exit 1
     fi
   fi
-  echo "\$@ = $@"
-  nohup $bin/hue $command "$@" >> "$log" 2>&1 < /dev/null &
+  nohup $HUE_HOME/build/env/bin/hue $command $startStop >> "$log" 2>&1 < /dev/null &
   echo $! > $pid
   sleep 1; head "$log"
   echo "`date` $command started, pid `cat $pid`" >> "$log" 2>&1 < /dev/null
     ;;
 
   (stop)
-  echo "entering stop"
   if [ -f $pid ]; then
     if kill -0 `cat $pid` > /dev/null 2>&1; then
       echo stopping $command
@@ -61,7 +57,6 @@ case $startStop in
     ;;
 
   (status)
-  echo "entering status"
   if [ -f $pid ]; then
     if kill -0 `cat $pid`; then
       echo $command  running as process `cat $pid`.
