@@ -25,8 +25,8 @@ if [ "$HUE_PID_DIR" = "" ]; then
 fi
 mkdir -p "$HUE_PID_DIR"
 
-log=$HUE_LOG_DIR/hue-$HUE_IDENT_STRING-huewebserver-$HOSTNAME.out
-pid=$HUE_PID_DIR/hue-$HUE_IDENT_STRING-huewebserver.pid
+log=$HUE_LOG_DIR/hue-$HUE_IDENT_STRING-$command-$HOSTNAME.out
+pid=$HUE_PID_DIR/hue-$HUE_IDENT_STRING-$command.pid
 
 case $startStop in
   (start)
@@ -36,7 +36,7 @@ case $startStop in
       exit 1
     fi
   fi
-  nohup $HUE_HOME/build/env/bin/hue $command $startStop >> "$log" 2>&1 < /dev/null &
+  nohup $HUE_HOME/build/env/bin/hue $command >> "$log" 2>&1 < /dev/null &
   echo $! > $pid
   sleep 1; head "$log"
   echo "`date` $command started, pid `cat $pid`" >> "$log" 2>&1 < /dev/null
