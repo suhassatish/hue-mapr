@@ -9,6 +9,10 @@ shift
 startStop=$1
 shift
 
+#file client impersonation
+MAPR_IMPERSONATION_ENABLED=" "
+export MAPR_IMPERSONATION_ENABLED
+
 HUE_PID_DIR=$HUE_HOME/pids
 if [ "$HUE_IDENT_STRING" = "" ]; then
   export HUE_IDENT_STRING=`id -nu`
