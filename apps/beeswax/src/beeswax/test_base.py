@@ -53,7 +53,13 @@ def _start_server(cluster):
 
   env = cluster._mr2_env.copy()
 
+  hadoop_cp_proc = subprocess.Popen(args=[get_run_root('ext/hadoop/hadoop') + '/bin/hadoop', 'classpath'], env=env, cwd=cluster._tmpdir, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+  hadoop_cp_proc.wait()
+  hadoop_cp = hadoop_cp_proc.stdout.read().strip()
+
   env.update({
+    'HADOOP_HOME': get_run_root('ext/hadoop/hadoop'), # Used only by Hive for some reason
+    #'HADOOP_HIVE2_HOME': get_run_root('ext/hadoop/hadoop'),
     'HIVE_CONF_DIR': beeswax.conf.HIVE_CONF_DIR.get(),
     'HIVE_SERVER2_THRIFT_PORT': str(HIVE_SERVER_TEST_PORT),
     'HADOOP_MAPRED_HOME': get_run_root('ext/hadoop/hadoop') + '/share/hadoop/mapreduce',
@@ -68,7 +74,8 @@ def _start_server(cluster):
        + ':' +
        get_run_root('ext/hadoop/hadoop') + '/share/hadoop/mapreduce/hadoop-mapreduce-client-core.jar'
        ,
-    'HADOOP_CLASSPATH': '',
+      'HADOOP_CLASSPATH': hadoop_cp,
+     #'HADOOP_CLASSPATH': '/home/romain/projects/hue/ext/hadoop/hadoop-2.1.0-cdh5.0.0-SNAPSHOT/etc/hadoop:/home/romain/projects/hue/ext/hadoop/hadoop-2.1.0-cdh5.0.0-SNAPSHOT/share/hadoop/common/lib/*:/home/romain/projects/hue/ext/hadoop/hadoop-2.1.0-cdh5.0.0-SNAPSHOT/share/hadoop/common/*:/home/romain/projects/hue/ext/hadoop/hadoop-2.1.0-cdh5.0.0-SNAPSHOT/share/hadoop/hdfs:/home/romain/projects/hue/ext/hadoop/hadoop-2.1.0-cdh5.0.0-SNAPSHOT/share/hadoop/hdfs/lib/*:/home/romain/projects/hue/ext/hadoop/hadoop-2.1.0-cdh5.0.0-SNAPSHOT/share/hadoop/hdfs/*:/home/romain/projects/hue/ext/hadoop/hadoop-2.1.0-cdh5.0.0-SNAPSHOT/share/hadoop/yarn/lib/*:/home/romain/projects/hue/ext/hadoop/hadoop-2.1.0-cdh5.0.0-SNAPSHOT/share/hadoop/yarn/*:/home/romain/projects/hue/ext/hadoop/hadoop-2.1.0-cdh5.0.0-SNAPSHOT/share/hadoop/mapreduce/lib/*:/home/romain/projects/hue/ext/hadoop/hadoop-2.1.0-cdh5.0.0-SNAPSHOT/share/hadoop/mapreduce/*:/contrib/capacity-scheduler/*.jar',
   })
 
   if os.getenv("JAVA_HOME"):
