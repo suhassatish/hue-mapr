@@ -238,12 +238,23 @@ SERVER_USER = Config(
   key="server_user",
   help=_("Username to run servers as."),
   type=str,
-  default="hue")
+  default="mapr")
 SERVER_GROUP = Config(
   key="server_group",
   help=_("Group to run servers as."),
   type=str,
-  default="hue")
+  default="mapr")
+
+DEFAULT_USER = Config(
+  key="default_user",
+  help=_("This should be the user running hue webserver"),
+  type=str,
+  default=None)
+DEFAULT_HDFS_SUPERUSER = Config(
+  key="default_hdfs_superuser",
+  help=_("This should be the hadoop cluster admin, defaults to owner of maprfs:///var"),
+  type=str,
+  default=None)
 
 CUSTOM = ConfigSection(
   key="custom",

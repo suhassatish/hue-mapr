@@ -37,9 +37,9 @@ from hadoop.conf import UPLOAD_CHUNK_SIZE
 
 import hadoop.conf
 import hadoop.core_site
+import desktop.conf
 
-
-DEFAULT_HDFS_SUPERUSER = 'hdfs'
+DEFAULT_HDFS_SUPERUSER = desktop.conf.DEFAULT_HDFS_SUPERUSER.get()
 
 # The number of bytes to read if not specified
 DEFAULT_READ_SIZE = 1024*1024 # 1MB
@@ -50,7 +50,7 @@ class WebHdfs(Hdfs):
   """
   WebHdfs implements the filesystem interface via the WebHDFS rest protocol.
   """
-  DEFAULT_USER = 'hue'        # This should be the user running Hue
+  DEFAULT_USER = desktop.conf.DEFAULT_USER.get()        # This should be the user running Hue
   TRASH_CURRENT = 'Current'
 
   def __init__(self, url,
@@ -107,8 +107,8 @@ class WebHdfs(Hdfs):
   def superuser(self):
     if self._superuser is None:
       try:
-        # The owner of '/' is usually the superuser
-        sb = self.stats('/')
+        # The owner of '/var' is usually the superuser
+        sb = self.stats('/var')
         self._superuser = sb.user
       except Exception, ex:
         LOG.exception('Failed to determine superuser of %s: %s' % (self, ex))
@@ -757,13 +757,13 @@ def test_fs_configuration(fs_config):
   fs.setuser(fs.superuser)
 
   # Access root
-##  try:
-##    statbuf = fs.stats('/')
-##    if statbuf.user != 'hdfs':
-##      return [(fs_config.WEBHDFS_URL, _("Filesystem root '/' should be owned by 'hdfs'"))]
-##  except Exception, ex:
-##    LOG.info("%s -- Validation error: %s" % (fs, ex))
-##    return [(fs_config.WEBHDFS_URL, _('Failed to access filesystem root'))]
+  try:
+    statbuf = fs.stats('/var')
+#    if statbuf.user != 'hdfs':
+#      return [(fs_config.WEBHDFS_URL, _("Filesystem root '/' should be owned by 'hdfs'"))]
+  except Exception, ex:
+    LOG.info("%s -- Validation error: %s" % (fs, ex))
+    return [(fs_config.WEBHDFS_URL, _('Failed to access filesystem root'))]
 
   # Write a file
   tmpname = fs.mktemp(prefix='hue_config_validation')
