@@ -33,10 +33,11 @@ from beeswax.server.dbms import get_query_server_config
 from beeswax import models
 from beeswax.design import hql_query
 from beeswax.server import dbms
+from desktop.conf import DEFAULT_USER
 
 
 LOG = logging.getLogger(__name__)
-DEFAULT_INSTALL_USER = 'hue'
+DEFAULT_INSTALL_USER = DEFAULT_USER.get()
 
 
 def get_install_user():

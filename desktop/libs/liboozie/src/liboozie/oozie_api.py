@@ -20,6 +20,7 @@ import threading
 
 
 from desktop.conf import TIME_ZONE
+from desktop.conf import DEFAULT_USER
 from desktop.lib.rest.http_client import HttpClient
 from desktop.lib.rest.resource import Resource
 
@@ -42,7 +43,7 @@ else:
   from liboozie.conf import OOZIE_URL
 
 LOG = logging.getLogger(__name__)
-DEFAULT_USER = 'hue'
+DEFAULT_USER = DEFAULT_USER.get()
 API_VERSION = 'v1'
 
 _XML_CONTENT_TYPE = 'application/xml;charset=UTF-8'
