@@ -62,6 +62,9 @@ def home(request):
     'json_tags': json.dumps(massaged_tags_for_json(tags, request.user))
   })
 
+def blueprint(request):
+  return render('blueprint.mako', request, {})
+
 
 def list_docs(request):
   docs = Document.objects.get_docs(request.user).order_by('-last_modified')[:1000]
