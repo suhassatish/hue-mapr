@@ -36,7 +36,7 @@ SECURITY_ENABLED = Config(
 
 REMOTE_DEPLOYMENT_DIR = Config(
   key="remote_deployement_dir",
-  default="/user/hue/oozie/deployments",
+  default="/oozie/deployments",
   help=_t("Location on HDFS where the workflows/coordinators are deployed when submitted by a non-owner."))
 
 
