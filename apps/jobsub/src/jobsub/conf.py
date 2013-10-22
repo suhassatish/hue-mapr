@@ -27,7 +27,7 @@ from django.utils.translation import ugettext_lazy as _
 # All of the config is now in Oozie app.
 REMOTE_DATA_DIR = Config(
   key="remote_data_dir",
-  default="/user/hue/jobsub",
+  default="/oozie/jobsub",
   help=_("Location on HDFS where the jobsub examples and templates are stored."))
 
 LOCAL_DATA_DIR = Config(

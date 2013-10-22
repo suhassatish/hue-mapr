@@ -34,7 +34,7 @@ describe("WorkflowModel", function(){
             "name":"Sleep-1",
             "workflow":workflow_id,
             "node_type":"mapreduce",
-            "jar_path":"/user/hue/oozie/workspaces/lib/hadoop-examples.jar",
+            "jar_path":"/oozie/workspaces/lib/hadoop-examples.jar",
             "child_links":[{
                 "comment":"",
                 "name":"ok",
@@ -51,7 +51,7 @@ describe("WorkflowModel", function(){
           "name":"Sleep-2",
           "workflow":workflow_id,
           "node_type":"mapreduce",
-          "jar_path":"/user/hue/oozie/workspaces/lib/hadoop-examples.jar",
+          "jar_path":"/oozie/workspaces/lib/hadoop-examples.jar",
           "child_links":[{
               "comment":"",
               "name":"ok",
@@ -68,7 +68,7 @@ describe("WorkflowModel", function(){
           "name":"Sleep-3",
           "workflow":workflow_id,
           "node_type":"mapreduce",
-          "jar_path":"/user/hue/oozie/workspaces/lib/hadoop-examples.jar",
+          "jar_path":"/oozie/workspaces/lib/hadoop-examples.jar",
           "child_links":[{
               "comment":"",
               "name":"ok",

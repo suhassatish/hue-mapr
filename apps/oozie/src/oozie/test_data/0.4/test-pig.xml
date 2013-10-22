@@ -6,7 +6,7 @@
             <name-node>${nameNode}</name-node>
             <script>aggregate.pig</script>
               <argument>-param</argument>
-              <argument>INPUT=/user/hue/oozie/workspaces/data</argument>
+              <argument>INPUT=/oozie/workspaces/data</argument>
               <argument>-param</argument>
               <argument>OUTPUT=${output}</argument>
         </pig>

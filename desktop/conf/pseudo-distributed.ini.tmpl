@@ -358,7 +358,7 @@
   ## security_enabled=false
 
   # Location on HDFS where the workflows/coordinator are deployed when submitted.
-  ## remote_deployement_dir=/user/hue/oozie/deployments
+  ## remote_deployement_dir=/oozie/deployments
 
 
 ###########################################################################
@@ -373,7 +373,7 @@
   ## sample_data_dir=...thirdparty/sample_data
 
   # Location on HDFS where the oozie examples and workflows are stored.
-  ## remote_data_dir=/user/hue/oozie/workspaces
+  ## remote_data_dir=/oozie/workspaces
 
   # Share workflows and coordinators information with all users. If set to false,
   # they will be visible only to the owner and administrators.
@@ -449,7 +449,7 @@
   ## local_sample_dir=/usr/share/hue/apps/pig/examples
 
   # Location piggybank.jar will be copied to in HDFS.
-  ## remote_data_dir=/user/hue/pig/examples
+  ## remote_data_dir=/oozie/pig/examples
 
 
 ###########################################################################
@@ -521,7 +521,7 @@
 
 [jobsub]
   # Location on HDFS where the jobsub examples and templates are stored.
-  ## remote_data_dir=/user/hue/jobsub
+  ## remote_data_dir=/oozie/jobsub
 
   # Location on local FS where examples and template are stored.
   ## local_data_dir=..../data
