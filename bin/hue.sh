@@ -42,7 +42,6 @@ case $startStop in
   fi
   nohup $HUE_HOME/build/env/bin/hue $command >> "$log" 2>&1 < /dev/null &
   echo $! > $pid
-  sleep 1; head "$log"
   echo "`date` $command started, pid `cat $pid`" >> "$log" 2>&1 < /dev/null
     ;;
 
