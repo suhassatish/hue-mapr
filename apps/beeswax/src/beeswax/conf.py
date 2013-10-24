@@ -71,14 +71,14 @@ BEESWAX_SERVER_HEAPSIZE = Config(
 
 BEESWAX_HIVE_HOME_DIR = Config(
   key="hive_home_dir",
-  default=os.environ.get("HIVE_HOME", "/usr/lib/hive"),
+  default=os.environ.get("HIVE_HOME", "/opt/mapr/hive/hive*"),
   help=_t("Path to the root of the Hive installation; " +
         "defaults to environment variable when not set."))
 
 BEESWAX_HIVE_CONF_DIR = Config(
-  key='hive_conf_dir',
+  key="hive_conf_dir",
   help=_t('Hive configuration directory, where hive-site.xml is located.'),
-  default=os.environ.get("HIVE_CONF_DIR", '/etc/hive/conf'))
+  default=os.environ.get("HIVE_CONF_DIR", "/opt/mapr/hive/hive*/conf"))
 
 LOCAL_EXAMPLES_DATA_DIR = Config(
   key='local_examples_data_dir',

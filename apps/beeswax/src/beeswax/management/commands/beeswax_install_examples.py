@@ -74,7 +74,7 @@ class Command(NoArgsCommand):
     """
     Setup the sample user
     """
-    USERNAME = 'sample'
+    USERNAME = DEFAULT_INSTALL_USER
     try:
       user = User.objects.get(username=USERNAME)
     except User.DoesNotExist:
