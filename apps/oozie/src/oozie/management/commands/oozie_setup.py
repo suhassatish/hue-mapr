@@ -29,9 +29,11 @@ from hadoop import cluster
 from oozie.conf import LOCAL_SAMPLE_DATA_DIR, LOCAL_SAMPLE_DIR,\
   REMOTE_SAMPLE_DIR
 from liboozie.submittion import create_directories
+from desktop.conf import DEFAULT_USER
 
 
 LOG = logging.getLogger(__name__)
+DEFAULT_INSTALL_USER = DEFAULT_USER.get()
 
 
 class Command(NoArgsCommand):
@@ -56,7 +58,7 @@ class Command(NoArgsCommand):
     fs.do_as_user(fs.DEFAULT_USER, fs.copyFromLocal, local_dir, remote_data_dir)
 
     # Load jobs
-    USERNAME = 'sample'
+    USERNAME = DEFAULT_INSTALL_USER
     try:
       sample_user = User.objects.get(username=USERNAME)
     except User.DoesNotExist:
