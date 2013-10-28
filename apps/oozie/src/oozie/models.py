@@ -15,13 +15,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-try:
-  import json
-except ImportError:
-  import simplejson as json
+import json
 import logging
 import re
+import StringIO
 import time
+import zipfile
 
 from datetime import datetime,  timedelta
 from string import Template
@@ -35,7 +34,7 @@ from django.contrib.auth.models import User
 from django.contrib.contenttypes import generic
 from django.contrib.contenttypes.models import ContentType
 from django.forms.models import inlineformset_factory
-from django.utils.encoding import force_unicode
+from django.utils.encoding import force_unicode, smart_str
 from django.utils.translation import ugettext as _, ugettext_lazy as _t
 
 from desktop.log.access import access_warn
@@ -472,7 +471,7 @@ class Workflow(Job):
 
   @classmethod
   def gen_status_graph_from_xml(cls, user, oozie_workflow):
-    from oozie.import_workflow import import_workflow # Circular dependency
+    from oozie.importlib.workflows import import_workflow # Circular dependency
     try:
       workflow = Workflow.objects.new_workflow(user)
       workflow.save()
@@ -492,6 +491,31 @@ class Workflow(Job):
     tmpl = 'editor/gen/workflow.xml.mako'
     xml = re.sub(re.compile('\s*\n+', re.MULTILINE), '\n', django_mako.render_to_string(tmpl, {'workflow': self, 'mapping': mapping}))
     return force_unicode(xml)
+
+  def compress(self, mapping=None, fp=StringIO.StringIO()):
+    # @TODO(abe) support for compression other than zip.
+    metadata = {}
+    for node in self.node_list:
+      if hasattr(node, 'jar_path'):
+        metadata[node.name] = {}
+        metadata[node.name]['jar_path'] = node.jar_path
+    
+    xml = self.to_xml(mapping=mapping)
+
+    zfile = zipfile.ZipFile(fp, 'w')
+    zfile.writestr("workflow.xml", smart_str(xml))
+    zfile.writestr("workflow-metadata.json", smart_str(json.dumps(metadata)))
+    zfile.close()
+
+    return fp
+
+  @classmethod
+  def decompress(cls, fp):
+    # @TODO(abe) support for other names than workflow.xml.
+    zfile = zipfile.ZipFile(fp, 'r')
+    metadata = json.loads(zfile.read('workflow-metadata.json'))
+    workflow_xml = zfile.read('workflow.xml')
+    return workflow_xml, metadata
 
 
 class Link(models.Model):
@@ -1387,6 +1411,29 @@ class Coordinator(Job):
       params.pop(wf_param['name'], None)
 
     return params
+
+  def compress(self, mapping=None, fp=StringIO.StringIO()):
+    # @TODO(abe) support for compression other than zip.
+    metadata = {
+      'workflow': self.workflow.name
+    }
+
+    xml = self.to_xml(mapping=mapping)
+
+    zfile = zipfile.ZipFile(fp, 'w')
+    zfile.writestr("coordinator.xml", smart_str(xml))
+    zfile.writestr("coordinator-metadata.json", smart_str(json.dumps(metadata)))
+    zfile.close()
+
+    return fp
+
+  @classmethod
+  def decompress(cls, fp):
+    # @TODO(abe) support for other names than workflow.xml.
+    zfile = zipfile.ZipFile(fp, 'r')
+    metadata = json.loads(zfile.read('coordinator-metadata.json'))
+    coordinator_xml = zfile.read('coordinator.xml')
+    return coordinator_xml, metadata
 
 
 def utc_datetime_format(utc_time):

@@ -1,0 +1,31 @@
+<bundle-app name="Aggregate"
+  xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'
+  xmlns="uri:oozie:bundle:0.2">
+  <parameters>
+    <property>
+        <name>oozie.use.system.libpath</name>
+        <value>true</value>
+    </property>
+  </parameters>
+  <controls>
+     <kick-off-time>2013-06-01T00:00Z</kick-off-time>
+  </controls>
+  <coordinator name='DailySleep-1' >
+     <app-path>${nameNode}/user/hue/oozie/deployments/_hdfs_-oozie-6-1383197181.33</app-path>
+       <configuration>
+         <property>
+            <name>wf_application_path</name>
+            <value>hdfs://solaris.abe.cloudera.com:8020/user/hue/oozie/deployments/_hdfs_-oozie-5-1383197180.95</value>
+        </property>
+      </configuration>
+  </coordinator>
+  <coordinator name='DailyAnalytics-2' >
+     <app-path>${nameNode}/user/hue/oozie/deployments/_hdfs_-oozie-21-1383197181.8</app-path>
+       <configuration>
+         <property>
+            <name>wf_application_path</name>
+            <value>hdfs://solaris.abe.cloudera.com:8020/user/hue/oozie/deployments/_hdfs_-oozie-11-1383197181.5</value>
+        </property>
+      </configuration>
+  </coordinator>
+</bundle-app>

@@ -44,8 +44,8 @@ from liboozie.types import WorkflowList, Workflow as OozieWorkflow, Coordinator 
 from oozie.models import Workflow, Node, Kill, Link, Job, Coordinator, History,\
   find_parameters, NODE_TYPES, Bundle
 from oozie.utils import workflow_to_dict, model_to_dict, smart_path
-from oozie.import_workflow import import_workflow
-from oozie.import_jobsub import convert_jobsub_design
+from oozie.importlib.workflows import import_workflow
+from oozie.importlib.jobdesigner import convert_jobsub_design
 
 
 

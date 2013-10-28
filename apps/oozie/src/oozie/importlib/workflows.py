@@ -14,7 +14,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from desktop.models import Document
 """
 Import an external workflow by providing an XML definition.
 The workflow definition is imported via the method 'import_workflow'.
@@ -32,23 +31,20 @@ Action extensions are also versioned.
 Every action extension will have its own version via /xslt/<workflow version>/extensions/<name of extensions>.<version>.xslt
 """
 
-try:
-  import json
-except ImportError:
-  import simplejson as json
-
 import logging
 from lxml import etree
+import os
 
 from django.core import serializers
 from django.utils.encoding import smart_str
 from django.utils.translation import ugettext as _
 
-from conf import DEFINITION_XSLT_DIR
-from models import Workflow, Node, Link, Start, End,\
-                   Decision, DecisionEnd, Fork, Join,\
-                   Kill
-from utils import xml_tag
+from desktop.models import Document
+
+from oozie.conf import DEFINITION_XSLT_DIR
+from oozie.models import Workflow, Node, Link, Start, End,\
+                         Decision, DecisionEnd, Fork, Join,\
+                         Kill
 
 LOG = logging.getLogger(__name__)
 
@@ -97,7 +93,7 @@ def _save_links(workflow, root):
     if child_el.tag.endswith('global'):
       continue
 
-    tag = xml_tag(child_el)
+    tag = etree.QName(child_el).localname
     name = child_el.attrib.get('name', tag)
     LOG.debug("Getting node with data - XML TAG: %(tag)s\tLINK NAME: %(node_name)s\tWORKFLOW NAME: %(workflow_name)s" % {
       'tag': smart_str(tag),
@@ -202,7 +198,7 @@ def _decision_relationships(workflow, parent, child_el):
       except Node.DoesNotExist, e:
         raise RuntimeError(_("Node %s has not been defined.") % to)
 
-      if xml_tag(case) == 'default':
+      if etree.QName(case).localname == 'default':
         name = 'default'
         obj = Link.objects.create(name=name, parent=parent, child=child)
 
@@ -226,7 +222,7 @@ def _node_relationships(workflow, parent, child_el):
       continue
 
     # Links
-    name = xml_tag(el)
+    name = etree.QName(el).localname
     if name in LINKS:
       if name == 'path':
         if 'start' not in el.attrib:
@@ -483,9 +479,9 @@ def _preprocess_nodes(workflow, transformed_root, workflow_definition_root, node
       for action_el in workflow_definition_root:
         if 'name' in action_el.attrib and action_el.attrib['name'] == full_node.name:
           for subworkflow_el in action_el:
-            if xml_tag(subworkflow_el) == 'sub-workflow':
+            if etree.QName(subworkflow_el).localname == 'sub-workflow':
               for property_el in subworkflow_el:
-                if xml_tag(property_el) == 'app-path':
+                if etree.QName(property_el).localname == 'app-path':
                   app_path = property_el.text
 
       if app_path is None:
@@ -548,9 +544,9 @@ def _save_nodes(workflow, nodes):
       node.save()
 
 
-def import_workflow(workflow, workflow_definition, fs=None):
+def import_workflow(workflow, workflow_definition, metadata=None, fs=None):
   xslt_definition_fh = open("%(xslt_dir)s/workflow.xslt" % {
-    'xslt_dir': DEFINITION_XSLT_DIR.get()
+    'xslt_dir': os.path.join(DEFINITION_XSLT_DIR.get(), 'workflows')
   })
 
   # Parse Workflow Definition

@@ -110,7 +110,3 @@ def smart_path(path, mapping):
       path = '%(nameNode)s%(path)s' % {'nameNode': '${nameNode}', 'path': path}
 
   return path
-
-
-def xml_tag(element):
-  return re.sub(r'^\{.+\}', '', element.tag)
