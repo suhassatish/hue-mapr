@@ -30,6 +30,7 @@ from pig.conf import LOCAL_SAMPLE_DIR, REMOTE_SAMPLE_DIR
 from liboozie.submittion import create_directories
 from desktop.lib import paths
 from desktop.conf import DEFAULT_USER
+from useradmin.models import install_sample_user
 
 LOG = logging.getLogger(__name__)
 DEFAULT_INSTALL_USER = DEFAULT_USER.get()
@@ -57,9 +58,5 @@ class Command(NoArgsCommand):
     fs.do_as_user(fs.DEFAULT_USER, fs.copyFromLocal, local_dir, remote_data_dir)
 
     # Load jobs
-    USERNAME = DEFAULT_INSTALL_USER
-    try:
-      sample_user = User.objects.get(username=USERNAME)
-    except User.DoesNotExist:
-      sample_user = User.objects.create(username=USERNAME, password='!', is_active=False, is_superuser=False, id=1100713, pk=1100713)
+    install_sample_user()
     management.call_command('loaddata', 'initial_pig_examples.json', verbosity=2)
