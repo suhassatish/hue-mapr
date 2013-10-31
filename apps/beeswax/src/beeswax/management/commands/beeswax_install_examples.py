@@ -29,11 +29,15 @@ import hive_metastore.ttypes
 from beeswaxd.ttypes import BeeswaxException
 from beeswax.models import SavedQuery
 from beeswax.server.dbms import get_query_server_config
+
 from beeswax import models
 from beeswax.design import hql_query
 from beeswax.server import dbms
-from useradmin.models import install_sample_user
+from desktop.conf import DEFAULT_USER
+
+
 LOG = logging.getLogger(__name__)
+DEFAULT_INSTALL_USER = DEFAULT_USER.get()
 
 
 def get_install_user():
@@ -59,13 +63,24 @@ class Command(NoArgsCommand):
   def handle_noargs(self, **options):
     """Main entry point to install or re-install examples. May raise InstallException"""
     try:
-      user = install_sample_user()
-      
+      user = self._install_user()
       self._install_tables(user, options['app_name'])
       self._install_queries(user, options['app_name'])
     except Exception, ex:
       LOG.exception(ex)
       raise InstallException(ex)
+
+  def _install_user(self):
+    """
+    Setup the sample user
+    """
+    USERNAME = get_install_user();
+    try:
+      user = User.objects.get(username=USERNAME)
+    except User.DoesNotExist:
+      user = User.objects.create(username=USERNAME, password='!', is_active=False, is_superuser=False, id=1100713, pk=1100713)
+      LOG.info('Installed a user called "%s"' % (USERNAME,))
+    return user
 
   def _install_tables(self, django_user, app_name):
     data_dir = beeswax.conf.LOCAL_EXAMPLES_DATA_DIR.get()
