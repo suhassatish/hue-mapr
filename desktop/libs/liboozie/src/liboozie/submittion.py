@@ -171,14 +171,10 @@ class Submission(object):
       })
 
     if self.job:
-      properties.update({
+      self.properties.update({
         self.job.get_application_path_key(): self.fs.get_hdfs_path(deployment_dir),
         self.job.HUE_ID: self.job.id
       })
-
-    properties.update(self.properties)
-
-    self.properties = properties
 
   def _create_deployment_dir(self):
     """
