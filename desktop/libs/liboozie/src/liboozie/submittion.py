@@ -166,7 +166,8 @@ class Submission(object):
   def _update_properties(self, jobtracker_addr, deployment_dir):
     if self.fs and self.jt:
       self.properties.update({
-        'jobTracker': self.jt.logical_name or jobtracker_addr,
+        #'jobTracker': self.jt.logical_name or jobtracker_addr,
+	'jobTracker': "maprfs:///",
         'nameNode': self.fs.logical_name or self.fs.fs_defaultfs,
       })
 
