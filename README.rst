@@ -7,7 +7,7 @@ applications. It features:
 
       * FileBrowser for accessing HDFS      
       * Beeswax application for executing Hive queries
-      * Impala App for executing Cloudera Impala queries
+      * Impala App for executing Impala queries
       * Oozie App for submitting and scheduling workflows and bundles
       * Pig App for submitting Pig scripts
       * HBase Browser for exploring and modifying HBase tables and data
