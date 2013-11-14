@@ -3,6 +3,13 @@
 bin=`dirname "$0"`
 bin=`cd "$bin"; pwd`
 export HUE_HOME=${bin}/..
+
+#
+# activate the Python virtual environment
+#
+$HUE_HOME/build/env/bin/activate
+
+
 # get arguments
 command=$1
 shift
@@ -79,4 +86,10 @@ case $startStop in
     ;;
 
 esac
+
+
+#
+# deactivate the Python virtual environment
+#
+deactivate
 
