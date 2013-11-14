@@ -7,7 +7,7 @@ export HUE_HOME=${bin}/..
 #
 # activate the Python virtual environment
 #
-$HUE_HOME/build/env/bin/activate
+source $HUE_HOME/build/env/bin/activate
 
 
 # get arguments
