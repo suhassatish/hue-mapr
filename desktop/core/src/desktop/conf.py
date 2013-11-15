@@ -255,6 +255,11 @@ DEFAULT_HDFS_SUPERUSER = Config(
   help=_("This should be the hadoop cluster admin, defaults to owner of maprfs:///var"),
   type=str,
   default=None)
+DEFAULT_JOBTRACKER_HOST = Config(
+  key="default_jobtracker_host",
+  help=_("This should be the currently active job tracker IP @, default to maprfs:/// will let JobClient find it automatically"),
+  type=str,
+  default="maprfs:///")
 
 CUSTOM = ConfigSection(
   key="custom",

@@ -27,9 +27,10 @@ from hadoop.fs.hadoopfs import Hdfs
 
 from liboozie.oozie_api import get_oozie
 from liboozie.conf import REMOTE_DEPLOYMENT_DIR
-
+from desktop.conf import DEFAULT_JOBTRACKER_HOST
 LOG = logging.getLogger(__name__)
 
+JT=DEFAULT_JOBTRACKER_HOST.get()
 
 class Submission(object):
   """
@@ -167,7 +168,7 @@ class Submission(object):
     if self.fs and self.jt:
       self.properties.update({
         #'jobTracker': self.jt.logical_name or jobtracker_addr,
-	'jobTracker': "maprfs:///",
+        'jobTracker': JT,
         'nameNode': self.fs.logical_name or self.fs.fs_defaultfs,
       })
 
