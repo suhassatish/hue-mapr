@@ -319,6 +319,11 @@ if desktop.conf.REDIRECT_WHITELIST.get():
 # Necessary for South to not fuzz with tests.  Fixed in South 0.7.1
 SKIP_SOUTH_TESTS = True
 
+if DATABASES['default']['ENGINE'] == 'django_pygresql':
+  SOUTH_DATABASE_ADAPTERS = {
+    'default': 'south.db.postgresql_psycopg2'
+  }
+
 # Set up environment variable so Kerberos libraries look at our private
 # ticket cache
 os.environ['KRB5CCNAME'] = desktop.conf.KERBEROS.CCACHE_PATH.get()
