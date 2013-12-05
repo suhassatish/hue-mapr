@@ -15,156 +15,125 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 import json
-import time
+import os
+import uuid
 
-from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
-
 from nose.tools import assert_true, assert_equal
 
 from desktop.lib.django_test_util import make_logged_in_client
-from desktop.lib.test_utils import grant_access
 
-from spark.models import create_or_update_script, SparkScript
-from spark.api import OozieSparkApi, get
+from spark.job_server_api import api
 
 
-class TestSparkBase(object):
-  SCRIPT_ATTRS = {
-      'id': 1000,
-      'name': 'Test',
-      'script': 'print "spark"',
-      'parameters': [],
-      'resources': [],
-      'hadoopProperties': [],
-      'language': 'python'
-  }
+class MockRdbms:
+  def get_databases(self):
+    return ['db1', 'db2']
 
-  def setUp(self):
-    self.c = make_logged_in_client(is_superuser=False)
-    grant_access("test", "test", "spark")
-    self.user = User.objects.get(username='test')
+  def get_tables(self, database):
+    return ['table1', 'table2']
 
-  def create_script(self):
-    return create_script(self.user)
-
-
-def create_script(user, xattrs=None):
-  attrs = {'user': user}
-  attrs.update(TestSparkBase.SCRIPT_ATTRS)
-  if xattrs is not None:
-    attrs.update(xattrs)
-  return create_or_update_script(**attrs)
-
-
-class TestMock(TestSparkBase):
-
-  def test_create_script(self):
-    spark_script = self.create_script()
-    assert_equal('Test', spark_script.dict['name'])
-
-  def test_save(self):
-    attrs = {'user': self.user,}
-    attrs.update(TestSparkBase.SCRIPT_ATTRS)
-    attrs['language'] = json.dumps(TestSparkBase.SCRIPT_ATTRS['language'])
-    attrs['parameters'] = json.dumps(TestSparkBase.SCRIPT_ATTRS['parameters'])
-    attrs['resources'] = json.dumps(TestSparkBase.SCRIPT_ATTRS['resources'])
-    attrs['hadoopProperties'] = json.dumps(TestSparkBase.SCRIPT_ATTRS['hadoopProperties'])
-
-    # Save
-    self.c.post(reverse('spark:save'), data=attrs, follow=True)
-
-    # Update
-    self.c.post(reverse('spark:save'), data=attrs, follow=True)
-
-  def test_parse_oozie_logs(self):
-    api = get(None, None, self.user)
-
-    assert_equal('''Stdoutput aaa''', api._match_logs({'logs': [None, OOZIE_LOGS]}))
-
-
-OOZIE_LOGS ="""  Log Type: stdout
-
-  Log Length: 58465
-
-  Oozie Launcher starts
-
-  Heart beat
-  Starting the execution of prepare actions
-  Completed the execution of prepare actions successfully
-
-  Files in current dir:/var/lib/hadoop-yarn/cache/yarn/nm-local-dir/usercache/romain/appcache/application_1383078934625_0050/container_1383078934625_0050_01_000002/.
-  ======================
-  File: .launch_container.sh.crc
-  File: oozie-sharelib-oozie-3.3.2-cdh4.4.0-SNAPSHOT.jar
-
-  Oozie Java/Map-Reduce/Pig action launcher-job configuration
-  =================================================================
-  Workflow job id   : 0000011-131105103808962-oozie-oozi-W
-  Workflow action id: 0000011-131105103808962-oozie-oozi-W@spark
-
-  Classpath         :
-  ------------------------
-  /var/lib/hadoop-yarn/cache/yarn/nm-local-dir/usercache/romain/appcache/application_1383078934625_0050/container_1383078934625_0050_01_000002
-  /etc/hadoop/conf
-  /usr/lib/hadoop/hadoop-nfs-2.1.0-cdh5.0.0-SNAPSHOT.jar
-  /usr/lib/hadoop/hadoop-common-2.1.0-cdh5.0.0-SNAPSHOT.jar
-  ------------------------
-
-  Main class        : org.apache.oozie.action.hadoop.ShellMain
-
-  Maximum output    : 2048
-
-  Arguments         :
-
-  Java System Properties:
-  ------------------------
-  #
-  #Tue Nov 05 14:02:13 ICT 2013
-  java.runtime.name=Java(TM) SE Runtime Environment
-  oozie.action.externalChildIDs.properties=/var/lib/hadoop-yarn/cache/yarn/nm-local-dir/usercache/romain/appcache/application_1383078934625_0050/container_1383078934625_0050_01_000002/externalChildIds.properties
-  sun.boot.library.path=/usr/lib/jvm/java-7-oracle/jre/lib/amd64
-  ------------------------
-
-  =================================================================
-
-  >>> Invoking Main class now >>>
-
-
-  Oozie Shell action configuration
-  =================================================================
-  Shell configuration:
-  --------------------
-  dfs.datanode.data.dir : file:///var/lib/hadoop-hdfs/cache/${user.name}/dfs/data
-  dfs.namenode.checkpoint.txns : 1000000
-  s3.replication : 3
-  --------------------
-
-  Current working dir /var/lib/hadoop-yarn/cache/yarn/nm-local-dir/usercache/romain/appcache/application_1383078934625_0050/container_1383078934625_0050_01_000002
-  Full Command ..
-  -------------------------
-  0:spark.sh:
-  List of passing environment
-  -------------------------
-  TERM=xterm:
-  JSVC_HOME=/usr/lib/bigtop-utils:
-  HADOOP_PREFIX=/usr/lib/hadoop:
-  HADOOP_MAPRED_HOME=/usr/lib/hadoop-mapreduce:
-  YARN_NICENESS=0:
-  =================================================================
-
-  >>> Invoking Shell command line now >>
-
-  Stdoutput aaa
-  Exit code of the Shell command 0
-  <<< Invocation of Shell command completed <<<
-
-
-  <<< Invocation of Main class completed <<<
-
-
-  Oozie Launcher ends
-
-"""
+#
+#class TestMockedRdbms:
+#  def setUp(self):
+#    self.client = make_logged_in_client()
+#
+#    # Mock DB calls as we don't need the real ones
+#    self.prev_dbms = dbms.get
+#    dbms.get = lambda a, b: MockRdbms()
+#
+#  def tearDown(self):
+#    # Remove monkey patching
+#    dbms.get = self.prev_dbms
+#
+#  def test_basic_flow(self):
+#    response = self.client.get("/rdbms/")
+#    assert_true('DB Query' in response.content, response.content)
+#
+#  def test_config_error(self):
+#    self.finish = rdbms_conf.RDBMS.set_for_testing({})
+#
+#    response = self.client.get("/rdbms/")
+#    assert_true('There are currently no databases configured.' in response.content)
+#
+#    response = self.client.get("/rdbms/execute/")
+#    assert_true('There are currently no databases configured.' in response.content)
+#
+#    self.finish()
+#
+#
+#class TestSQLiteRdbmsBase(object):
+#  @classmethod
+#  def setup_class(cls):
+#    cls.database = '/tmp/%s.db' % uuid.uuid4()
+#    cls.prefillDatabase()
+#
+#  @classmethod
+#  def teardown_class(cls):
+#    os.remove(cls.database)
+#
+#  def setUp(self):
+#    self.client = make_logged_in_client()
+#    self.finish = rdbms_conf.RDBMS.set_for_testing({
+#      'sqlitee': {
+#        'name': self.database,
+#        'engine': 'sqlite'
+#      }
+#    })
+#
+#  def tearDown(self):
+#    self.finish()
+#
+#  @classmethod
+#  def prefillDatabase(cls):
+#    import sqlite3
+#    connection = sqlite3.connect(cls.database)
+#    connection.execute("CREATE TABLE test1 (date text, trans text, symbol text, qty real, price real)")
+#    connection.execute("INSERT INTO test1 VALUES ('2006-01-05','BUY','RHAT',100,35.14)")
+#    connection.commit()
+#    connection.close()
+#
+#
+#class TestAPI(TestSQLiteRdbmsBase):
+#  def test_get_servers(self):
+#    response = self.client.get(reverse('rdbms:api_servers'))
+#    response_dict = json.loads(response.content)
+#    assert_true('sqlitee' in response_dict['servers'], response_dict)
+#
+#  def test_get_databases(self):
+#    response = self.client.get(reverse('rdbms:api_databases', args=['sqlitee']))
+#    response_dict = json.loads(response.content)
+#    assert_true(self.database in response_dict['databases'], response_dict)
+#
+#  def test_get_tables(self):
+#    response = self.client.get(reverse('rdbms:api_tables', args=['sqlitee', self.database]))
+#    response_dict = json.loads(response.content)
+#    assert_true('test1' in response_dict['tables'], response_dict)
+#
+#  def test_get_columns(self):
+#    response = self.client.get(reverse('rdbms:api_columns', args=['sqlitee', self.database, 'test1']))
+#    response_dict = json.loads(response.content)
+#    assert_true('date' in response_dict['columns'], response_dict)
+#    assert_true('trans' in response_dict['columns'], response_dict)
+#    assert_true('symbol' in response_dict['columns'], response_dict)
+#    assert_true('qty' in response_dict['columns'], response_dict)
+#    assert_true('price' in response_dict['columns'], response_dict)
+#
+#  def test_execute_query(self):
+#    data = {
+#      'server': 'sqlitee',
+#      'database': self.database,
+#      'query': 'SELECT * FROM test1'
+#    }
+#    response = self.client.post(reverse('rdbms:api_execute_query'), data, follow=True)
+#    response_dict = json.loads(response.content)
+#    assert_equal(1, len(response_dict['results']['rows']), response_dict)
+#
+#  def test_options(self):
+#    finish = rdbms_conf.RDBMS['sqlitee'].OPTIONS.set_for_testing({'nonsensical': None})
+#    try:
+#      self.client.get(reverse('rdbms:api_tables', args=['sqlitee', self.database]))
+#    except TypeError, e:
+#      assert_true('nonsensical' in str(e), e)
+#    finish()
