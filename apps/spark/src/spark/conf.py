@@ -15,29 +15,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 from django.utils.translation import ugettext as _, ugettext_lazy as _t
 
 from desktop.lib.conf import Config, validate_path
 
 
-SPARK_MASTER = Config(
+JOB_SERVER_ = Config(
   key="spark_master",
   help=_t("Address of the Spark master, e.g spark://localhost:7077. If empty use the current configuration. "
           "Can be overriden in the script too."),
   default=""
 )
 
-SPARK_HOME = Config(
-  key="spark_home",
-  help=_t("Local path to Spark Home on all the nodes of the cluster."),
-  default="/usr/lib/spark"
-)
-
-
 def config_validator(user):
   res = []
 
-  res.extend(validate_path(SPARK_HOME, is_dir=True))
+  res.extend(validate_path(JOB_SERVER_, is_dir=True))
 
   return res

@@ -17,19 +17,30 @@
 
 from django.conf.urls.defaults import patterns, url
 
+
+# Views
 urlpatterns = patterns('spark.views',
-  url(r'^$', 'app', name='index'),
-
-  url(r'^app/$', 'app', name='app'),
-
-  # Ajax
-  url(r'^scripts/$', 'scripts', name='scripts'),
-  url(r'^dashboard/$', 'dashboard', name='dashboard'),
-  url(r'^save/$', 'save', name='save'),
-  url(r'^run/$', 'run', name='run'),
-  url(r'^copy/$', 'copy', name='copy'),
-  url(r'^delete/$', 'delete', name='delete'),
-  url(r'^watch/(?P<job_id>[-\w]+)$', 'watch', name='watch'),
-  url(r'^stop/$', 'stop', name='stop'),
-  url(r'^install_examples$', 'install_examples', name='install_examples'),
+  url(r'^$', 'execute_query', name='index'),
+  url(r'^execute/(?P<design_id>\d+)?$', 'execute_query', name='execute_query')
 )
+
+# APIs
+#urlpatterns += patterns('spark.api',
+#  url(r'^api/servers/?$', 'servers', name='api_servers'),
+#)
+
+#urlpatterns += patterns('beeswax.views',
+#  url(r'^autocomplete/$', 'autocomplete', name='autocomplete'),
+#  url(r'^autocomplete/(?P<database>\w+)/$', 'autocomplete', name='autocomplete'),
+#  url(r'^autocomplete/(?P<database>\w+)/(?P<table>\w+)$', 'autocomplete', name='autocomplete'),
+#
+#  url(r'^save_design_properties$', 'save_design_properties', name='save_design_properties'), # Ajax
+#
+#  url(r'^my_queries$', 'my_queries', name='my_queries'),
+#  url(r'^list_designs$', 'list_designs', name='list_designs'),
+#  url(r'^list_trashed_designs$', 'list_trashed_designs', name='list_trashed_designs'),
+#  url(r'^delete_designs$', 'delete_design', name='delete_design'),
+#  url(r'^restore_designs$', 'restore_design', name='restore_design'),
+#  url(r'^clone_design/(?P<design_id>\d+)$', 'clone_design', name='clone_design'),
+#  url(r'^query_history$', 'list_query_history', name='list_query_history')
+#)
