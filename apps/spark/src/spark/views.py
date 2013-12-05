@@ -15,229 +15,97 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import json
+
 import logging
 
-from django.core.urlresolvers import reverse
-from django.http import HttpResponse
 from django.utils.translation import ugettext as _
-from django.views.decorators.http import require_http_methods
+from django.core.urlresolvers import reverse
 
-from desktop.lib.django_util import render
-from desktop.lib.exceptions_renderable import PopupException
-from desktop.lib.rest.http_client import RestException
+from desktop.context_processors import get_app_name
 from desktop.models import Document
+from desktop.lib.django_util import render
 
-from oozie.views.dashboard import show_oozie_error, check_job_access_permission,\
-                                  check_job_edition_permission
+from beeswax import models as beeswax_models
+from beeswax.views import safe_get_design
 
-from spark import api
-from spark.models import get_workflow_output, hdfs_link, SparkScript,\
-  create_or_update_script, get_scripts
+from spark import conf
+from spark.design import SQLdesign
 
 
 LOG = logging.getLogger(__name__)
 
 
-def app(request):
-  return render('app.mako', request, {
-    'autocomplete_base_url': reverse('beeswax:autocomplete', kwargs={}),
+def execute_query(request, design_id=None):
+  """
+  View function for executing an arbitrary synchronously query.
+  """
+  action = request.path
+  app_name = get_app_name(request)
+  query_type = beeswax_models.SavedQuery.TYPES_MAPPING[app_name]
+  design = safe_get_design(request, query_type, design_id)
+
+  return render('execute.mako', request, {
+    'action': action,
+    'design': design,
+    'autocomplete_base_url': reverse('rdbms:autocomplete', kwargs={}),
+    'can_edit_name': design.id and not design.is_auto,
   })
 
 
-def scripts(request):
-  return HttpResponse(json.dumps(get_scripts(request.user, is_design=True)), mimetype="application/json")
+def save_design(request, save_form, query_form, type_, design, explicit_save=False):
+  """
+  save_design(request, save_form, query_form, type_, design, explicit_save) -> SavedQuery
 
+  A helper method to save the design:
+    * If ``explicit_save``, then we save the data in the current design.
+    * If the user clicked the submit button, we do NOT overwrite the current
+      design. Instead, we create a new "auto" design (iff the user modified
+      the data). This new design is named after the current design, with the
+      AUTO_DESIGN_SUFFIX to signify that it's different.
 
-@show_oozie_error
-def dashboard(request):
-  spark_api = api.get(request.fs, request.jt, request.user)
+  Need to return a SavedQuery because we may end up with a different one.
+  Assumes that form.saveform is the SaveForm, and that it is valid.
+  """
 
-  jobs = spark_api.get_jobs()
-  hue_jobs = Document.objects.available(SparkScript, request.user)
-  massaged_jobs = spark_api.massaged_jobs_for_json(request, jobs, hue_jobs)
-
-  return HttpResponse(json.dumps(massaged_jobs), mimetype="application/json")
-
-
-def save(request):
-  if request.method != 'POST':
-    raise PopupException(_('POST request required.'))
-
-  attrs = {
-    'id': request.POST.get('id'),
-    'name': request.POST.get('name'),
-    'script': request.POST.get('script'),
-    'user': request.user,
-    'parameters': json.loads(request.POST.get('parameters')),
-    'resources': json.loads(request.POST.get('resources')),
-    'hadoopProperties': json.loads(request.POST.get('hadoopProperties')),
-    'language': json.loads(request.POST.get('language')),
-  }
-  spark_script = create_or_update_script(**attrs)
-  spark_script.is_design = True
-  spark_script.save()
-
-  response = {
-    'id': spark_script.id,
-  }
-
-  return HttpResponse(json.dumps(response), content_type="text/plain")
-
-
-@show_oozie_error
-def stop(request):
-  if request.method != 'POST':
-    raise PopupException(_('POST request required.'))
-
-  spark_script = SparkScript.objects.get(id=request.POST.get('id'))
-  job_id = spark_script.dict['job_id']
-
-  job = check_job_access_permission(request, job_id)
-  check_job_edition_permission(job, request.user)
-
-  try:
-    api.get(request.fs, request.jt, request.user).stop(job_id)
-  except RestException, e:
-    raise PopupException(_("Error stopping Pig script.") % e.message)
-
-  return watch(request, job_id)
-
-
-@show_oozie_error
-def run(request):
-  if request.method != 'POST':
-    raise PopupException(_('POST request required.'))
-
-  attrs = {
-    'id': request.POST.get('id'),
-    'name': request.POST.get('name'),
-    'script': request.POST.get('script'),
-    'user': request.user,
-    'parameters': json.loads(request.POST.get('parameters')),
-    'resources': json.loads(request.POST.get('resources')),
-    'hadoopProperties': json.loads(request.POST.get('hadoopProperties')),
-    'language': json.loads(request.POST.get('language')),
-    'is_design': False
-  }
-
-  spark_script = create_or_update_script(**attrs)
-
-  params = request.POST.get('submissionVariables')
-  oozie_id = api.get(request.fs, request.jt, request.user).submit(spark_script, params)
-
-  spark_script.update_from_dict({'job_id': oozie_id})
-  spark_script.save()
-
-  response = {
-    'id': spark_script.id,
-    'watchUrl': reverse('spark:watch', kwargs={'job_id': oozie_id}) + '?format=python'
-  }
-
-  return HttpResponse(json.dumps(response), content_type="text/plain")
-
-
-def copy(request):
-  if request.method != 'POST':
-    raise PopupException(_('POST request required.'))
-
-  spark_script = SparkScript.objects.get(id=request.POST.get('id'))
-  spark_script.doc.get().can_edit_or_exception(request.user)
-
-  existing_script_data = spark_script.dict
-
-  owner=request.user
-  name = existing_script_data["name"] + _(' (Copy)')
-  script = existing_script_data["script"]
-  parameters = existing_script_data["parameters"]
-  resources = existing_script_data["resources"]
-  hadoopProperties = existing_script_data["hadoopProperties"]
-  language = existing_script_data["language"]
-
-  script_copy = SparkScript.objects.create()
-  script_copy.update_from_dict({
-      'name': name,
-      'script': script,
-      'parameters': parameters,
-      'resources': resources,
-      'hadoopProperties': hadoopProperties,
-      'language': language
-  })
-  script_copy.save()
-
-  copy_doc = spark_script.doc.get().copy()
-  script_copy.doc.add(copy_doc)
-
-  response = {
-    'id': script_copy.id,
-    'name': name,
-    'script': script,
-    'parameters': parameters,
-    'resources': resources,
-    'hadoopProperties': hadoopProperties,
-    'language': language
-  }
-
-  return HttpResponse(json.dumps(response), content_type="text/plain")
-
-
-def delete(request):
-  if request.method != 'POST':
-    raise PopupException(_('POST request required.'))
-
-  ids = request.POST.get('ids').split(",")
-
-  for script_id in ids:
-    try:
-      spark_script = SparkScript.objects.get(id=script_id)
-      spark_script.doc.get().can_edit_or_exception(request.user)
-      spark_script.doc.get().delete()
-      spark_script.delete()
-    except:
-      None
-
-  response = {
-    'ids': ids,
-  }
-
-  return HttpResponse(json.dumps(response), content_type="text/plain")
-
-
-@show_oozie_error
-def watch(request, job_id):
-  oozie_workflow = check_job_access_permission(request, job_id)
-  logs, workflow_actions = api.get(request.jt, request.jt, request.user).get_log(request, oozie_workflow)
-  output = get_workflow_output(oozie_workflow, request.fs)
-
-  workflow = {
-    'job_id': oozie_workflow.id,
-    'status': oozie_workflow.status,
-    'progress': oozie_workflow.get_progress(),
-    'isRunning': oozie_workflow.is_running(),
-    'killUrl': reverse('oozie:manage_oozie_jobs', kwargs={'job_id': oozie_workflow.id, 'action': 'kill'}),
-    'rerunUrl': reverse('oozie:rerun_oozie_job', kwargs={'job_id': oozie_workflow.id, 'app_path': oozie_workflow.appPath}),
-    'actions': workflow_actions
-  }
-
-  response = {
-    'workflow': workflow,
-    'logs': logs,
-    'output': hdfs_link(output)
-  }
-
-  return HttpResponse(json.dumps(response), content_type="text/plain")
-
-
-def install_examples(request):
-  result = {'status': -1, 'message': ''}
-
-  if request.method != 'POST':
-    result['message'] = _('A POST request is required.')
+  if type_ == beeswax_models.RDBMS:
+    design_cls = SQLdesign
   else:
-    try:
-      result['status'] = 0
-    except Exception, e:
-      LOG.exception(e)
-      result['message'] = str(e)
+    raise ValueError(_('Invalid design type %(type)s') % {'type': type_})
 
-  return HttpResponse(json.dumps(result), mimetype="application/json")
+  old_design = design
+  design_obj = design_cls(query_form)
+  new_data = design_obj.dumps()
+
+  # Auto save if (1) the user didn't click "save", and (2) the data is different.
+  # Don't generate an auto-saved design if the user didn't change anything
+  if explicit_save:
+    design.name = save_form.cleaned_data['name']
+    design.desc = save_form.cleaned_data['desc']
+    design.is_auto = False
+  elif new_data != old_design.data:
+    # Auto save iff the data is different
+    if old_design.id is not None:
+      # Clone iff the parent design isn't a new unsaved model
+      design = old_design.clone()
+      if not old_design.is_auto:
+        design.name = old_design.name + beeswax_models.SavedQuery.AUTO_DESIGN_SUFFIX
+    else:
+      design.name = beeswax_models.SavedQuery.DEFAULT_NEW_DESIGN_NAME
+    design.is_auto = True
+
+  design.type = type_
+  design.data = new_data
+
+  design.save()
+
+  LOG.info('Saved %s design "%s" (id %s) for %s' % (design.name and '' or 'auto ', design.name, design.id, design.owner))
+
+  if design.doc.exists():
+    design.doc.update(name=design.name, description=design.desc)
+  else:
+    Document.objects.link(design, owner=design.owner, extra=design.type, name=design.name, description=design.desc)
+
+  if design.is_auto:
+    design.doc.get().add_to_history()
+
+  return design
