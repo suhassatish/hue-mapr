@@ -31,10 +31,7 @@ function RdbmsViewModel() {
   });
   self.rows = ko.observableArray();
   self.columns = ko.observableArray();
-
-  self.filter = ko.observable("");
-  self.isLoading = ko.observable(false);
-  self.isReady = ko.observable(false);
+  self.resultsEmpty = ko.observable(false);
 
   self.server = ko.computed({
     'read': function() {
@@ -80,15 +77,10 @@ function RdbmsViewModel() {
 
   self.updateResults = function(results) {
     var rows = [];
+    self.columns.removeAll();  // Needed for datatables to refresh properly.
     self.columns(results.columns);
-    $.each(results.rows, function(i, result_row) {
-      var row = [];
-      $.each(self.columns(), function(j, column) {
-        row.push(result_row[column]);
-      });
-      rows.push(row);
-    });
-    self.rows(rows);
+    self.rows.removeAll();
+    self.rows(results.rows);
   };
 
   self.updateServers = function(servers) {
@@ -142,6 +134,14 @@ function RdbmsViewModel() {
     $.totalStorage(key, value);
   };
 
+  var error_fn = function(jqXHR, status, errorThrown) {
+    try {
+      $(document).trigger('server.error', $.parseJSON(jqXHR.responseText));
+    } catch(e) {
+      $(document).trigger('server.unmanageable_error', jqXHR.responseText);
+    }
+  };
+
   self.explainQuery = function() {
     var data = ko.mapping.toJS(self.query);
     data.database = self.database();
@@ -156,12 +156,13 @@ function RdbmsViewModel() {
           $(document).trigger('explain.query', data);
           self.updateResults(data.results);
           self.query.id(data.design);
+          self.resultsEmpty(data.results.rows.length === 0);
           $(document).trigger('explained.query', data);
         } else {
           self.query.errors.push(data.message);
         }
       },
-      error: $.noop,
+      error: error_fn,
       data: data
     };
     $.ajax(request);
@@ -177,7 +178,7 @@ function RdbmsViewModel() {
         success: function(data) {
           self.updateQuery(data.design);
         },
-        error: $.noop
+        error: error_fn
       };
       $.ajax(request);
     }
@@ -224,12 +225,13 @@ function RdbmsViewModel() {
           $(document).trigger('execute.query', data);
           self.updateResults(data.results);
           self.query.id(data.design);
+          self.resultsEmpty(data.results.rows.length === 0);
           $(document).trigger('executed.query', data);
         } else {
           self.query.errors.push(data.message);
         }
       },
-      error: $.noop,
+      error: error_fn,
       data: data
     };
     $.ajax(request);
@@ -244,7 +246,7 @@ function RdbmsViewModel() {
         self.updateServers(data.servers);
         self.fetchDatabases();
       },
-      error: $.noop
+      error: error_fn
     };
     $.ajax(request);
   };
@@ -258,7 +260,7 @@ function RdbmsViewModel() {
         success: function(data) {
           self.updateDatabases(data.databases);
         },
-        error: $.noop
+        error: error_fn
       };
       $.ajax(request);
     }

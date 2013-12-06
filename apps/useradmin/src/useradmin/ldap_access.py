@@ -189,11 +189,10 @@ class LdapConnection(object):
     group_info = []
     if result_data:
       for dn, data in result_data:
-        # Case insensitivity
-        data = CaseInsensitiveDict.from_dict(data)
-
         # Skip Active Directory # refldap entries.
         if dn is not None:
+          # Case insensitivity
+          data = CaseInsensitiveDict.from_dict(data)
 
           # Skip unnamed entries.
           if group_name_attr not in data:
@@ -206,7 +205,7 @@ class LdapConnection(object):
           }
 
           member_attr = desktop.conf.LDAP.GROUPS.GROUP_MEMBER_ATTR.get()
-          if member_attr in data:
+          if member_attr in data and 'posixGroup' not in data['objectClass']:
             ldap_info['members'] = data[member_attr]
           else:
             ldap_info['members'] = []

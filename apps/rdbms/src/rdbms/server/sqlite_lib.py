@@ -51,10 +51,18 @@ class SQLiteClient(BaseRDMSClient):
 
   @property
   def _conn_params(self):
-    return {
+    params = {
       'database': self.query_server['name'],
       'detect_types': Database.PARSE_DECLTYPES | Database.PARSE_COLNAMES,
     }
+
+    if self.query_server['options']:
+      params.update(self.query_server['options'])
+
+    # Make sure connection is shareable.
+    params['check_same_thread'] = False
+
+    return params
 
 
   def use(self, database):
@@ -77,7 +85,7 @@ class SQLiteClient(BaseRDMSClient):
     return [self._conn_params['database']]
 
 
-  def get_tables(self, database, table_names):
+  def get_tables(self, database, table_names=[]):
     # Doesn't use database and only retrieves tables for database currently in use.
     cursor = self.connection.cursor()
     cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")

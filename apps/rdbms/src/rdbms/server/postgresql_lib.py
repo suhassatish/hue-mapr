@@ -55,6 +55,13 @@ class PostgreSQLClient(BaseRDMSClient):
       'port': self.query_server['server_port'] == 0 and 5432 or self.query_server['server_port'],
       'database': self.query_server['name']
     }
+
+    if self.query_server['options']:
+      params.update(self.query_server['options'])
+      # handle transaction commits manually.
+      if 'autocommit' in params:
+        del params['autocommit']
+
     return params
 
 
@@ -78,7 +85,7 @@ class PostgreSQLClient(BaseRDMSClient):
     return [self._conn_params['database']]
 
 
-  def get_tables(self, database, table_names):
+  def get_tables(self, database, table_names=[]):
     # Doesn't use database and only retrieves tables for database currently in use.
     cursor = self.connection.cursor()
     cursor.execute("SELECT table_schema,table_name FROM information_schema.tables")

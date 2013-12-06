@@ -18,28 +18,11 @@
   from django.utils.translation import ugettext as _
 %>
 
+<%namespace name="common" file="common.mako" />
+
 ${ commonheader(_('Query'), app_name, user) | n,unicode }
 
-<div class="navbar navbar-inverse navbar-fixed-top">
-  <div class="navbar-inner">
-    <div class="container-fluid">
-      <div class="nav-collapse">
-        <ul class="nav">
-          <li class="currentApp">
-            <a href="/rdbms">
-              <img src="/rdbms/static/art/icon_rdbms_24.png" />
-              ${ _('DB Query') }
-            </a>
-          </li>
-          <li class="active"><a href="${ url('rdbms:execute_query') }">${_('Query Editor')}</a></li>
-          <li><a href="${ url('rdbms:my_queries') }">${_('My Queries')}</a></li>
-          <li><a href="${ url('rdbms:list_designs') }">${_('Saved Queries')}</a></li>
-          <li><a href="${ url('rdbms:list_query_history') }">${_('History')}</a></li>
-        </ul>
-      </div>
-    </div>
-  </div>
-</div>
+<%common:navbar></%common:navbar>
 
 <div class="container-fluid">
   <div class="row-fluid">
@@ -69,9 +52,9 @@ ${ commonheader(_('Query'), app_name, user) | n,unicode }
       </ul>
     </div>
   </div>
-
-  <div id="query" class="row-fluid">
-    <div class="row-fluid">
+  <div class="row-fluid">
+    <div class="span10">
+    <div id="query">
       <div class="card card-small">
         <div style="margin-bottom: 30px">
           <h1 class="card-heading simple">
@@ -128,8 +111,7 @@ ${ commonheader(_('Query'), app_name, user) | n,unicode }
         </div>
       </div>
     </div>
-
-    <div data-bind="css: {'hide': rows().length == 0}" class="row-fluid hide">
+    <div data-bind="css: {'hide': rows().length == 0}" class="hide">
       <div class="card card-small scrollable">
         <table class="table table-striped table-condensed resultTable" cellpadding="0" cellspacing="0" data-tablescroller-min-height-disable="true" data-tablescroller-enforce-height="true">
           <thead>
@@ -137,16 +119,42 @@ ${ commonheader(_('Query'), app_name, user) | n,unicode }
               <th data-bind="text: $data"></th>
             </tr>
           </thead>
-          <tbody data-bind="foreach: rows">
-            <tr data-bind="foreach: $data">
-              <td data-bind="text: $data"></td>
-            </tr>
-          </tbody>
         </table>
       </div>
     </div>
+
+    <div data-bind="css: {'hide': !resultsEmpty()}" class="hide">
+      <div class="card card-small scrollable">
+        <div class="row-fluid">
+          <div class="span10 offset1 center empty-wrapper">
+            <i class="fa fa-frown-o"></i>
+            <h1>${_('The server returned no results.')}</h1>
+            <br />
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="span2" id="navigator">
+      <div class="card card-small">
+        <a href="#" title="${_('Double click on a table name or field to insert it in the editor')}" rel="tooltip" data-placement="left" class="pull-right" style="margin:10px;margin-left: 0"><i class="fa fa-question-circle"></i></a>
+        <a id="refreshNavigator" href="#" title="${_('Manually refresh the table list')}" rel="tooltip" data-placement="left" class="pull-right" style="margin:10px"><i class="fa fa-refresh"></i></a>
+        <h1 class="card-heading simple"><i class="fa fa-compass"></i> ${_('Navigator')}</h1>
+        <div class="card-body">
+          <p>
+            <input id="navigatorSearch" type="text" placeholder="${ _('Table name...') }" style="width:90%"/>
+            <span id="navigatorNoTables">${_('The selected database has no tables.')}</span>
+            <ul id="navigatorTables" class="unstyled"></ul>
+            <div id="navigatorLoader">
+              <!--[if !IE]><!--><i class="fa fa-spinner fa-spin" style="font-size: 20px; color: #DDD"></i><!--<![endif]-->
+              <!--[if IE]><img src="/static/art/spinner.gif" /><![endif]-->
+            </div>
+          </p>
+        </div>
+      </div>
   </div>
 
+  </div>
 </div>
 
 
@@ -267,6 +275,32 @@ ${ commonheader(_('Query'), app_name, user) | n,unicode }
   .resultTable td, .resultTable th {
     white-space: nowrap;
   }
+
+  .empty-wrapper {
+    margin-top: 50px;
+    color: #BBB;
+    line-height: 60px;
+  }
+
+  .empty-wrapper i {
+    font-size: 148px;
+  }
+
+  #navigatorTables li {
+    width: 95%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  #navigatorSearch, #navigatorNoTables {
+    display: none;
+  }
+
+  #navigator .card {
+    padding-bottom: 30px;
+  }
+
 </style>
 
 <script src="/static/ext/js/knockout-min.js" type="text/javascript" charset="utf-8"></script>
@@ -283,10 +317,14 @@ ${ commonheader(_('Query'), app_name, user) | n,unicode }
 <script src="/static/ext/js/bootstrap-editable.min.js"></script>
 
 <script src="/static/ext/js/jquery/plugins/jquery-fieldselection.js" type="text/javascript"></script>
-<script src="/beeswax/static/js/autocomplete.utils.js" type="text/javascript" charset="utf-8"></script>
+<script src="/rdbms/static/js/autocomplete.utils.js" type="text/javascript" charset="utf-8"></script>
 
 <script type="text/javascript" charset="utf-8">
   var codeMirror, viewModel;
+
+  var RDBMS_AUTOCOMPLETE_BASE_URL = '/rdbms/api';
+  var RDBMS_AUTOCOMPLETE_FAILS_SILENTLY_ON = [500, 404]; // error codes from rdbms/views.py - autocomplete
+  var RDBMS_AUTOCOMPLETE_GLOBAL_CALLBACK = $.noop;
 
   $(document).ready(function(){
 
@@ -295,6 +333,21 @@ ${ commonheader(_('Query'), app_name, user) | n,unicode }
     $("*[rel=tooltip]").tooltip({
       placement: 'bottom'
     });
+
+    var navigatorSearchTimeout = -1;
+    $("#navigatorSearch").on("keyup", function () {
+      window.clearTimeout(navigatorSearchTimeout);
+      navigatorSearchTimeout = window.setTimeout(function () {
+        $("#navigatorTables li").removeClass("hide");
+        $("#navigatorTables li").each(function () {
+          if ($(this).text().toLowerCase().indexOf($("#navigatorSearch").val().toLowerCase()) == -1) {
+            $(this).addClass("hide");
+          }
+        });
+      }, 300);
+    });
+
+    $("#navigatorTables").css("max-height", ($(window).height() - 340) + "px").css("overflow-y", "auto");
 
     var resizeTimeout = -1;
     var winWidth = $(window).width();
@@ -308,6 +361,7 @@ ${ commonheader(_('Query'), app_name, user) | n,unicode }
           codeMirror.setSize("95%", 100);
           winWidth = $(window).width();
           winHeight = $(window).height();
+          $("#navigatorTables").css("max-height", ($(window).height() - 340) + "px").css("overflow-y", "auto");
         }
       }, 200);
     });
@@ -320,9 +374,82 @@ ${ commonheader(_('Query'), app_name, user) | n,unicode }
       if (CodeMirror.tableFieldMagic) {
         codeMirror.replaceRange(" ", from, from);
         codeMirror.setCursor(from);
-        CodeMirror.showHint(codeMirror, AUTOCOMPLETE_SET);
+        codeMirror.execCommand("autocomplete");
       }
     };
+
+    CodeMirror.commands.autocomplete = function (cm) {
+      $(document.body).on("contextmenu", function (e) {
+        e.preventDefault(); // prevents native menu on FF for Mac from being shown
+      });
+
+      var pos = cm.cursorCoords();
+      $(".CodeMirror-spinner").remove();
+      $("<i class='fa fa-spinner fa-spin CodeMirror-spinner'></i>").css("top", pos.top + "px").css("left", (pos.left - 4) + "px").appendTo($("body"));
+
+      if ($.totalStorage('rdbms_tables_' + viewModel.server().name() + "_" + viewModel.database()) == null) {
+        CodeMirror.showHint(cm, AUTOCOMPLETE_SET);
+        rdbms_getTables(viewModel.server().name(), viewModel.database(), function () {
+        }); // if preload didn't work, tries again
+      }
+      else {
+        rdbms_getTables(viewModel.server().name(), viewModel.database(), function (tables) {
+          CodeMirror.catalogTables = tables;
+          var _before = codeMirror.getRange({line: 0, ch: 0}, {line: codeMirror.getCursor().line, ch: codeMirror.getCursor().ch}).replace(/(\r\n|\n|\r)/gm, " ");
+          CodeMirror.possibleTable = false;
+          CodeMirror.tableFieldMagic = false;
+          if (_before.toUpperCase().indexOf(" FROM ") > -1 && _before.toUpperCase().indexOf(" ON ") == -1 && _before.toUpperCase().indexOf(" WHERE ") == -1) {
+            CodeMirror.possibleTable = true;
+          }
+          CodeMirror.possibleSoloField = false;
+          if (_before.toUpperCase().indexOf("SELECT ") > -1 && _before.toUpperCase().indexOf(" FROM ") == -1 && !CodeMirror.fromDot) {
+            if (codeMirror.getValue().toUpperCase().indexOf("FROM ") > -1) {
+              fieldsAutocomplete(cm);
+            }
+            else {
+              CodeMirror.tableFieldMagic = true;
+              CodeMirror.showHint(cm, AUTOCOMPLETE_SET);
+            }
+          }
+          else {
+            if (_before.toUpperCase().indexOf("WHERE ") > -1 && !CodeMirror.fromDot && _before.match(/ON|GROUP|SORT/) == null) {
+              fieldsAutocomplete(cm);
+            }
+            else {
+              CodeMirror.showHint(cm, AUTOCOMPLETE_SET);
+            }
+          }
+        });
+      }
+    }
+
+    function fieldsAutocomplete(cm) {
+      CodeMirror.possibleSoloField = true;
+      try {
+        var _possibleTables = $.trim(codeMirror.getValue(" ").substr(codeMirror.getValue().toUpperCase().indexOf("FROM ") + 4)).split(" ");
+        var _foundTable = "";
+        for (var i = 0; i < _possibleTables.length; i++) {
+          if ($.trim(_possibleTables[i]) != "" && _foundTable == "") {
+            _foundTable = _possibleTables[i];
+          }
+        }
+        if (_foundTable != "") {
+          if (rdbms_tableHasAlias(viewModel.server().name(), _foundTable, codeMirror.getValue())) {
+            CodeMirror.possibleSoloField = false;
+            CodeMirror.showHint(cm, AUTOCOMPLETE_SET);
+          }
+          else {
+            rdbms_getTableColumns(viewModel.server().name(), viewModel.database(), _foundTable, codeMirror.getValue(),
+                    function (columns) {
+                      CodeMirror.catalogFields = columns;
+                      CodeMirror.showHint(cm, AUTOCOMPLETE_SET);
+                    });
+          }
+        }
+      }
+      catch (e) {
+      }
+    }
 
     CodeMirror.fromDot = false;
 
@@ -336,7 +463,7 @@ ${ commonheader(_('Query'), app_name, user) | n,unicode }
       extraKeys: {
         "Ctrl-Space": function () {
           CodeMirror.fromDot = false;
-          CodeMirror.showHint(codeMirror, AUTOCOMPLETE_SET);
+          codeMirror.execCommand("autocomplete");
         },
         Tab: function (cm) {
           $("#executeQuery").focus();
@@ -349,17 +476,18 @@ ${ commonheader(_('Query'), app_name, user) | n,unicode }
             var _partial = _line.substring(0, codeMirror.getCursor().ch);
             var _table = _partial.substring(_partial.lastIndexOf(" ") + 1, _partial.length - 1);
             if (codeMirror.getValue().toUpperCase().indexOf("FROM") > -1) {
-              hac_getTableColumns($("#id_query-database").val(), _table, codeMirror.getValue(), function (columns) {
-                var _cols = columns.split(" ");
-                for (var col in _cols){
-                  _cols[col] = "." + _cols[col];
-                }
-                CodeMirror.catalogFields = _cols.join(" ");
-                CodeMirror.fromDot = true;
-                window.setTimeout(function () {
-                  codeMirror.execCommand("autocomplete");
-                }, 100);  // timeout for IE8
-              });
+              rdbms_getTableColumns(viewModel.server().name(), viewModel.database(), _table, codeMirror.getValue(),
+                      function (columns) {
+                        var _cols = columns.split(" ");
+                        for (var col in _cols) {
+                          _cols[col] = "." + _cols[col];
+                        }
+                        CodeMirror.catalogFields = _cols.join(" ");
+                        CodeMirror.fromDot = true;
+                        window.setTimeout(function () {
+                          codeMirror.execCommand("autocomplete");
+                        }, 100);  // timeout for IE8
+                      });
             }
           }
         }
@@ -374,6 +502,7 @@ ${ commonheader(_('Query'), app_name, user) | n,unicode }
       selectedLine = $.trim(err.substring(err.indexOf(" ", firstPos), err.indexOf(":", firstPos))) * 1;
       errorWidget = codeMirror.addLineWidget(selectedLine - 1, $("<div>").addClass("editorError").html("<i class='fa fa-exclamation-circle'></i> " + err)[0], {coverGutter: true, noHScroll: true})
     }
+
 
     codeMirror.setSize("95%", 100);
 
@@ -401,6 +530,7 @@ ${ commonheader(_('Query'), app_name, user) | n,unicode }
       'trigger': 'hover',
       'html': true
     });
+
   });
 
   function modal(el) {
@@ -478,12 +608,12 @@ ${ commonheader(_('Query'), app_name, user) | n,unicode }
     // First call skipped to avoid reset of hueRdbmsLastDatabase
     var counter = 0;
     return function(value) {
-
       % if design.id:
         if (counter++ == 0) {
           viewModel.fetchQuery(${design.id});
         }
       % endif
+      renderNavigator();
     }
   })());
   viewModel.query.query.subscribe((function() {
@@ -497,6 +627,66 @@ ${ commonheader(_('Query'), app_name, user) | n,unicode }
   })());
   ko.applyBindings(viewModel);
 
+  function resetNavigator() {
+    renderNavigator();
+  }
+
+  function renderNavigator() {
+    $("#navigatorTables").empty();
+    $("#navigatorLoader").show();
+    rdbms_getTables(viewModel.server().name(), viewModel.database(), function (data) {  //preload tables for the default db
+      $(data.split(" ")).each(function (cnt, table) {
+        if ($.trim(table) != "") {
+          var _table = $("<li>");
+          _table.html("<a href='#' title='" + table + "'><i class='fa fa-table'></i> " + table + "</a><ul class='unstyled'></ul>");
+          _table.data("table", table).attr("id", "navigatorTables_" + table);
+          _table.find("a").on("dblclick", function () {
+            codeMirror.replaceSelection($.trim($(this).text()) + ' ');
+            codeMirror.setSelection(codeMirror.getCursor());
+            codeMirror.focus();
+          });
+          _table.find("a").on("click", function () {
+            _table.find(".fa-table").removeClass("fa-table").addClass("fa-spin").addClass("fa-spinner");
+            rdbms_getTableColumns(viewModel.server().name(), viewModel.database(), table, "", function (columns) {
+              _table.find("ul").empty();
+              _table.find(".fa-spinner").removeClass("fa-spinner").removeClass("fa-spin").addClass("fa-table");
+              $(columns.split(" ")).each(function (iCnt, col) {
+                if ($.trim(col) != "" && $.trim(col) != "*") {
+                  var _column = $("<li>");
+                  _column.html("<a href='#' style='padding-left:10px'><i class='fa fa-columns'></i> " + col + "</a>");
+                  _column.appendTo(_table.find("ul"));
+                  _column.on("dblclick", function () {
+                    codeMirror.replaceSelection($.trim(col) + ', ');
+                    codeMirror.setSelection(codeMirror.getCursor());
+                    codeMirror.focus();
+                  });
+                }
+              });
+            });
+          });
+          _table.find("a:eq(2)").on("dblclick", function () {
+            codeMirror.replaceSelection($.trim(table) + ' ');
+            codeMirror.setSelection(codeMirror.getCursor());
+            codeMirror.focus();
+          });
+          _table.appendTo($("#navigatorTables"));
+        }
+      });
+      $("#navigatorLoader").hide();
+      if ($("#navigatorTables li").length > 0) {
+        $("#navigatorSearch").show();
+        $("#navigatorNoTables").hide();
+      }
+      else {
+        $("#navigatorSearch").hide();
+        $("#navigatorNoTables").show();
+      }
+    });
+  }
+
+  $("#refreshNavigator").on("click", function () {
+    resetNavigator();
+  });
 
   // Editables
   $("#query-name").editable({
@@ -525,14 +715,24 @@ ${ commonheader(_('Query'), app_name, user) | n,unicode }
   });
 
   var dataTable = null;
-  var dataTableWidth = 0;
   function cleanResultsTable() {
     if (dataTable) {
+      dataTable.fnClearTable();
       dataTable.fnDestroy();
       viewModel.columns.valueHasMutated();
       viewModel.rows.valueHasMutated();
       dataTable = null;
     }
+  }
+
+  function addResults(viewModel, dataTable, index, pageSize) {
+    $.each(viewModel.rows.slice(index, index+pageSize), function(row_index, row) {
+      var ordered_row = [];
+      $.each(viewModel.columns(), function(col_index, col) {
+        ordered_row.push(row[col]);
+      });
+      dataTable.fnAddData(ordered_row);
+    });
   }
 
   function resultsTable() {
@@ -556,17 +756,34 @@ ${ commonheader(_('Query'), app_name, user) | n,unicode }
       $(".dataTables_filter").hide();
       $(".dataTables_wrapper").jHueTableScroller();
 
-      if (dataTableWidth > 0) {
-        $(".resultTable").width(dataTableWidth);
-      } else {
-        dataTableWidth = $(".resultTable").outerWidth();
-      }
+      // Automatic results grower
+      var dataTableEl = $(".dataTables_wrapper");
+      var index = 0;
+      var pageSize = 100;
+      dataTableEl.on("scroll", function (e) {
+        if (dataTableEl.scrollTop() + dataTableEl.outerHeight() + 20 > dataTableEl[0].scrollHeight && dataTable) {
+          addResults(viewModel, dataTable, index, pageSize);
+          index += pageSize;
+        }
+      });
+      addResults(viewModel, dataTable, index, pageSize);
+      index += pageSize;
+
+      $(".resultTable").width($(".resultTable").parent().width());
     }
   }
   $(document).on('execute.query', cleanResultsTable);
   $(document).on('explain.query', cleanResultsTable);
   $(document).on('executed.query', resultsTable);
   $(document).on('explained.query', resultsTable);
+
+  // Server error handling.
+  $(document).on('server.error', function(e, data) {
+    $(document).trigger('error', "${_('Server error occured: ')}" + data.error);
+  });
+  $(document).on('server.unmanageable_error', function(e, responseText) {
+    $(document).trigger('error', "${_('Unmanageable server error occured: ')}" + responseText);
+  });
 
 </script>
 

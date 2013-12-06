@@ -29,6 +29,7 @@ from django.contrib.auth.models import User
 
 from desktop.lib.django_test_util import make_logged_in_client
 from desktop.lib.paths import get_run_root
+from desktop.lib.python_util import find_unused_port
 from desktop.lib.security_util import get_localhost_name
 from hadoop import pseudo_hdfs4
 
@@ -36,9 +37,9 @@ import beeswax.conf
 
 from beeswax.server.dbms import get_query_server_config
 from beeswax.server import dbms
+ 
 
-
-HIVE_SERVER_TEST_PORT = 6969
+HIVE_SERVER_TEST_PORT = find_unused_port()
 _INITIALIZED = False
 _SHARED_HIVE_SERVER_PROCESS = None
 _SHARED_HIVE_SERVER = None
@@ -129,6 +130,7 @@ def get_shared_beeswax_server():
     if _SHARED_HIVE_SERVER_PROCESS is None:
       p = _start_server(cluster)
       LOG.info("started")
+      cluster.fs.do_as_superuser(cluster.fs.chmod, '/tmp', 01777)
 
       _SHARED_HIVE_SERVER_PROCESS = p
       def kill():

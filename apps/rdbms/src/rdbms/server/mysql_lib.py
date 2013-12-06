@@ -64,6 +64,9 @@ class MySQLClient(BaseRDMSClient):
       'port': self.query_server['server_port']
     }
 
+    if self.query_server['options']:
+      params.update(self.query_server['options'])
+
     if 'name' in self.query_server:
       params['db'] = self.query_server['name']
 
@@ -97,7 +100,7 @@ class MySQLClient(BaseRDMSClient):
     return [row[0] for row in cursor.fetchall()]
 
 
-  def get_tables(self, database, table_names):
+  def get_tables(self, database, table_names=[]):
     cursor = self.connection.cursor()
     cursor.execute("SHOW TABLES")
     self.connection.commit()
@@ -106,6 +109,6 @@ class MySQLClient(BaseRDMSClient):
 
   def get_columns(self, database, table):
     cursor = self.connection.cursor()
-    cursor.execute("SHOW COLUMNS %s.%s" % (database, table))
+    cursor.execute("SHOW COLUMNS FROM %s.%s" % (database, table))
     self.connection.commit()
     return [row[0] for row in cursor.fetchall()]

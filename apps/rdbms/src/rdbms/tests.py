@@ -52,6 +52,17 @@ class TestMockedRdbms:
     response = self.client.get("/rdbms/")
     assert_true('DB Query' in response.content, response.content)
 
+  def test_config_error(self):
+    self.finish = rdbms_conf.RDBMS.set_for_testing({})
+
+    response = self.client.get("/rdbms/")
+    assert_true('There are currently no databases configured.' in response.content)
+
+    response = self.client.get("/rdbms/execute/")
+    assert_true('There are currently no databases configured.' in response.content)
+
+    self.finish()
+
 
 class TestSQLiteRdbmsBase(object):
   @classmethod
@@ -96,6 +107,20 @@ class TestAPI(TestSQLiteRdbmsBase):
     response_dict = json.loads(response.content)
     assert_true(self.database in response_dict['databases'], response_dict)
 
+  def test_get_tables(self):
+    response = self.client.get(reverse('rdbms:api_tables', args=['sqlitee', self.database]))
+    response_dict = json.loads(response.content)
+    assert_true('test1' in response_dict['tables'], response_dict)
+
+  def test_get_columns(self):
+    response = self.client.get(reverse('rdbms:api_columns', args=['sqlitee', self.database, 'test1']))
+    response_dict = json.loads(response.content)
+    assert_true('date' in response_dict['columns'], response_dict)
+    assert_true('trans' in response_dict['columns'], response_dict)
+    assert_true('symbol' in response_dict['columns'], response_dict)
+    assert_true('qty' in response_dict['columns'], response_dict)
+    assert_true('price' in response_dict['columns'], response_dict)
+
   def test_execute_query(self):
     data = {
       'server': 'sqlitee',
@@ -105,3 +130,11 @@ class TestAPI(TestSQLiteRdbmsBase):
     response = self.client.post(reverse('rdbms:api_execute_query'), data, follow=True)
     response_dict = json.loads(response.content)
     assert_equal(1, len(response_dict['results']['rows']), response_dict)
+
+  def test_options(self):
+    finish = rdbms_conf.RDBMS['sqlitee'].OPTIONS.set_for_testing({'nonsensical': None})
+    try:
+      self.client.get(reverse('rdbms:api_tables', args=['sqlitee', self.database]))
+    except TypeError, e:
+      assert_true('nonsensical' in str(e), e)
+    finish()

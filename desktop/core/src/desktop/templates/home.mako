@@ -341,74 +341,62 @@ $(document).ready(function () {
 
   function toggleSpecificSection(section, filter){
     section.siblings().removeClass("active");
-    if (section.hasClass("active")) {
-      populateTable("");
-      section.removeClass("active");
-      section.find("a").blur();
-    }
-    else {
-      populateTable(filter);
-      section.addClass("active");
-    }
+    populateTable(filter);
+    section.addClass("active");
   }
 
   $(document).on("click", ".toggle-tag", function (e) {
     var _this = $(this);
     _this.siblings().removeClass("active");
     _this.blur();
-    if (_this.hasClass("active")) {
-      _this.removeClass("active");
-      _this.find("a").blur();
-    }
-    else {
-      _this.addClass("active");
-    }
-    var _tags = [];
-    $(".toggle-tag.active").each(function () {
-      _tags.push($(this).data("tag"));
-    });
-    populateTable(_tags.join(","));
+    _this.addClass("active");
+    populateTable($(".toggle-tag.active").data("tag"));
   });
 
-  // update tag counters
-  var _tagCounters = {};
-  $(JSON_DOCS).each(function (cnt, doc) {
-    if (doc.tags != null) {
-      for (var i = 0; i < doc.tags.length; i++) {
-        if (_tagCounters[doc.tags[i].name] == null) {
-          _tagCounters[doc.tags[i].name] = 1;
-        }
-        else {
-          _tagCounters[doc.tags[i].name]++;
+  function updateTagCounters(){
+    // update tag counters
+    var _tagCounters = {};
+    $(JSON_DOCS).each(function (cnt, doc) {
+      if (doc.tags != null) {
+        for (var i = 0; i < doc.tags.length; i++) {
+          if (doc.tags[i].name == "trash" || doc.tags[i].name == "history" || (!isInTags(doc, "trash") && !isInTags(doc, "history"))) {
+            _tagCounters[doc.tags[i].name] = (_tagCounters[doc.tags[i].name] == null) ? 1 : _tagCounters[doc.tags[i].name] + 1;
+          }
         }
       }
-    }
-  });
-  $("#trashCounter").text(_tagCounters["trash"]);
-  $("#historyCounter").text(_tagCounters["history"]);
-  $("li[data-tag]").each(function () {
-    if (_tagCounters[$(this).data("tag")] != null) {
-      $(this).find(".badge").text(_tagCounters[$(this).data("tag")]);
-    }
-  });
+    });
+    $("#trashCounter").text(_tagCounters["trash"]);
+    $("#historyCounter").text(_tagCounters["history"]);
+    $("li[data-tag]").each(function () {
+      if (_tagCounters[$(this).data("tag")] != null) {
+        $(this).find(".badge").text(_tagCounters[$(this).data("tag")]);
+      }
+    });
+    _tagCounters = null;
+  }
+
+  updateTagCounters();
 
   if ($.totalStorage("hueHomeTags") == null){
-    $("li[data-tag='default']").click(); // for new users show default tag
-  }
-  else {
-    if ($.totalStorage("hueHomeTags") != "") {
-      if ($.totalStorage("hueHomeTags") == "history") {
-        $(".viewHistory").click();
-      }
-      else if ($.totalStorage("hueHomeTags") == "trash") {
-        $(".view-trash").click();
-      }
-      else {
-        $("li[data-tag='" + $.totalStorage("hueHomeTags") + "']").click();
-      }
+    if ($("li[data-tag='default']").length > 0){
+      $("li[data-tag='default']").click(); // for new users show default tag
+    }
+    else if ($("li[data-tag='example']").length > 0){
+      $("li[data-tag='example']").click(); // for new users show example tag if default is not available
     }
     else {
-      populateTable();
+      $(".viewHistory").click();
+    }
+  }
+  else {
+    if ($.totalStorage("hueHomeTags") == "history") {
+      $(".viewHistory").click();
+    }
+    else if ($.totalStorage("hueHomeTags") == "trash") {
+      $(".view-trash").click();
+    }
+    else {
+      $("li[data-tag='" + $.totalStorage("hueHomeTags") + "']").click();
     }
   }
 
@@ -419,20 +407,23 @@ $(document).ready(function () {
   });
 
   function renderTags() {
+    var _selected = "";
+    if ($(".toggle-tag.active").length > 0){
+      _selected = $(".toggle-tag.active").data("tag");
+    }
     $(".toggle-tag").remove();
     for (var i = JSON_TAGS.length - 1; i >= 0; i--) {
-      if (!JSON_TAGS[i].isTrash && !JSON_TAGS[i].isHistory && !JSON_TAGS[i].isExample) {
+      if (!JSON_TAGS[i].isTrash && !JSON_TAGS[i].isHistory) {
         var _t = $("<li>").addClass("toggle-tag");
         _t.attr("data-tag", JSON_TAGS[i].name);
         _t.html('<a href="javascript:void(0)">' + JSON_TAGS[i].name + '<span class="tag-counter badge pull-right">0</span></a>');
         _t.insertAfter(".tag-header");
       }
     }
-    $("li[data-tag]").each(function () {
-      if (_tagCounters[$(this).data("tag")] != null) {
-        $(this).find(".badge").text(_tagCounters[$(this).data("tag")]);
-      }
-    });
+    if (_selected != ""){
+      $(".toggle-tag[data-tag='"+_selected+"']").click();
+    }
+    updateTagCounters();
   }
 
   function renderTagsModal() {
@@ -558,7 +549,8 @@ $(document).ready(function () {
             }
             documentsTable.fnUpdate('<div class="documentTags" data-document-id="' + _doc.id + '">' + _tags + '</div>', node, 3, false);
             updateDoc(_doc);
-            $("#saveDocumentTags").button("loading");
+            $("#saveDocumentTags").button("reset");
+            renderTags();
           }
         });
       }
@@ -729,31 +721,18 @@ function isInTags(doc, tag) {
   return _inTags;
 }
 
-function populateTable(tags) {
-  $.totalStorage("hueHomeTags", tags);
+function populateTable(tag) {
+  if (tag == null || tag == "") {
+    tag = "default"; //force default tag in case of empty
+  }
+  $.totalStorage("hueHomeTags", tag);
   documentsTable.fnClearTable();
   documentsTable.fnDraw();
-  if (tags == null || tags == "") {
-    $(JSON_DOCS).each(function (cnt, doc) {
-      if (!isInTags(doc, "trash") && !isInTags(doc, "history")) {
-        addRow(doc);
-      }
-    });
-  }
-  else {
-    var _tags = tags.split(",");
-    $(JSON_DOCS).each(function (cnt, doc) {
-      var _add = false;
-      $(_tags).each(function (cnt, tag) {
-        if (isInTags(doc, tag)) {
-          _add = true;
-        }
-      });
-      if (_add) {
-        addRow(doc);
-      }
-    });
-  }
+  $(JSON_DOCS).each(function (cnt, doc) {
+    if (((tag == ("trash") || tag == "history") || (tag != "trash" && tag != "history" && !isInTags(doc, "trash") && !isInTags(doc, "history"))) && isInTags(doc, tag)) {
+      addRow(doc);
+    }
+  });
   documentsTable.fnDraw();
   $("a[rel='tooltip']").tooltip();
 }

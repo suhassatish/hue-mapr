@@ -21,7 +21,10 @@ import logging
 import re
 import os
 import StringIO
+import shutil
+import tempfile
 import zipfile
+from datetime import datetime
 
 from itertools import chain
 
@@ -46,7 +49,6 @@ from oozie.models import Workflow, Node, Kill, Link, Job, Coordinator, History,\
 from oozie.utils import workflow_to_dict, model_to_dict, smart_path
 from oozie.importlib.workflows import import_workflow
 from oozie.importlib.jobdesigner import convert_jobsub_design
-
 
 
 LOG = logging.getLogger(__name__)
@@ -203,8 +205,10 @@ class OozieMockBase(object):
     oozie_api._api_cache = None
 
     History.objects.all().delete()
-    Coordinator.objects.all().delete()
-    Bundle.objects.all().delete()
+    for coordinator in Coordinator.objects.all():
+      coordinator.delete(skip_trash=True)
+    for bundle in Bundle.objects.all():
+      bundle.delete(skip_trash=True)
 
 
   def setup_simple_workflow(self):
@@ -301,7 +305,6 @@ class OozieBase(OozieServerProvider):
 
     self.c.post(reverse('oozie:install_examples'))
     self.cluster.fs.do_as_user('test', self.cluster.fs.create_home_dir, '/user/test')
-    self.cluster.fs.do_as_superuser(self.cluster.fs.chmod, '/user/test', 0777, True)
 
     _INITIALIZED = True
 
@@ -1130,6 +1133,132 @@ class TestEditor(OozieMockBase):
     </action>""" in xml, xml)
 
 
+  def test_workflow_hive_gen_xml(self):
+    self.wf.node_set.filter(name='action-name-1').delete()
+
+    action1 = add_node(self.wf, 'action-name-1', 'hive', [self.wf.start], {
+        u'job_xml': 'my-job.xml',
+        u'files': '["hello.py"]',
+        u'name': 'MyHive',
+        u'job_properties': '[]',
+        u'script_path': 'hello.sql',
+        u'archives': '[]',
+        u'prepares': '[]',
+        u'params': '[{"value":"World!","type":"argument"}]',
+        u'description': ''
+    })
+    Link(parent=action1, child=self.wf.end, name="ok").save()
+
+    xml = self.wf.to_xml()
+
+    assert_true("""
+<workflow-app name="wf-name-1" xmlns="uri:oozie:workflow:0.4">
+  <global>
+      <job-xml>jobconf.xml</job-xml>
+            <configuration>
+                <property>
+                    <name>sleep-all</name>
+                    <value>${SLEEP}</value>
+                </property>
+            </configuration>
+  </global>
+    <start to="MyHive"/>
+    <action name="MyHive">
+        <hive xmlns="uri:oozie:hive-action:0.2">
+            <job-tracker>${jobTracker}</job-tracker>
+            <name-node>${nameNode}</name-node>
+              <job-xml>my-job.xml</job-xml>
+            <script>hello.sql</script>
+              <argument>World!</argument>
+            <file>hello.py#hello.py</file>
+        </hive>
+        <ok to="end"/>
+        <error to="kill"/>
+    </action>
+    <kill name="kill">
+        <message>Action failed, error message[${wf:errorMessage(wf:lastErrorNode())}]</message>
+    </kill>
+    <end name="end"/>
+</workflow-app>""" in xml, xml)
+
+    import beeswax
+    from beeswax.tests import hive_site_xml
+
+    tmpdir = tempfile.mkdtemp()
+    saved = None
+    try:
+      # We just replace the Beeswax conf variable
+      class Getter(object):
+        def get(self):
+          return tmpdir
+
+      xml = hive_site_xml(is_local=False, use_sasl=True, kerberos_principal='hive/_HOST@test.com')
+      file(os.path.join(tmpdir, 'hive-site.xml'), 'w').write(xml)
+
+      beeswax.hive_site.reset()
+      saved = beeswax.conf.HIVE_CONF_DIR
+      beeswax.conf.HIVE_CONF_DIR = Getter()
+
+      xml = self.wf.to_xml(mapping={
+         'is_kerberized_hive': True,
+         'credential_type': 'hcat',
+         'thrift_server': 'thrift://darkside-1234:9999',
+         'hive_principal': 'hive/darkside-1234@test.com'
+      })
+
+      assert_true("""
+<workflow-app name="wf-name-1" xmlns="uri:oozie:workflow:0.4">
+  <global>
+      <job-xml>jobconf.xml</job-xml>
+            <configuration>
+                <property>
+                    <name>sleep-all</name>
+                    <value>${SLEEP}</value>
+                </property>
+            </configuration>
+  </global>
+  <credentials>
+    <credential name='hive_credentials' type='hcat'>
+      <property>
+        <name>hcat.metastore.uri</name>
+        <value>thrift://darkside-1234:9999</value>
+      </property>
+      <property>
+        <name>hcat.metastore.principal</name>
+        <value>hive/darkside-1234@test.com</value>
+      </property>
+    </credential>
+   </credentials>
+    <start to="MyHive"/>
+    <action name="MyHive" cred='hive_credentials'>
+        <hive xmlns="uri:oozie:hive-action:0.2">
+            <job-tracker>${jobTracker}</job-tracker>
+            <name-node>${nameNode}</name-node>
+              <job-xml>my-job.xml</job-xml>
+            <script>hello.sql</script>
+              <argument>World!</argument>
+            <file>hello.py#hello.py</file>
+        </hive>
+        <ok to="end"/>
+        <error to="kill"/>
+    </action>
+    <kill name="kill">
+        <message>Action failed, error message[${wf:errorMessage(wf:lastErrorNode())}]</message>
+    </kill>
+    <end name="end"/>
+</workflow-app>""" in xml, xml)
+
+    finally:
+      beeswax.hive_site.reset()
+      if saved is not None:
+        beeswax.conf.HIVE_CONF_DIR = saved
+      shutil.rmtree(tmpdir)
+
+
+    self.wf.node_set.filter(name='action-name-1').delete()
+
+
+
   def test_create_coordinator(self):
     create_coordinator(self.wf, self.c, self.user)
 
@@ -1706,7 +1835,7 @@ class TestImportWorkflow04(OozieMockBase):
     """
     workflow = Workflow.objects.new_workflow(self.user)
     workflow.save()
-    f = open('apps/oozie/src/oozie/test_data/0.4/test-basic-namespace-missing.xml')
+    f = open('apps/oozie/src/oozie/test_data/workflows/0.4/test-basic-namespace-missing.xml')
     contents = f.read()
     f.close()
 
@@ -1720,7 +1849,7 @@ class TestImportWorkflow04(OozieMockBase):
     """
     workflow = Workflow.objects.new_workflow(self.user)
     workflow.save()
-    f = open('apps/oozie/src/oozie/test_data/0.4/test-basic.xml')
+    f = open('apps/oozie/src/oozie/test_data/workflows/0.4/test-basic.xml')
     import_workflow(workflow, f.read())
     f.close()
     workflow.save()
@@ -1737,7 +1866,7 @@ class TestImportWorkflow04(OozieMockBase):
     """
     workflow = Workflow.objects.new_workflow(self.user)
     workflow.save()
-    f = open('apps/oozie/src/oozie/test_data/0.4/test-basic-global-config.xml')
+    f = open('apps/oozie/src/oozie/test_data/workflows/0.4/test-basic-global-config.xml')
     import_workflow(workflow, f.read())
     f.close()
     workflow.save()
@@ -1754,7 +1883,7 @@ class TestImportWorkflow04(OozieMockBase):
     """
     workflow = Workflow.objects.new_workflow(self.user)
     workflow.save()
-    f = open('apps/oozie/src/oozie/test_data/0.4/test-decision.xml')
+    f = open('apps/oozie/src/oozie/test_data/workflows/0.4/test-decision.xml')
     import_workflow(workflow, f.read())
     f.close()
     workflow.save()
@@ -1770,7 +1899,7 @@ class TestImportWorkflow04(OozieMockBase):
   def test_import_workflow_decision_complex(self):
     workflow = Workflow.objects.new_workflow(self.user)
     workflow.save()
-    f = open('apps/oozie/src/oozie/test_data/0.4/test-decision-complex.xml')
+    f = open('apps/oozie/src/oozie/test_data/workflows/0.4/test-decision-complex.xml')
     import_workflow(workflow, f.read())
     f.close()
     workflow.save()
@@ -1789,7 +1918,7 @@ class TestImportWorkflow04(OozieMockBase):
     """
     workflow = Workflow.objects.new_workflow(self.user)
     workflow.save()
-    f = open('apps/oozie/src/oozie/test_data/0.4/test-distcp.0.1.xml')
+    f = open('apps/oozie/src/oozie/test_data/workflows/0.4/test-distcp.0.1.xml')
     import_workflow(workflow, f.read())
     f.close()
     workflow.save()
@@ -1802,7 +1931,7 @@ class TestImportWorkflow04(OozieMockBase):
   def test_import_workflow_forks(self):
     workflow = Workflow.objects.new_workflow(self.user)
     workflow.save()
-    f = open('apps/oozie/src/oozie/test_data/0.4/test-forks.xml')
+    f = open('apps/oozie/src/oozie/test_data/workflows/0.4/test-forks.xml')
     import_workflow(workflow, f.read())
     f.close()
     workflow.save()
@@ -1820,7 +1949,7 @@ class TestImportWorkflow04(OozieMockBase):
     """
     workflow = Workflow.objects.new_workflow(self.user)
     workflow.save()
-    f = open('apps/oozie/src/oozie/test_data/0.4/test-mapreduce.xml')
+    f = open('apps/oozie/src/oozie/test_data/workflows/0.4/test-mapreduce.xml')
     import_workflow(workflow, f.read())
     f.close()
     workflow.save()
@@ -1836,7 +1965,7 @@ class TestImportWorkflow04(OozieMockBase):
     """
     workflow = Workflow.objects.new_workflow(self.user)
     workflow.save()
-    f = open('apps/oozie/src/oozie/test_data/0.4/test-pig.xml')
+    f = open('apps/oozie/src/oozie/test_data/workflows/0.4/test-pig.xml')
     import_workflow(workflow, f.read())
     f.close()
     workflow.save()
@@ -1854,7 +1983,7 @@ class TestImportWorkflow04(OozieMockBase):
     """
     workflow = Workflow.objects.new_workflow(self.user)
     workflow.save()
-    f = open('apps/oozie/src/oozie/test_data/0.4/test-sqoop.0.2.xml')
+    f = open('apps/oozie/src/oozie/test_data/workflows/0.4/test-sqoop.0.2.xml')
     import_workflow(workflow, f.read())
     f.close()
     workflow.save()
@@ -1873,7 +2002,7 @@ class TestImportWorkflow04(OozieMockBase):
     """
     workflow = Workflow.objects.new_workflow(self.user)
     workflow.save()
-    f = open('apps/oozie/src/oozie/test_data/0.4/test-java.xml')
+    f = open('apps/oozie/src/oozie/test_data/workflows/0.4/test-java.xml')
     import_workflow(workflow, f.read())
     f.close()
     workflow.save()
@@ -1893,7 +2022,7 @@ class TestImportWorkflow04(OozieMockBase):
   def test_import_workflow_shell(self):
     workflow = Workflow.objects.new_workflow(self.user)
     workflow.save()
-    f = open('apps/oozie/src/oozie/test_data/0.4/test-shell.xml')
+    f = open('apps/oozie/src/oozie/test_data/workflows/0.4/test-shell.xml')
     import_workflow(workflow, f.read())
     f.close()
     workflow.save()
@@ -1917,7 +2046,7 @@ class TestImportWorkflow04(OozieMockBase):
     """
     workflow = Workflow.objects.new_workflow(self.user)
     workflow.save()
-    f = open('apps/oozie/src/oozie/test_data/0.4/test-fs.xml')
+    f = open('apps/oozie/src/oozie/test_data/workflows/0.4/test-fs.xml')
     import_workflow(workflow, f.read())
     f.close()
     workflow.save()
@@ -1938,7 +2067,7 @@ class TestImportWorkflow04(OozieMockBase):
     """
     workflow = Workflow.objects.new_workflow(self.user)
     workflow.save()
-    f = open('apps/oozie/src/oozie/test_data/0.4/test-email.0.1.xml')
+    f = open('apps/oozie/src/oozie/test_data/workflows/0.4/test-email.0.1.xml')
     import_workflow(workflow, f.read())
     f.close()
     workflow.save()
@@ -1958,7 +2087,7 @@ class TestImportWorkflow04(OozieMockBase):
     """
     workflow = Workflow.objects.new_workflow(self.user)
     workflow.save()
-    f = open('apps/oozie/src/oozie/test_data/0.4/test-generic.xml')
+    f = open('apps/oozie/src/oozie/test_data/workflows/0.4/test-generic.xml')
     import_workflow(workflow, f.read())
     f.close()
     workflow.save()
@@ -1977,7 +2106,7 @@ class TestImportWorkflow04(OozieMockBase):
     """
     workflow = Workflow.objects.new_workflow(self.user)
     workflow.save()
-    f = open('apps/oozie/src/oozie/test_data/0.4/test-java-multiple-kill.xml')
+    f = open('apps/oozie/src/oozie/test_data/workflows/0.4/test-java-multiple-kill.xml')
     import_workflow(workflow, f.read())
     f.close()
     workflow.save()
@@ -2002,7 +2131,7 @@ class TestImportWorkflow04(OozieMockBase):
     """
     workflow = Workflow.objects.new_workflow(self.user)
     workflow.save()
-    f = open('apps/oozie/src/oozie/test_data/0.4/test-java-different-error-links.xml')
+    f = open('apps/oozie/src/oozie/test_data/workflows/0.4/test-java-different-error-links.xml')
     import_workflow(workflow, f.read())
     f.close()
     workflow.save()
@@ -2019,6 +2148,43 @@ class TestImportWorkflow04(OozieMockBase):
     assert_equal(1, len(Link.objects.filter(parent__workflow=workflow).filter(parent__name='TeraGenWorkflow').filter(name='error').filter(child__node_type='java')))
     assert_equal(1, len(Link.objects.filter(parent__workflow=workflow).filter(parent__name='TeraSort').filter(name='error').filter(child__node_type='kill')))
     workflow.delete(skip_trash=True)
+
+
+class TestImportCoordinator02(OozieMockBase):
+
+  def setUp(self):
+    super(TestImportCoordinator02, self).setUp()
+    self.setup_simple_workflow()
+
+  def test_import_coordinator_simple(self):
+    coordinator_count = Document.objects.available_docs(Coordinator, self.user).count()
+
+    # Create
+    filename = os.path.abspath(os.path.dirname(__file__) + "/test_data/coordinators/0.2/test-basic.xml")
+    fh = open(filename)
+    response = self.c.post(reverse('oozie:import_coordinator'), {
+      'name': ['test_coordinator'],
+      'workflow': Workflow.objects.get(name='wf-name-1').pk,
+      'definition_file': [fh],
+      'description': ['test description']
+    }, follow=True)
+    fh.close()
+
+    assert_equal(coordinator_count + 1, Document.objects.available_docs(Coordinator, self.user).count(), response)
+    coordinator = Coordinator.objects.get(name='test_coordinator')
+    assert_equal('[{"name":"oozie.use.system.libpath","value":"true"}]', coordinator.parameters)
+    assert_equal('uri:oozie:coordinator:0.2', coordinator.schema_version)
+    assert_equal('test description', coordinator.description)
+    assert_equal(datetime.strptime('2013-06-03T00:00Z', '%Y-%m-%dT%H:%MZ'), coordinator.start)
+    assert_equal(datetime.strptime('2013-06-05T00:00Z', '%Y-%m-%dT%H:%MZ'), coordinator.end)
+    assert_equal('America/Los_Angeles', coordinator.timezone)
+    assert_equal('days', coordinator.frequency_unit)
+    assert_equal(1, coordinator.frequency_number)
+    assert_equal(None, coordinator.timeout)
+    assert_equal(None, coordinator.concurrency)
+    assert_equal(None, coordinator.execution)
+    assert_equal(None, coordinator.throttle)
+    assert_not_equal(None, coordinator.deployment_dir)
 
 
 class TestPermissions(OozieBase):
@@ -2487,7 +2653,7 @@ class TestEditorWithOozie(OozieBase):
     workflow_count = Document.objects.available_docs(Workflow, self.user).count()
 
     # Create
-    filename = os.path.abspath(os.path.dirname(__file__) + "/test_data/0.4/test-mapreduce.xml")
+    filename = os.path.abspath(os.path.dirname(__file__) + "/test_data/workflows/0.4/test-mapreduce.xml")
     fh = open(filename)
     response = self.c.post(reverse('oozie:import_workflow'), {
       'job_xml': [''],
@@ -2537,7 +2703,7 @@ class TestImportWorkflow04WithOozie(OozieBase):
     """
     workflow = Workflow.objects.new_workflow(self.user)
     workflow.save()
-    f = open('apps/oozie/src/oozie/test_data/0.4/test-subworkflow.xml')
+    f = open('apps/oozie/src/oozie/test_data/workflows/0.4/test-subworkflow.xml')
     import_workflow(workflow, f.read(), None, self.cluster.fs)
     f.close()
     workflow.save()
@@ -2960,7 +3126,7 @@ class TestDashboard(OozieMockBase):
 
 
   def test_bundles_permissions(self):
-    response = self.c.get(reverse('oozie:list_oozie_bundles')+"?format=json")
+    response = self.c.get(reverse('oozie:list_oozie_bundles') + "?format=json")
     assert_true('MyBundle1' in response.content, response.content)
 
     # Login as someone else

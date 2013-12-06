@@ -17,12 +17,32 @@
 
 import logging
 
+from desktop.lib.i18n import smart_str
 from beeswax.models import QueryHistory
-
 from rdbms.conf import RDBMS
 
 
 LOG = logging.getLogger(__name__)
+
+
+def force_dict_to_strings(dictionary):
+  if not dictionary:
+    return dictionary
+
+  new_dict = {}
+  for k in dictionary:
+    new_key = smart_str(k)
+    if isinstance(dictionary[k], basestring):
+      # Strings should not be unicode.
+      new_dict[new_key] = smart_str(dictionary[k])
+    elif isinstance(dictionary[k], dict):
+      # Recursively force dicts to strings.
+      new_dict[new_key] = force_dict_to_strings(dictionary[k])
+    else:
+      # Normal objects, or other literals, should not be converted.
+      new_dict[new_key] = dictionary[k]
+
+  return new_dict
 
 
 def get(user, query_server=None):
@@ -61,7 +81,7 @@ def get_query_server_config(server=None):
       'server_port': RDBMS[name].PORT.get(),
       'username': RDBMS[name].USER.get(),
       'password': RDBMS[name].PASSWORD.get(),
-      'password': RDBMS[name].PASSWORD.get(),
+      'options': force_dict_to_strings(RDBMS[name].OPTIONS.get()),
       'alias': name
     }
 
@@ -80,11 +100,17 @@ class Rdbms(object):
     self.client = client
     self.server_type = server_type
 
+  def get_databases(self):
+    return self.client.get_databases()
+
+  def get_tables(self, database):
+    return self.client.get_tables(database)
+
   def get_table(self, database, table_name):
     return self.client.get_table(database, table_name)
 
-  def get_databases(self):
-    return self.client.get_databases()
+  def get_columns(self, database, table_name):
+    return self.client.get_columns(database, table_name)
 
   def execute_query(self, query, design):
     sql_query = query.sql_query

@@ -25,20 +25,46 @@ from django.utils.translation import ugettext as _
 ${ commonheader(_('Create table from file'), 'metastore', user) | n,unicode }
 ${ layout.metastore_menubar() }
 
+<link rel="stylesheet" href="/metastore/static/css/metastore.css">
+
 <div class="container-fluid">
     <div class="row-fluid">
         <div class="span3">
             <div class="sidebar-nav">
                 <ul class="nav nav-list">
-                    <li class="nav-header">${_('Actions')}</li>
-                    <li><a href="${ url(app_name + ':import_wizard', database=database)}"><i class="fa fa-files-o"></i> ${_('Create a new table from a file')}</a></li>
-                    <li><a href="${ url(app_name + ':create_table', database=database)}"><i class="fa fa-wrench"></i> ${_('Create a new table manually')}</a></li>
+                  <li class="nav-header">${_('database')}</li>
+                  <li class="white">
+                      <select id="chooseDatabase" class="input-medium">
+                    % for db in databases:
+                      <option value="${db["url"]}"
+                              %if database==db["name"]:
+                                selected="selected"
+                              %endif
+                          >${db["name"]}</option>
+                    % endfor
+                      </select>
+                  </li>
+                  <li class="nav-header">${_('Actions')}</li>
+                  <li><a href="${ url(app_name + ':import_wizard', database=database)}"><i class="fa fa-files-o"></i> ${_('Create a new table from a file')}</a></li>
+                  <li><a href="${ url(app_name + ':create_table', database=database)}"><i class="fa fa-wrench"></i> ${_('Create a new table manually')}</a></li>
                 </ul>
             </div>
         </div>
         <div class="span9">
-          <div class="card" style="margin-top: 0">
-            <h1 class="card-heading simple">${_('Create a new table from a file')}</h1>
+          <div class="card card-small" style="margin-top: 0">
+            <h1 class="card-heading simple">
+              <ul id="breadcrumbs" class="nav nav-pills hueBreadcrumbBar">
+                <li>
+                  <a href="${url('metastore:databases')}">${_('Databases')}</a><span class="divider">&gt;</span>
+                </li>
+                <li>
+                  <a href="${ url('metastore:show_tables', database=database) }">${database}</a><span class="divider">&gt;</span>
+                </li>
+                <li>
+                    <span style="padding-left:12px">${_('Create a new table from a file')}</span>
+                </li>
+              </ul>
+            </h1>
             <div class="card-body">
               <p>
                 <ul class="nav nav-pills">
@@ -57,14 +83,25 @@ ${ layout.metastore_menubar() }
                     if n_rows > 2: n_rows = 2
                 %>
                 <fieldset>
-                    <div class="alert alert-info"><h3>${_('Define your columns')}</h3></div>
-                    <div class="control-group">
+                    <div class="alert alert-info">
+                      <h3>${_('Define your columns')}</h3>
+                    </div>
+                    <div class="row" style="margin-left: 8px">
+                      <div class="span3">
+                        <input id="removeHeader" type="checkbox" class="hide" name="removeHeader">
+                        ${_('Use first row as column names')} &nbsp;<a id="useHeader" class="btn disable-feedback"><i class="fa fa-outdent"></i></a>
+                      </div>
+                      <div class="span3">
+                        ${ _('Bulk edit column names') } &nbsp;<a id="editColumns" class="btn"><i class="fa fa-edit"></i></a>
+                      </div>
+                    </div>
+                    <div class="control-group" style="margin-top: 10px">
                         <div class="controls">
                             <div class="scrollable">
                                 <table class="table table-striped">
                                     <thead>
-                                      <th id="editColumns">${ _('Column name') } &nbsp;<i class="fa fa-edit" rel="tooltip" data-placement="right" title="${ _('Bulk edit names') }"></i></th>
-                                      <th>${ _('Column Type') }</th>
+                                      <th id="column_names" style="width:210px">${ _('Column name') }</th>
+                                      <th style="width:210px">${ _('Column Type') }</th>
                                       % for i in range(0, n_rows):
                                         <th><em>${_('Sample Row')} #${i + 1}</em></th>
                                       % endfor
@@ -73,19 +110,14 @@ ${ layout.metastore_menubar() }
                                       % for col, form in zip(range(len(column_formset.forms)), column_formset.forms):
                                       <tr>
                                         <td class="cols">
-                                          ${comps.field(form["column_name"],
-                                              render_default=False,
-                                              placeholder=_("Column name")
-                                            )}
+                                          ${ comps.field(form["column_name"], render_default=False, placeholder=_("Column name")) }
                                         </td>
                                         <td>
-                                          ${comps.field(form["column_type"],
-                                              render_default=True
-                                            )}
+                                          ${ comps.field(form["column_type"], render_default=True) }
                                           ${unicode(form["_exists"]) | n}
                                         </td>
                                         % for row in fields_list[:n_rows]:
-                                          ${ comps.getEllipsifiedCell(row[col], "bottom", "dataSample") }
+                                          ${ comps.getEllipsifiedCell(row[col], "bottom", "dataSample cols-%s" % (loop.index + 1)) }
                                         % endfor
                                       </tr>
                                       %endfor
@@ -149,7 +181,67 @@ ${ layout.metastore_menubar() }
 
 <script type="text/javascript" charset="utf-8">
   $(document).ready(function () {
+    $("#chooseDatabase").on("change", function () {
+      window.location.href = $(this).val();
+    });
+
     $("[rel='tooltip']").tooltip();
+
+    $("#useHeader").on("click", function(){
+      var _isChecked = false;
+      var _klass = "btn-info";
+      if ($(this).hasClass(_klass)){
+        $(this).removeClass(_klass);
+      }
+      else {
+        $(this).addClass(_klass);
+        _isChecked = true;
+      }
+      $("#removeHeader").prop('checked', _isChecked);
+
+      $(".cols input[type='text']").each(function (cnt, item) {
+        if (_isChecked) {
+          $(item).data('previous', $(item).val());
+          $(item).val($.trim(${ fields_list_json | n,unicode }[0][cnt]));
+        } else {
+          $(item).val($(item).data('previous'));
+        }
+      });
+
+      $(".cols-1").each(function (cnt, item) {
+        if (_isChecked) {
+          $(item).data('previous', $(item).text());
+          $(item).text($.trim(${ fields_list_json | n,unicode }[1][cnt]));
+        } else {
+          $(item).text($(item).data('previous'));
+        }
+      });
+
+      $(".cols-2").each(function (cnt, item) {
+        if (_isChecked) {
+          $(item).data('previous', $(item).text());
+          $(item).text($.trim(${ fields_list_json | n,unicode }[2][cnt]));
+        } else {
+          $(item).text($(item).data('previous'));
+        }
+      });
+
+      guessColumnTypes();
+    });
+
+    guessColumnTypes();
+
+    // Really basic heuristic to detect if first row is a header.
+    var isString = 0;
+    $(".cols-1").each(function (cnt, item) {
+      if ($(item).data("possibleType") == 'string') {
+        isString += 1;
+      }
+    });
+    // First row is just strings
+    if (isString == $(".cols-1").length) {
+      $("#useHeader").click();
+    }
 
     $(".scrollable").width($(".form-actions").width() - 10);
 
@@ -187,7 +279,7 @@ ${ layout.metastore_menubar() }
       $(".cols input[type='text']").each(function (cnt, item) {
         _newVal += $(item).val() + (cnt < $(".cols input[type='text']").length - 1 ? ", " : "");
       });
-      $("#columnNamesPopover").show().css("left", $("#editColumns i").position().left + 16).css("top", $("#editColumns i").position().top - ($("#columnNamesPopover").height() / 2));
+      $("#columnNamesPopover").show().css("left", $("#column_names").position().left + 16).css("top", $("#column_names").position().top - ($("#columnNamesPopover").height() / 2));
       $(".editable-input input").val(_newVal).focus();
     });
 
@@ -212,42 +304,42 @@ ${ layout.metastore_menubar() }
       $("#columnNamesPopover").hide();
     });
 
-    $(".dataSample").each(function () {
-      var _val = $.trim($(this).text());
-      var _field = $(this).siblings().find("select[id^=id_cols-]");
-      var _foundType = "string";
-      if ($.isNumeric(_val)) {
-        _val = _val * 1;
-        if (isInt(_val)) {
-          // it's an int
-          _foundType = "int";
-        }
-        else {
-          // it's possibly a float
-          _foundType = "float";
-        }
-      }
-      else {
-        if (_val.toLowerCase().indexOf("true") > -1 || _val.toLowerCase().indexOf("false") > -1) {
-          // it's a boolean
-          _foundType = "boolean";
-        }
-        else {
-          // it's most probably a string
-          _foundType = "string";
-        }
-      }
-      if (_field.data("possibleType") != null && _field.data("possibleType") != _foundType) {
-        _field.data("possibleType", "string");
-      }
-      else {
-        _field.data("possibleType", _foundType);
-      }
-    });
+    function guessColumnTypes() {
+      // Pick from 2nd column only
+      $(".dataSample").each(function () {
+        var _val = $.trim($(this).text());
+        var _field = $(this).siblings().find("select[id^=id_cols-]");
+        var _foundType = "string";
 
-    $("select[id^=id_cols-]").each(function () {
-      $(this).val($(this).data("possibleType"));
-    });
+        if ($.isNumeric(_val)) {
+          if (isInt(_val)) {
+            // it's an int
+            _foundType = "int";
+          }
+          else {
+            // it's possibly a float
+            _foundType = "float";
+          }
+        }
+        else {
+          if (_val.toLowerCase().indexOf("true") > -1 || _val.toLowerCase().indexOf("false") > -1) {
+            // it's a boolean
+            _foundType = "boolean";
+          }
+          else {
+            // it's most probably a string
+            _foundType = "string";
+          }
+        }
+
+        _field.data("possibleType", _foundType);
+        $(this).data("possibleType", _foundType);
+      });
+
+      $("select[id^=id_cols-]").each(function () {
+        $(this).val($(this).data("possibleType"));
+      });
+    }
 
     function parseJSON(val) {
       try {
@@ -271,7 +363,7 @@ ${ layout.metastore_menubar() }
     }
 
     function isInt(n) {
-      return typeof n === 'number' && parseFloat(n) == parseInt(n, 10) && !isNaN(n);
+      return Math.floor(n) == n && n.toString().indexOf(".") == -1;
     }
   });
 </script>

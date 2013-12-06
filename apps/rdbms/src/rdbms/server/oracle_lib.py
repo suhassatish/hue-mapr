@@ -43,8 +43,17 @@ class OracleClient(BaseRDMSClient):
 
   def __init__(self, *args, **kwargs):
     super(OracleClient, self).__init__(*args, **kwargs)
-    self.connection = Database.connect(self._conn_string, **{})
+    if self.__conn_params:
+      self.connection = Database.connect(self._conn_string, **self.__conn_params)
+    else:
+      self.connection = Database.connect(self._conn_string)
 
+  @property
+  def _conn_params(self):
+    if self.query_server['options']:
+      return self.query_server['options'].copy()
+    else:
+      return None
 
   @property
   def _conn_string(self):
@@ -78,7 +87,7 @@ class OracleClient(BaseRDMSClient):
     return [self.query_server['name']]
 
 
-  def get_tables(self, database, table_names):
+  def get_tables(self, database, table_names=[]):
     cursor = self.connection.cursor()
     cursor.execute("SELECT table_name FROM all_tables")
     self.connection.commit()

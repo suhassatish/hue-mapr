@@ -45,6 +45,7 @@ DEFAULT_READ_SIZE = 1024*1024 # 1MB
 
 LOG = logging.getLogger(__name__)
 
+
 class WebHdfs(Hdfs):
   """
   WebHdfs implements the filesystem interface via the WebHDFS rest protocol.
@@ -68,7 +69,8 @@ class WebHdfs(Hdfs):
     self._client = self._make_client(url, security_enabled)
     self._root = resource.Resource(self._client)
 
-    self._user = None
+    # To store user info
+    self._thread_local = threading.local()
 
     LOG.debug("Initializing Hadoop WebHdfs: %s (security: %s, superuser: %s)" %
               (self._url, self._security_enabled, self._superuser))
@@ -124,7 +126,7 @@ class WebHdfs(Hdfs):
   @property
   def user(self):
     try:
-      return self._user
+      return self._thread_local.user
     except AttributeError:
       return WebHdfs.DEFAULT_USER
 
@@ -145,7 +147,7 @@ class WebHdfs(Hdfs):
   def setuser(self, user):
     """Set a new user. Return the current user."""
     curr = self.user
-    self._user = user
+    self._thread_local.user = user
     return curr
 
   def listdir_stats(self, path, glob=None):
@@ -472,7 +474,7 @@ class WebHdfs(Hdfs):
     self._invoke_with_redirect('POST', path, params, data)
 
 
-  def copyfile(self, src, dst):
+  def copyfile(self, src, dst, skip_header=False):
     sb = self._stats(src)
     if sb is None:
       raise IOError(errno.ENOENT, _("Copy src '%s' does not exist") % src)
@@ -486,6 +488,10 @@ class WebHdfs(Hdfs):
     while True:
       data = self.read(src, offset, UPLOAD_CHUNK_SIZE.get())
       if offset == 0:
+        if skip_header:
+          n = data.index('\n')
+          if n > 0:
+            data = data[n + 1:]
         self.create(dst,
                     overwrite=True,
                     blocksize=sb.blockSize,

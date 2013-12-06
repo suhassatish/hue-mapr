@@ -60,6 +60,7 @@ from beeswax.server.dbms import QueryServerException
 from beeswax.server.hive_server2_lib import HiveServerClient,\
   PartitionValueCompatible, HiveServerTable
 from beeswax.test_base import BeeswaxSampleProvider
+from beeswax.hive_site import get_metastore
 
 
 
@@ -998,7 +999,13 @@ for x in sys.stdin:
     RAW_FIELDS = [
       ['ta\tb', 'nada', 'sp ace'],
       ['f\too', 'bar', 'fred'],
-      ['a\ta', 'bb', 'cc'] ]
+      ['a\ta', 'bb', 'cc'],
+    ]
+    CSV_FIELDS = [
+      ['a', 'b', 'c'],
+      ['"a,a"', '"b,b"', '"c,c"'],
+      ['"a,\"\"a"', '"b,\"\"b"', '"c,\"\"c"'],
+    ]
 
     def write_file(filename, raw_fields, delim, do_gzip=False):
       lines = [ delim.join(row) for row in raw_fields ]
@@ -1009,15 +1016,20 @@ for x in sys.stdin:
         gzdat.write(data)
         gzdat.close()
         data = sio.getvalue()
+
       f = self.cluster.fs.open(filename, "w")
       f.write(data)
       f.close()
+      self.cluster.fs.do_as_superuser(self.cluster.fs.chown, filename, 'test', 'test')
+
+    self.cluster.fs.do_as_user('test', self.cluster.fs.create_home_dir, '/user/test')
 
     write_file('/tmp/spacé.dat'.decode('utf-8'), RAW_FIELDS, ' ')
     write_file('/tmp/tab.dat', RAW_FIELDS, '\t')
     write_file('/tmp/comma.dat', RAW_FIELDS, ',')
     write_file('/tmp/pipes.dat', RAW_FIELDS, '|')
     write_file('/tmp/comma.dat.gz', RAW_FIELDS, ',', do_gzip=True)
+    write_file('/tmp/comma.csv', CSV_FIELDS, ',')
 
     # Test auto delim selection
     resp = self.client.post('/beeswax/create/import_wizard/default', {
@@ -1056,6 +1068,21 @@ for x in sys.stdin:
       'file_type': 'text',
     })
     assert_equal(len(resp.context['fields_list'][0]), 3)
+
+    # Make sure quoted CSV works
+    resp = self.client.post('/beeswax/create/import_wizard/default', {
+      'submit_preview': 'on',
+      'path': '/tmp/comma.csv',
+      'name': 'test_create_import_csv',
+      'delimiter_0': '__other__',
+      'delimiter_1': ',',
+      'file_type': 'text',
+    })
+    assert_equal(resp.context['fields_list'], [
+      ['a', 'b', 'c'],
+      ['a,a', 'b,b', 'c,c'],
+      ['a,"a', 'b,"b', 'c,"c'],
+    ] )
 
     # Test column definition
     resp = self.client.post('/beeswax/create/import_wizard/default', {
@@ -1099,6 +1126,41 @@ for x in sys.stdin:
     assert_equal([ col.name for col in cols ], [ 'col_a', 'col_b', 'col_c' ])
     assert_true("nada" in resp.content, resp.content)
     assert_true("sp ace" in resp.content, resp.content)
+
+    # Test table creation and data loading
+    resp = self.client.post('/beeswax/create/import_wizard/default', {
+      'submit_create': 'on',
+      'path': '/tmp/comma.csv',
+      'name': 'test_create_import_with_header',
+      'delimiter_0': ',',
+      'delimiter_1': '',
+      'file_type': 'text',
+      'do_import': 'True',
+      'cols-0-_exists': 'True',
+      'cols-0-column_name': 'col_a',
+      'cols-0-column_type': 'string',
+      'cols-1-_exists': 'True',
+      'cols-1-column_name': 'col_b',
+      'cols-1-column_type': 'string',
+      'cols-2-_exists': 'True',
+      'cols-2-column_name': 'col_c',
+      'cols-2-column_type': 'string',
+      'cols-next_form_id': '3',
+      'removeHeader': 'on'
+    }, follow=True)
+
+    resp = wait_for_query_to_finish(self.client, resp, max=180.0)
+
+    # Check data is in the table (by describing it)
+    resp = self.client.get('/metastore/table/default/test_create_import_with_header')
+    cols = resp.context['table'].cols
+    assert_equal(len(cols), 3)
+    assert_equal([ col.name for col in cols ], [ 'col_a', 'col_b', 'col_c' ])
+    assert_equal(resp.context['sample'], [
+      #['a', 'b', 'c'], # Gone as told to be header
+      ['"a', 'a"', '"b'], # Hive does not support natively quoted CSV
+      ['"a', '""a"', '"b']
+    ] )
 
 
   def test_create_database(self):
@@ -1312,7 +1374,7 @@ def test_hive_site():
 
     assert_equal(beeswax.hive_site.get_conf()['hive.metastore.warehouse.dir'], u'/abc')
     assert_equal(beeswax.hive_site.get_hiveserver2_kerberos_principal('localhost'), 'hs2test/test.com@TEST.COM')
-    assert_equal(beeswax.hive_site.get_hiveserver2_authentication(), 'NONE')
+    assert_equal(beeswax.hive_site.get_hiveserver2_authentication(), 'NOSASL')
   finally:
     beeswax.hive_site.reset()
     if saved is not None:
@@ -1371,7 +1433,7 @@ def test_hive_site_null_hs2krb():
 
     assert_equal(beeswax.hive_site.get_conf()['hive.metastore.warehouse.dir'], u'/abc')
     assert_equal(beeswax.hive_site.get_hiveserver2_kerberos_principal('localhost'), None)
-    assert_equal(beeswax.hive_site.get_hiveserver2_authentication(), 'NONE')
+    assert_equal(beeswax.hive_site.get_hiveserver2_authentication(), 'NOSASL')
   finally:
     beeswax.hive_site.reset()
     if saved is not None:
@@ -1595,11 +1657,11 @@ class TestDesign():
         {'type': 'FILE', 'path': 's3://host/my_s3_file'}
     ]
 
-    assert_equal([
-        u'\nADD FILE hdfs://localhost:8020my_file\n', # Expected
-        u'\nADD FILE hdfs://localhost:8020/my_path/my_file\n',
-        u'\nADD FILE s3://host/my_s3_file\n'
-    ], design.get_configuration_statements())
+    statements = design.get_configuration_statements()
+    assert_true(re.match('\nADD FILE hdfs://([^:]+):(\d+)my_file\n', statements[0]), statements[0])
+    assert_true(re.match('\nADD FILE hdfs://([^:]+):(\d+)/my_path/my_file\n', statements[1]), statements[1])
+    assert_equal('\nADD FILE s3://host/my_s3_file\n', statements[2])
+
 
 def search_log_line(component, expected_log, all_logs):
   """Checks if 'expected_log' can be found in one line of 'all_logs' outputed by the logging component 'component'."""
@@ -1657,6 +1719,34 @@ def test_hiveserver2_get_security():
       hive_site._HIVE_SITE_DICT.pop(hive_site._CNF_HIVESERVER2_AUTHENTICATION, None)
 
 
+def test_metastore_security():
+  tmpdir = tempfile.mkdtemp()
+  saved = None
+  try:
+    # We just replace the Beeswax conf variable
+    class Getter(object):
+      def get(self):
+        return tmpdir
+
+    xml = hive_site_xml(is_local=False, use_sasl=True, kerberos_principal='hive/_HOST@test.com')
+    file(os.path.join(tmpdir, 'hive-site.xml'), 'w').write(xml)
+
+    beeswax.hive_site.reset()
+    saved = beeswax.conf.HIVE_CONF_DIR
+    beeswax.conf.HIVE_CONF_DIR = Getter()
+
+    metastore = get_metastore()
+
+    assert_true(metastore['use_sasl'])
+    assert_equal('thrift://darkside-1234:9999', metastore['thrift_uri'])
+    assert_equal('hive/darkside-1234@test.com', metastore['kerberos_principal'])
+  finally:
+    beeswax.hive_site.reset()
+    if saved is not None:
+      beeswax.conf.HIVE_CONF_DIR = saved
+    shutil.rmtree(tmpdir)
+
+
 def hive_site_xml(is_local=False, use_sasl=False, thrift_uris='thrift://darkside-1234:9999',
                   warehouse_dir='/abc', kerberos_principal='test/test.com@TEST.COM',
                   hs2_kerberos_principal='hs2test/test.com@TEST.COM',
@@ -1702,7 +1792,7 @@ def hive_site_xml(is_local=False, use_sasl=False, thrift_uris='thrift://darkside
       </property>
 
       <property>
-        <name>hive.metastore.sasl.enabled</name>
+        <name>hive.server2.authentication</name>
         <value>%(hs2_authentication)s</value>
       </property>
 
