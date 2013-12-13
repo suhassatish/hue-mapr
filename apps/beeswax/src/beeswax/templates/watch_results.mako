@@ -160,7 +160,7 @@ ${layout.menubar(section='query')}
             <tr>
               <th>&nbsp;</th>
               % for col in columns:
-                <th>${ col }</th>
+                <th>${ col.name }</th>
               % endfor
             </tr>
             </thead>
@@ -208,7 +208,7 @@ ${layout.menubar(section='query')}
             </thead>
             <tbody>
               % for col in columns:
-                <tr><td><a href="javascript:void(0)" class="column-selector" data-column="${col}">${col}</a></td></tr>
+                <tr><td><a href="javascript:void(0)" class="column-selector" data-column="${col}">${ col.name }</a></td></tr>
               % endfor
             </tbody>
           </table>
@@ -279,6 +279,19 @@ $(document).ready(function () {
         "sEmptyTable": "${_('No data available')}",
         "sZeroRecords": "${_('No matching records')}",
     },
+    "aoColumns":[
+        {"sSortDataType":"dom-text", "sType":"numeric", "sWidth":"1%" },
+        % for col in columns:
+          <%
+          sType = "string"
+          if col.type in ["TINYINT_TYPE", "SMALLINT_TYPE", "INT_TYPE", "BIGINT_TYPE", "FLOAT_TYPE", "DOUBLE_TYPE", "DECIMAL_TYPE"]:
+            sType = "numeric"
+          elif col.type in ["TIMESTAMP_TYPE", "DATE_TYPE"]:
+            sType = "date"
+          %>
+        { "sSortDataType":"dom-text", "sType":"${ sType }"},
+        % endfor
+    ],
     "fnDrawCallback": function( oSettings ) {
       $(".resultTable").jHueTableExtender({
         hintElement: "#jumpToColumnAlert",
