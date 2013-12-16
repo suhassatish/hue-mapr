@@ -22,7 +22,7 @@
 
 ${ commonheader(_('Query'), app_name, user) | n,unicode }
 
-<%common:navbar></%common:navbar>
+${ common.navbar('editor') }
 
 <div class="container-fluid">
   <div class="row-fluid">
@@ -30,12 +30,25 @@ ${ commonheader(_('Query'), app_name, user) | n,unicode }
       <ul class="nav nav-pills hueBreadcrumbBar" id="breadcrumbs">
         <li>
           <div style="display: inline" class="dropdown">
-            ${_('Server')}&nbsp;
+            ${_('App name')}&nbsp;
+            <a data-bind="if: $root.appName" data-toggle="dropdown" href="javascript:void(0);">
+              <strong data-bind="text: $root.appName().nice_name"></strong>
+              <i class="fa fa-caret-down"></i>
+            </a>
+            <ul data-bind="foreach: $root.appNames" class="dropdown-menu">
+              <li data-bind="click: $root.chooseAppName, text: nice_name" class="selectable"></li>
+            </ul>
+          </div>
+        </li>
+        <li>&nbsp;&nbsp;&nbsp;&nbsp;</li>
+        <li>
+          <div style="display: inline" class="dropdown">
+            ${_('Class path')}&nbsp;
             <a data-bind="if: $root.server" data-toggle="dropdown" href="javascript:void(0);">
               <strong data-bind="text: $root.server().nice_name"></strong>
               <i class="fa fa-caret-down"></i>
             </a>
-            <ul data-bind="foreach: $root.servers" class="dropdown-menu">
+            <ul data-bind="foreach: $root.classPathes" class="dropdown-menu">
               <li data-bind="click: $root.chooseServer, text: nice_name" class="selectable"></li>
             </ul>
           </div>
@@ -43,10 +56,7 @@ ${ commonheader(_('Query'), app_name, user) | n,unicode }
         <li>&nbsp;&nbsp;&nbsp;&nbsp;</li>
         <li>
           <div style="display: inline" class="dropdown">
-            ${_('Database')}&nbsp;<a data-toggle="dropdown" href="#"><strong data-bind="text: $root.database"></strong> <i class="fa fa-caret-down"></i></a>
-            <ul data-bind="foreach: $root.databases" class="dropdown-menu">
-              <li data-bind="click: $root.chooseDatabase, text: $data" class="selectable"></li>
-            </ul>
+            ${_('Context')}&nbsp;<a data-toggle="dropdown" href="#"><strong data-bind="text: $root.database"></strong> <i class="fa fa-caret-down"></i></a>            
           </div>
         </li>
       </ul>
@@ -95,14 +105,15 @@ ${ commonheader(_('Query'), app_name, user) | n,unicode }
                 </div>
               </div>
 
-              <textarea class="hide" tabindex="1" name="query" id="queryField"></textarea>
+              ${ _('Class name') }<input tabindex="1" name="classPath" id="classPath"></input>
+              <textarea class="hide" tabindex="2" name="query" id="queryField"></textarea>
 
               <div class="actions">
                 <button data-bind="click: tryExecuteQuery" type="button" id="executeQuery" class="btn btn-primary" tabindex="2">${_('Execute')}</button>
                 <button data-bind="click: trySaveQuery, css: {'hide': !$root.query.id() || $root.query.id() == -1}" type="button" class="btn hide">${_('Save')}</button>
                 <button data-bind="click: trySaveAsQuery" type="button" class="btn">${_('Save as...')}</button>
                 <button data-bind="click: tryExplainQuery" type="button" id="explainQuery" class="btn">${_('Explain')}</button>
-                &nbsp; ${_('or create a')} &nbsp;<a type="button" class="btn" href="${ url('spark:execute_query') }">${_('New query')}</a>
+                &nbsp; ${_('or create a')} &nbsp;<a type="button" class="btn" href="${ url('spark:editor') }">${_('New query')}</a>
                 <br /><br />
             </div>
 
@@ -115,9 +126,10 @@ ${ commonheader(_('Query'), app_name, user) | n,unicode }
       <div class="card card-small scrollable">
         <table class="table table-striped table-condensed resultTable" cellpadding="0" cellspacing="0" data-tablescroller-min-height-disable="true" data-tablescroller-enforce-height="true">
           <thead>
-            <tr data-bind="foreach: columns">
-              <th data-bind="text: $data"></th>
-            </tr>
+            <tr><th>aa</th><th>aa</th></tr>
+            ##<tr data-bind="foreach: columns">
+            ##  <th data-bind="text: $data"></th>
+            ##</tr>
           </thead>
         </table>
       </div>
@@ -145,10 +157,6 @@ ${ commonheader(_('Query'), app_name, user) | n,unicode }
             <input id="navigatorSearch" type="text" placeholder="${ _('Table name...') }" style="width:90%"/>
             <span id="navigatorNoTables">${_('The selected database has no tables.')}</span>
             <ul id="navigatorTables" class="unstyled"></ul>
-            <div id="navigatorLoader">
-              <!--[if !IE]><!--><i class="fa fa-spinner fa-spin" style="font-size: 20px; color: #DDD"></i><!--<![endif]-->
-              <!--[if IE]><img src="/static/art/spinner.gif" /><![endif]-->
-            </div>
           </p>
         </div>
       </div>
@@ -332,197 +340,12 @@ ${ commonheader(_('Query'), app_name, user) | n,unicode }
 
     $("*[rel=tooltip]").tooltip({
       placement: 'bottom'
-    });
-
-    var navigatorSearchTimeout = -1;
-    $("#navigatorSearch").on("keyup", function () {
-      window.clearTimeout(navigatorSearchTimeout);
-      navigatorSearchTimeout = window.setTimeout(function () {
-        $("#navigatorTables li").removeClass("hide");
-        $("#navigatorTables li").each(function () {
-          if ($(this).text().toLowerCase().indexOf($("#navigatorSearch").val().toLowerCase()) == -1) {
-            $(this).addClass("hide");
-          }
-        });
-      }, 300);
-    });
-
-    $("#navigatorTables").css("max-height", ($(window).height() - 340) + "px").css("overflow-y", "auto");
-
-    var resizeTimeout = -1;
-    var winWidth = $(window).width();
-    var winHeight = $(window).height();
-
-    $(window).on("resize", function () {
-      window.clearTimeout(resizeTimeout);
-      resizeTimeout = window.setTimeout(function () {
-        // prevents endless loop in IE8
-        if (winWidth != $(window).width() || winHeight != $(window).height()) {
-          codeMirror.setSize("95%", 100);
-          winWidth = $(window).width();
-          winHeight = $(window).height();
-          $("#navigatorTables").css("max-height", ($(window).height() - 340) + "px").css("overflow-y", "auto");
-        }
-      }, 200);
-    });
+    });   
 
     var queryEditor = $("#queryField")[0];
 
-    var AUTOCOMPLETE_SET = CodeMirror.sqlHint;
-
-    CodeMirror.onAutocomplete = function (data, from, to) {
-      if (CodeMirror.tableFieldMagic) {
-        codeMirror.replaceRange(" ", from, from);
-        codeMirror.setCursor(from);
-        codeMirror.execCommand("autocomplete");
-      }
-    };
-
-    CodeMirror.commands.autocomplete = function (cm) {
-      $(document.body).on("contextmenu", function (e) {
-        e.preventDefault(); // prevents native menu on FF for Mac from being shown
-      });
-
-      var pos = cm.cursorCoords();
-      $(".CodeMirror-spinner").remove();
-      $("<i class='fa fa-spinner fa-spin CodeMirror-spinner'></i>").css("top", pos.top + "px").css("left", (pos.left - 4) + "px").appendTo($("body"));
-
-      if ($.totalStorage('spark_tables_' + viewModel.server().name() + "_" + viewModel.database()) == null) {
-        CodeMirror.showHint(cm, AUTOCOMPLETE_SET);
-        spark_getTables(viewModel.server().name(), viewModel.database(), function () {
-        }); // if preload didn't work, tries again
-      }
-      else {
-        spark_getTables(viewModel.server().name(), viewModel.database(), function (tables) {
-          CodeMirror.catalogTables = tables;
-          var _before = codeMirror.getRange({line: 0, ch: 0}, {line: codeMirror.getCursor().line, ch: codeMirror.getCursor().ch}).replace(/(\r\n|\n|\r)/gm, " ");
-          CodeMirror.possibleTable = false;
-          CodeMirror.tableFieldMagic = false;
-          if (_before.toUpperCase().indexOf(" FROM ") > -1 && _before.toUpperCase().indexOf(" ON ") == -1 && _before.toUpperCase().indexOf(" WHERE ") == -1) {
-            CodeMirror.possibleTable = true;
-          }
-          CodeMirror.possibleSoloField = false;
-          if (_before.toUpperCase().indexOf("SELECT ") > -1 && _before.toUpperCase().indexOf(" FROM ") == -1 && !CodeMirror.fromDot) {
-            if (codeMirror.getValue().toUpperCase().indexOf("FROM ") > -1) {
-              fieldsAutocomplete(cm);
-            }
-            else {
-              CodeMirror.tableFieldMagic = true;
-              CodeMirror.showHint(cm, AUTOCOMPLETE_SET);
-            }
-          }
-          else {
-            if (_before.toUpperCase().indexOf("WHERE ") > -1 && !CodeMirror.fromDot && _before.match(/ON|GROUP|SORT/) == null) {
-              fieldsAutocomplete(cm);
-            }
-            else {
-              CodeMirror.showHint(cm, AUTOCOMPLETE_SET);
-            }
-          }
-        });
-      }
-    }
-
-    function fieldsAutocomplete(cm) {
-      CodeMirror.possibleSoloField = true;
-      try {
-        var _possibleTables = $.trim(codeMirror.getValue(" ").substr(codeMirror.getValue().toUpperCase().indexOf("FROM ") + 4)).split(" ");
-        var _foundTable = "";
-        for (var i = 0; i < _possibleTables.length; i++) {
-          if ($.trim(_possibleTables[i]) != "" && _foundTable == "") {
-            _foundTable = _possibleTables[i];
-          }
-        }
-        if (_foundTable != "") {
-          if (spark_tableHasAlias(viewModel.server().name(), _foundTable, codeMirror.getValue())) {
-            CodeMirror.possibleSoloField = false;
-            CodeMirror.showHint(cm, AUTOCOMPLETE_SET);
-          }
-          else {
-            spark_getTableColumns(viewModel.server().name(), viewModel.database(), _foundTable, codeMirror.getValue(),
-                    function (columns) {
-                      CodeMirror.catalogFields = columns;
-                      CodeMirror.showHint(cm, AUTOCOMPLETE_SET);
-                    });
-          }
-        }
-      }
-      catch (e) {
-      }
-    }
-
-    CodeMirror.fromDot = false;
-
-    codeMirror = CodeMirror(function (elt) {
-      queryEditor.parentNode.replaceChild(elt, queryEditor);
-    }, {
-      value: queryEditor.value,
-      readOnly: false,
-      lineNumbers: true,
-      mode: "text/x-sql",
-      extraKeys: {
-        "Ctrl-Space": function () {
-          CodeMirror.fromDot = false;
-          codeMirror.execCommand("autocomplete");
-        },
-        Tab: function (cm) {
-          $("#executeQuery").focus();
-        }
-      },
-      onKeyEvent: function (e, s) {
-        if (s.type == "keyup") {
-          if (s.keyCode == 190) {
-            var _line = codeMirror.getLine(codeMirror.getCursor().line);
-            var _partial = _line.substring(0, codeMirror.getCursor().ch);
-            var _table = _partial.substring(_partial.lastIndexOf(" ") + 1, _partial.length - 1);
-            if (codeMirror.getValue().toUpperCase().indexOf("FROM") > -1) {
-              spark_getTableColumns(viewModel.server().name(), viewModel.database(), _table, codeMirror.getValue(),
-                      function (columns) {
-                        var _cols = columns.split(" ");
-                        for (var col in _cols) {
-                          _cols[col] = "." + _cols[col];
-                        }
-                        CodeMirror.catalogFields = _cols.join(" ");
-                        CodeMirror.fromDot = true;
-                        window.setTimeout(function () {
-                          codeMirror.execCommand("autocomplete");
-                        }, 100);  // timeout for IE8
-                      });
-            }
-          }
-        }
-      }
-    });
-
     var selectedLine = -1;
     var errorWidget = null;
-    if ($(".queryErrorMessage").length > 0) {
-      var err = $(".queryErrorMessage").text().toLowerCase();
-      var firstPos = err.indexOf("line");
-      selectedLine = $.trim(err.substring(err.indexOf(" ", firstPos), err.indexOf(":", firstPos))) * 1;
-      errorWidget = codeMirror.addLineWidget(selectedLine - 1, $("<div>").addClass("editorError").html("<i class='fa fa-exclamation-circle'></i> " + err)[0], {coverGutter: true, noHScroll: true})
-    }
-
-
-    codeMirror.setSize("95%", 100);
-
-    codeMirror.on("focus", function () {
-      if (codeMirror.getValue() == queryPlaceholder) {
-        codeMirror.setValue("");
-      }
-      if (errorWidget) {
-        errorWidget.clear();
-      }
-      $("#validationResults").empty();
-    });
-
-    codeMirror.on("blur", function () {
-      $(document.body).off("contextmenu");
-    });
-
-    codeMirror.on("change", function () {
-      $(".query").val(codeMirror.getValue());
-    });
 
     $("#help").popover({
       'title': "${_('Did you know?')}",
@@ -600,94 +423,58 @@ ${ commonheader(_('Query'), app_name, user) | n,unicode }
     return $.totalStorage(key);
   }
 
+    var queryEditor = $("#queryField")[0];
+
+    var AUTOCOMPLETE_SET = CodeMirror.sqlHint;
+
+  codeMirror = CodeMirror(function (elt) {
+      queryEditor.parentNode.replaceChild(elt, queryEditor);
+    }, {
+      value: queryEditor.value,
+      readOnly: false,
+      lineNumbers: true,
+      mode: "text/x-sql",
+      extraKeys: {
+        "Ctrl-Space": function () {
+          CodeMirror.fromDot = false;
+          codeMirror.execCommand("autocomplete");
+        },
+        Tab: function (cm) {
+          $("#executeQuery").focus();
+        }
+      },
+      onKeyEvent: function (e, s) {
+        if (s.type == "keyup") {
+          if (s.keyCode == 190) {
+            var _line = codeMirror.getLine(codeMirror.getCursor().line);
+            var _partial = _line.substring(0, codeMirror.getCursor().ch);
+            var _table = _partial.substring(_partial.lastIndexOf(" ") + 1, _partial.length - 1);
+            if (codeMirror.getValue().toUpperCase().indexOf("FROM") > -1) {
+              rdbms_getTableColumns(viewModel.server().name(), viewModel.database(), _table, codeMirror.getValue(),
+                      function (columns) {
+                        var _cols = columns.split(" ");
+                        for (var col in _cols) {
+                          _cols[col] = "." + _cols[col];
+                        }
+                        CodeMirror.catalogFields = _cols.join(" ");
+                        CodeMirror.fromDot = true;
+                        window.setTimeout(function () {
+                          codeMirror.execCommand("autocomplete");
+                        }, 100);  // timeout for IE8
+                      });
+            }
+          }
+        }
+      }
+    });
+
 
   // Knockout
   viewModel = new sparkViewModel();
-  viewModel.fetchServers();
-  viewModel.database.subscribe((function() {
-    // First call skipped to avoid reset of huesparkLastDatabase
-    var counter = 0;
-    return function(value) {
-      % if design.id:
-        if (counter++ == 0) {
-          viewModel.fetchQuery(${design.id});
-        }
-      % endif
-      renderNavigator();
-    }
-  })());
-  viewModel.query.query.subscribe((function() {
-    // First call skipped to avoid reset of huesparkLastDatabase
-    var counter = 0;
-    return function(value) {
-      if (counter++ == 0) {
-        codeMirror.setValue(value);
-      }
-    }
-  })());
+  viewModel.fetchAppNames();
   ko.applyBindings(viewModel);
 
-  function resetNavigator() {
-    renderNavigator();
-  }
-
-  function renderNavigator() {
-    $("#navigatorTables").empty();
-    $("#navigatorLoader").show();
-    spark_getTables(viewModel.server().name(), viewModel.database(), function (data) {  //preload tables for the default db
-      $(data.split(" ")).each(function (cnt, table) {
-        if ($.trim(table) != "") {
-          var _table = $("<li>");
-          _table.html("<a href='#' title='" + table + "'><i class='fa fa-table'></i> " + table + "</a><ul class='unstyled'></ul>");
-          _table.data("table", table).attr("id", "navigatorTables_" + table);
-          _table.find("a").on("dblclick", function () {
-            codeMirror.replaceSelection($.trim($(this).text()) + ' ');
-            codeMirror.setSelection(codeMirror.getCursor());
-            codeMirror.focus();
-          });
-          _table.find("a").on("click", function () {
-            _table.find(".fa-table").removeClass("fa-table").addClass("fa-spin").addClass("fa-spinner");
-            spark_getTableColumns(viewModel.server().name(), viewModel.database(), table, "", function (columns) {
-              _table.find("ul").empty();
-              _table.find(".fa-spinner").removeClass("fa-spinner").removeClass("fa-spin").addClass("fa-table");
-              $(columns.split(" ")).each(function (iCnt, col) {
-                if ($.trim(col) != "" && $.trim(col) != "*") {
-                  var _column = $("<li>");
-                  _column.html("<a href='#' style='padding-left:10px'><i class='fa fa-columns'></i> " + col + "</a>");
-                  _column.appendTo(_table.find("ul"));
-                  _column.on("dblclick", function () {
-                    codeMirror.replaceSelection($.trim(col) + ', ');
-                    codeMirror.setSelection(codeMirror.getCursor());
-                    codeMirror.focus();
-                  });
-                }
-              });
-            });
-          });
-          _table.find("a:eq(2)").on("dblclick", function () {
-            codeMirror.replaceSelection($.trim(table) + ' ');
-            codeMirror.setSelection(codeMirror.getCursor());
-            codeMirror.focus();
-          });
-          _table.appendTo($("#navigatorTables"));
-        }
-      });
-      $("#navigatorLoader").hide();
-      if ($("#navigatorTables li").length > 0) {
-        $("#navigatorSearch").show();
-        $("#navigatorNoTables").hide();
-      }
-      else {
-        $("#navigatorSearch").hide();
-        $("#navigatorNoTables").show();
-      }
-    });
-  }
-
-  $("#refreshNavigator").on("click", function () {
-    resetNavigator();
-  });
-
+ 
   // Editables
   $("#query-name").editable({
     validate: function (value) {
@@ -701,14 +488,6 @@ ${ commonheader(_('Query'), app_name, user) | n,unicode }
     emptytext: "${ _('Query name') }"
   });
 
-  $("#query-description").editable({
-    success: function(response, newValue) {
-      viewModel.query.description(newValue);
-    },
-    emptytext: "${ _('Empty description') }"
-  });
-
-
   // Events and datatables
   $(document).on('saved.query', function() {
     $.jHueNotify.info("${_('Query saved successfully!')}")
@@ -719,19 +498,19 @@ ${ commonheader(_('Query'), app_name, user) | n,unicode }
     if (dataTable) {
       dataTable.fnClearTable();
       dataTable.fnDestroy();
-      viewModel.columns.valueHasMutated();
+      //viewModel.columns.valueHasMutated();
       viewModel.rows.valueHasMutated();
       dataTable = null;
     }
   }
 
   function addResults(viewModel, dataTable, index, pageSize) {
-    $.each(viewModel.rows.slice(index, index+pageSize), function(row_index, row) {
-      var ordered_row = [];
-      $.each(viewModel.columns(), function(col_index, col) {
-        ordered_row.push(row[col]);
-      });
-      dataTable.fnAddData(ordered_row);
+    $.each(viewModel.rows.slice(index, index + pageSize), function(row_index, row) {
+      //var ordered_row = [];
+//      $.each(viewModel.columns(), function(col_index, col) {
+  //      ordered_row.push(row[col]);
+      //});
+      dataTable.fnAddData(row);
     });
   }
 

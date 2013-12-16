@@ -21,7 +21,8 @@ import threading
 
 from desktop.lib.rest.http_client import HttpClient
 from desktop.lib.rest.resource import Resource
-from hadoop import cluster
+
+from spark.conf import JOB_SERVER_URL
 
 
 LOG = logging.getLogger(__name__)
@@ -34,28 +35,30 @@ _api_cache = None
 _api_cache_lock = threading.Lock()
 
 
-def get_resource_manager():
+def get_api(user):
   global _api_cache
   if _api_cache is None:
     _api_cache_lock.acquire()
     try:
       if _api_cache is None:
-        yarn_cluster = cluster.get_cluster_conf_for_job_submission()
-        _api_cache = ResourceManagerApi(yarn_cluster.RESOURCE_MANAGER_API_URL.get())
+        _api_cache = JobServerApi(JOB_SERVER_URL.get())
     finally:
       _api_cache_lock.release()
+  _api_cache.setuser(user)
   return _api_cache
 
 
-class ResourceManagerApi(object):
+class JobServerApi(object):
   def __init__(self, oozie_url):
-    self._url = posixpath.join(oozie_url, 'ws', _API_VERSION)
+    self._url = posixpath.join(oozie_url)
     self._client = HttpClient(self._url, logger=LOG)
     self._root = Resource(self._client)
     self._security_enabled = False
+    # To store user info
+    self._thread_local = threading.local()    
 
   def __str__(self):
-    return "ResourceManagerApi at %s" % (self._url,)
+    return "JobServerApi at %s" % (self._url,)
 
   @property
   def url(self):
@@ -65,8 +68,40 @@ class ResourceManagerApi(object):
   def security_enabled(self):
     return self._security_enabled
 
-  def apps(self, **kwargs):
-    return self._root.get('cluster/apps', params=kwargs, headers={'Accept': _JSON_CONTENT_TYPE})
+  @property
+  def user(self):
+    return self._thread_local.user
 
-  def app(self, app_id):
-    return self._root.get('cluster/apps/%(app_id)s' % {'app_id': app_id}, headers={'Accept': _JSON_CONTENT_TYPE})
+  def setuser(self, user):
+    if hasattr(user, 'username'):
+      self._thread_local.user = user.username
+    else:
+      self._thread_local.user = user
+
+  def get_status(self, **kwargs):
+    return self._root.get('', params=kwargs, headers={'Accept': _JSON_CONTENT_TYPE})
+  
+  def submit_job(self, appName, classPath, **data):
+    params = {'appName': appName, 'classPath': classPath, 'sync': 'true'}   # ?sync=false
+    return self._root.post('jobs' % params, params=params, data=data)
+
+  def job(self, **kwargs):
+    return self._root.get('jobs/%(job_id)s' % kwargs, headers={'Accept': _JSON_CONTENT_TYPE})
+
+  def jobs(self, **kwargs):
+    return self._root.get('jobs', params=kwargs, headers={'Accept': _JSON_CONTENT_TYPE})
+
+  def create_context(self, **kwargs):
+    return self._root.get('contexts/%(_id)s' % kwargs, headers={'Accept': _JSON_CONTENT_TYPE})
+
+  def context(self, **kwargs):
+    return self._root.post('contexts', params=kwargs)
+
+  def contexts(self, **kwargs):
+    return self._root.get('contexts', params=kwargs, headers={'Accept': _JSON_CONTENT_TYPE})
+  
+  def upload_jar(self, **kwargs):
+    return self._root.post('jars', params=kwargs, headers={'Accept': _JSON_CONTENT_TYPE})
+
+  def jars(self, **kwargs):
+    return self._root.get('jars', params=kwargs, headers={'Accept': _JSON_CONTENT_TYPE})

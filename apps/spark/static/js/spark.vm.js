@@ -18,84 +18,63 @@
 function sparkViewModel() {
   var self = this;
 
-  self.servers = ko.observableArray();
-  self.selectedServer = ko.observable(0);
-  self.databases = ko.observableArray();
-  self.selectedDatabase = ko.observable(0);
+  self.appNames = ko.observableArray(); // list of jars
+  self.selectedAppName = ko.observable(0);
+  self.classPathes = ko.observableArray(); // read from upload or edit manually or better API
+  self.classPath = ko.observable('spark.jobserver.WordCountExample');
   self.query = ko.mapping.fromJS({
     'id': -1,
-    'query': '',
+    'query': '', // query == params
     'name': null,
     'description': null,
     'errors': []
   });
   self.rows = ko.observableArray();
-  self.columns = ko.observableArray();
+  //self.columns = ko.observableArray();
   self.resultsEmpty = ko.observable(false);
 
-  self.server = ko.computed({
+  self.appName = ko.computed({
     'read': function() {
-      if (self.servers().length > 0) {
-        return self.servers()[self.selectedServer()];
+      if (self.appNames().length > 0) {
+        return self.appNames()[self.selectedAppName()];
       } else{
         return null;
       }
     },
     'write': function(value) {
-      var filtered = $.each(self.servers(), function(index, server) {
-        if (server.name() == value) {
-          self.selectedServer(index);
+      var filtered = $.each(self.appNames(), function(index, appName) {
+        if (appName.name() == value) {
+          self.selectedAppName(index);
         }
       });
     }
   });
 
-  self.database = ko.computed({
-    'read': function() {
-      if (self.databases()) {
-        return self.databases()[self.selectedDatabase()];
-      } else{
-        return "";
-      }
-    },
-    'write': function(value) {
-      self.selectedDatabase(self.databases.indexOf(value));
-    }
-  });
-
-  self.getFirstDatabase = function() {
-    if (self.databases()) {
-      return self.databases()[0];
-    } else {
-      return null;
-    }
-  };
-
-  self.getServerNiceName = function(value) {
-    return self.servers[value];
-  };
-
   self.updateResults = function(results) {
     var rows = [];
-    self.columns.removeAll();  // Needed for datatables to refresh properly.
-    self.columns(results.columns);
+    //self.columns.removeAll();  // Needed for datatables to refresh properly.
+    //self.columns(results.columns);
     self.rows.removeAll();
-    self.rows(results.rows);
+    var newRows = [];
+    $.each(results.result, function(key, value) {
+      newRows.push([key, value]);
+    });     
+    self.rows(newRows);
   };
 
-  self.updateServers = function(servers) {
-    var newServers = [];
-    $.each(servers, function(name, nice_name) {
-      newServers.push({
-        'name': ko.observable(name),
-        'nice_name': ko.observable(nice_name)
+  self.updateAppNames = function(appNames) {
+    var newAppNames = [];
+    $.each(appNames, function(key, value) {
+    	newAppNames.push({
+        'name': ko.observable(key),
+        'nice_name': ko.observable(key)
       });
-    });
-    self.servers(newServers);
+    });//alert(ko.utils.stringifyJson(newAppNames));
+    self.appNames(newAppNames); 
 
-    var last = $.totalStorage('huesparkLastServer') || ((newServers[0].length > 0) ? newServers[0].name() : null);
+    var last = $.totalStorage('hueSparkLastAppName') || ((newAppNames[0].length > 0) ? newAppNames[0].name() : null);
     if (last) {
-      self.server(last);
+      self.appName(last);
     }
   };
 
@@ -118,14 +97,13 @@ function sparkViewModel() {
     self.server(design.server);
   };
 
-  self.chooseServer = function(value, e) {
-    $.each(self.servers(), function(index, server) {
-      if (server.name() == value.name()) {
-        self.selectedServer(index);
+  self.chooseAppName = function(value, e) {
+    $.each(self.appNames(), function(index, appName) {
+      if (appName.name() == value.name()) {
+        self.selectedAppName(index);
       }
     });
-    $.totalStorage('huesparkLastServer', self.server().name());
-    self.fetchDatabases();
+    $.totalStorage('hueSparkLastAppName', self.server().name());
   };
 
   self.chooseDatabase = function(value, e) {
@@ -140,32 +118,6 @@ function sparkViewModel() {
     } catch(e) {
       $(document).trigger('server.unmanageable_error', jqXHR.responseText);
     }
-  };
-
-  self.explainQuery = function() {
-    var data = ko.mapping.toJS(self.query);
-    data.database = self.database();
-    data.server = self.server().name();
-    var request = {
-      url: '/spark/api/explain/',
-      dataType: 'json',
-      type: 'POST',
-      success: function(data) {
-        self.query.errors.removeAll();
-        if (data.status === 0) {
-          $(document).trigger('explain.query', data);
-          self.updateResults(data.results);
-          self.query.id(data.design);
-          self.resultsEmpty(data.results.rows.length === 0);
-          $(document).trigger('explained.query', data);
-        } else {
-          self.query.errors.push(data.message);
-        }
-      },
-      error: error_fn,
-      data: data
-    };
-    $.ajax(request);
   };
 
   self.fetchQuery = function(id) {
@@ -213,19 +165,19 @@ function sparkViewModel() {
 
   self.executeQuery = function() {
     var data = ko.mapping.toJS(self.query);
-    data.database = self.database();
-    data.server = self.server().name();
+    data.appName = self.appName().name;
+    data.classPath = self.classPath();
     var request = {
-      url: '/spark/api/execute/',
+      url: '/spark/api/execute',
       dataType: 'json',
       type: 'POST',
       success: function(data) {
         self.query.errors.removeAll();
-        if (data.status === 0) {
+        if (data.status == 0) {
           $(document).trigger('execute.query', data);
           self.updateResults(data.results);
           self.query.id(data.design);
-          self.resultsEmpty(data.results.rows.length === 0);
+          self.resultsEmpty($.isEmptyObject(data.results.result));
           $(document).trigger('executed.query', data);
         } else {
           self.query.errors.push(data.message);
@@ -237,32 +189,16 @@ function sparkViewModel() {
     $.ajax(request);
   };
 
-  self.fetchServers = function() {
+  self.fetchAppNames = function() {
     var request = {
-      url: '/spark/api/servers/',
+      url: '/spark/api/jars',
       dataType: 'json',
       type: 'GET',
       success: function(data) {
-        self.updateServers(data.servers);
-        self.fetchDatabases();
+        self.updateAppNames(data.jars);
       },
       error: error_fn
     };
     $.ajax(request);
-  };
-
-  self.fetchDatabases = function() {
-    if (self.server()) {
-      var request = {
-        url: '/spark/api/servers/' + self.server().name() + '/databases/',
-        dataType: 'json',
-        type: 'GET',
-        success: function(data) {
-          self.updateDatabases(data.databases);
-        },
-        error: error_fn
-      };
-      $.ajax(request);
-    }
   };
 }

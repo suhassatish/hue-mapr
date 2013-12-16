@@ -28,29 +28,50 @@ from desktop.lib.django_util import render
 from beeswax import models as beeswax_models
 from beeswax.views import safe_get_design
 
-from spark import conf
-from spark.design import SQLdesign
+from spark.design import SparkDesign
+from spark.job_server_api import get_api
 
 
 LOG = logging.getLogger(__name__)
 
 
-def execute_query(request, design_id=None):
-  """
-  View function for executing an arbitrary synchronously query.
-  """
+def editor(request, design_id=None):
   action = request.path
   app_name = get_app_name(request)
   query_type = beeswax_models.SavedQuery.TYPES_MAPPING[app_name]
   design = safe_get_design(request, query_type, design_id)
 
-  return render('execute.mako', request, {
+  return render('editor.mako', request, {
     'action': action,
     'design': design,
-    'autocomplete_base_url': reverse('rdbms:autocomplete', kwargs={}),
     'can_edit_name': design.id and not design.is_auto,
   })
 
+
+# For now
+def list_jobs(request):
+  api = get_api(request.user)
+
+  return render('list_jobs.mako', request, {
+    'jobs': api.jobs() 
+  })
+  
+
+def list_contexts(request):
+  api = get_api(request.user)
+
+  return render('list_contexts.mako', request, {
+    'contexts': api.contexts() 
+  })
+  
+  
+def list_jars(request):
+  api = get_api(request.user)
+
+  return render('list_jars.mako', request, {
+    'jars': api.jars() 
+  })
+  
 
 def save_design(request, save_form, query_form, type_, design, explicit_save=False):
   """
@@ -67,8 +88,8 @@ def save_design(request, save_form, query_form, type_, design, explicit_save=Fal
   Assumes that form.saveform is the SaveForm, and that it is valid.
   """
 
-  if type_ == beeswax_models.RDBMS:
-    design_cls = SQLdesign
+  if type_ == beeswax_models.SPARK:
+    design_cls = SparkDesign
   else:
     raise ValueError(_('Invalid design type %(type)s') % {'type': type_})
 

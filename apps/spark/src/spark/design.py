@@ -15,9 +15,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-The HQLdesign class can (de)serialize a design to/from a QueryDict.
-"""
 import json
 import logging
 
@@ -33,7 +30,7 @@ LOG = logging.getLogger(__name__)
 SERIALIZATION_VERSION = "0.0.1"
 
 
-class SQLdesign(object):
+class SparkDesign(object):
   """
   Represents an SQL design, with methods to perform (de)serialization.
   """
@@ -42,7 +39,7 @@ class SQLdesign(object):
   def __init__(self, form=None, query_type=None):
     """Initialize the design from a valid form data."""
     if form is not None:
-      self._data_dict = dict(query = normalize_form_dict(form, SQLdesign._QUERY_ATTRS))
+      self._data_dict = dict(query = normalize_form_dict(form, SparkDesign._QUERY_ATTRS))
       if query_type is not None:
         self._data_dict['query']['type'] = query_type
 
@@ -76,7 +73,7 @@ class SQLdesign(object):
 
     res = django.http.QueryDict('', mutable=True)
     res.update(denormalize_form_dict(
-                self._data_dict['query'], mform.query, SQLdesign._QUERY_ATTRS))
+                self._data_dict['query'], mform.query, SparkDesign._QUERY_ATTRS))
     return res
 
   def get_query(self):
@@ -111,6 +108,6 @@ class SQLdesign(object):
     if 'database' not in dic['query']:
       raise RuntimeError(_('No database!'))
 
-    design = SQLdesign()
+    design = SparkDesign()
     design._data_dict = dic
     return design

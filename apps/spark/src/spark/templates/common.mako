@@ -13,9 +13,18 @@
 ## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 ## See the License for the specific language governing permissions and
 ## limitations under the License.
+
 <%! from django.utils.translation import ugettext as _ %>
 
-<%def name="navbar()">
+<%!
+def is_selected(section, matcher):
+  if section == matcher:
+    return "active"
+  else:
+    return ""
+%>
+
+<%def name="navbar(section='editor')">
   <div class="navbar navbar-inverse navbar-fixed-top">
     <div class="navbar-inner">
       <div class="container-fluid">
@@ -27,10 +36,12 @@
                 ${ _('Spark Editor') }
               </a>
             </li>
-            <li class="active"><a href="${ url('spark:execute_query') }">${_('Query Editor')}</a></li>
-            ##<li><a href="${ url('spark:my_queries') }">${_('My Queries')}</a></li>
-            ##<li><a href="${ url('spark:list_designs') }">${_('Saved Queries')}</a></li>
-            ##<li><a href="${ url('spark:list_query_history') }">${_('History')}</a></li>
+            <li class="class=${is_selected(section, 'query')}"><a href="${ url('spark:editor') }">${_('Query Editor')}</a></li>
+            <li class="class=${is_selected(section, 'jobs')}"><a href="${ url('spark:list_jobs') }">${_('Jobs')}</a></li>            
+            <li class="class=${is_selected(section, 'contexts')}"><a href="${ url('spark:list_contexts') }">${_('Contexts')}</a></li>
+            <li class="class=${is_selected(section, 'jars')}"><a href="${ url('spark:list_jars') }">${_('Jars')}</a></li>
+            <li class="class=${is_selected(section, 'queries')}"><a href="${ url('spark:list_designs') }">${_('Queries')}</a></li>
+            <li class="class=${is_selected(section, 'history')}"><a href="${ url('spark:list_query_history') }">${_('History')}</a></li>
           </ul>
         </div>
       </div>
