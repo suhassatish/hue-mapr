@@ -48,8 +48,6 @@ from beeswax.models import SavedQuery, make_query_context, QueryHistory
 from beeswax.server import dbms
 from beeswax.server.dbms import expand_exception, get_query_server_config, QueryServerException
 
-from thrift.transport.TTransport import TTransportException
-
 
 LOG = logging.getLogger(__name__)
 
@@ -446,22 +444,30 @@ def execute_query(request, design_id=None):
     'error_message': error_message,
     'form': form,
     'log': log,
-    'autocomplete_base_url': reverse(get_app_name(request) + ':autocomplete', kwargs={}),
+    'autocomplete_base_url': reverse(get_app_name(request) + ':api_autocomplete', kwargs={}),
     'on_success_url': on_success_url,
     'can_edit_name': design.id and not design.is_auto,
   })
 
 
 def execute_parameterized_query(request, design_id):
+  """
+  DEPRECATED!!!
+  """
   return _run_parameterized_query(request, design_id, False)
 
 
 def explain_parameterized_query(request, design_id):
+  """
+  DEPRECATED!!!
+  """
   return _run_parameterized_query(request, design_id, True)
 
 
 def watch_query(request, id):
   """
+  DEPRECATED!!!
+
   Wait for the query to finish and (by default) displays the results of query id.
   It understands the optional GET params:
 
@@ -706,6 +712,7 @@ def view_results(request, id, first_row=0):
 
   if request.GET.get('format') == 'json':
     context = {
+      'columns': [column.name for column in columns],
       'results': data,
       'has_more': results.has_more,
       'next_row': results.start_row + len(data),
@@ -795,7 +802,7 @@ def confirm_query(request, query, on_success_url=None):
     'design': None,
     'on_success_url': on_success_url,
     'design': None,
-    'autocomplete_base_url': reverse(get_app_name(request) + ':autocomplete', kwargs={}),
+    'autocomplete_base_url': reverse(get_app_name(request) + ':api_autocomplete', kwargs={}),
   })
 
 
@@ -881,32 +888,6 @@ def query_done_cb(request, server_id):
     LOG.error(msg)
     message['message'] = msg
   return HttpResponse(message_template % message)
-
-
-def autocomplete(request, database=None, table=None):
-  app_name = get_app_name(request)
-  query_server = get_query_server_config(app_name)
-  db = dbms.get(request.user, query_server)
-  response = {}
-
-  try:
-    if database is None:
-      response['databases'] = db.get_databases()
-    elif table is None:
-      response['tables'] = db.get_tables(database=database)
-    else:
-      t = db.get_table(database, table)
-      response['columns'] = [column.name for column in t.cols]
-      response['extended_columns'] = massage_columns_for_json(t.cols)
-  except TTransportException, tx:
-    response['code'] = 503
-    response['error'] = tx.message
-  except Exception, e:
-    LOG.warn('Autocomplete data fetching error %s.%s: %s' % (database, table, e))
-    response['code'] = 500
-    response['error'] = e.message
-
-  return HttpResponse(json.dumps(response), mimetype="application/json")
 
 
 """
@@ -1012,6 +993,7 @@ def make_parameterization_form(query_str):
 
 def _run_parameterized_query(request, design_id, explain):
   """
+  DEPRECATED!!!
   Given a design and arguments to parameterize that design, runs the query.
   - explain is a boolean to determine whether to run as an explain or as an
   execute.
@@ -1062,7 +1044,7 @@ def _run_parameterized_query(request, design_id, explain):
         'error_message': error_message,
         'form': query_form,
         'log': log,
-        'autocomplete_base_url': reverse(get_app_name(request) + ':autocomplete', kwargs={}),
+        'autocomplete_base_url': reverse(get_app_name(request) + ':api_autocomplete', kwargs={}),
       })
   else:
     return render("parameterization.mako", request, dict(form=parameterization_form, design=design, explain=explain))

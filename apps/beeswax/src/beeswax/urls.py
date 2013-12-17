@@ -32,11 +32,6 @@ urlpatterns = patterns('beeswax.views',
   url(r'^save_results/(?P<id>\d+)$', 'save_results', name='save_results'),
   url(r'^save_design_properties$', 'save_design_properties', name='save_design_properties'), # Ajax
 
-  url(r'^autocomplete/$', 'autocomplete', name='autocomplete'),
-  url(r'^autocomplete/(?P<database>\w+)/$', 'autocomplete', name='autocomplete'),
-  url(r'^autocomplete/(?P<database>\w+)/(?P<table>\w+)$', 'autocomplete', name='autocomplete'),
-
-
   url(r'^my_queries$', 'my_queries', name='my_queries'),
   url(r'^list_designs$', 'list_designs', name='list_designs'),
   url(r'^list_trashed_designs$', 'list_trashed_designs', name='list_trashed_designs'),
@@ -62,4 +57,16 @@ urlpatterns += patterns(
   url(r'^create/create_table/(?P<database>\w+)$', 'create_table', name='create_table'),
   url(r'^create/import_wizard/(?P<database>\w+)$', 'import_wizard', name='import_wizard'),
   url(r'^create/auto_load/(?P<database>\w+)$', 'load_after_create', name='load_after_create'),
+)
+
+urlpatterns += patterns(
+  'beeswax.api',
+
+  url(r'^api/autocomplete/$', 'autocomplete', name='api_autocomplete'),
+  url(r'^api/autocomplete/(?P<database>\w+)/$', 'autocomplete', name='api_autocomplete'),
+  url(r'^api/autocomplete/(?P<database>\w+)/(?P<table>\w+)$', 'autocomplete', name='api_autocomplete'),
+  url(r'^api/query/parameters$', 'parameters', name='api_parameters'),
+  url(r'^api/query/execute/(?P<design_id>\d+)?$', 'execute', name='api_execute'),
+  url(r'^api/query/(?P<design_id>\d+)?$', 'save_query', name='api_save_query'),
+  url(r'^api/query/(?P<design_id>\d+)/get$', 'fetch_saved_query', name='api_fetch_saved_query'),
 )
