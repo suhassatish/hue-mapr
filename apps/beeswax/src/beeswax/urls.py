@@ -63,3 +63,12 @@ urlpatterns += patterns(
   url(r'^create/import_wizard/(?P<database>\w+)$', 'import_wizard', name='import_wizard'),
   url(r'^create/auto_load/(?P<database>\w+)$', 'load_after_create', name='load_after_create'),
 )
+
+urlpatterns += patterns(
+  'beeswax.api',
+
+  url(r'^api/databases$', 'databases', name='databases'),
+  url(r'^api/databases/(?P<database>\w+)/tables$', 'tables', name='tables'),
+  url(r'^api/parameters$', 'parameters', name='parameters'),
+  url(r'^api/execute/(?P<design_id>\d+)?$', 'execute', name='execute'),
+)

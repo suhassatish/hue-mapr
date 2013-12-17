@@ -83,10 +83,13 @@ ${layout.menubar(section='query')}
 
                 <div class="control-group">
                     ${comps.label(f['key'])}
-                    ${comps.field(f['key'], attrs=dict(placeholder=app_name == 'impala' and "ABORT_ON_ERROR" or "mapred.reduce.tasks",
-                        klass="settingsField span8",
-                        autocomplete="off"
-                    ))}
+                    ${comps.field(f['key'], attrs={
+                        'data-bind': "value: form['%s']" % f['key'].html_name,
+                        'placeholder': app_name == 'impala' and "ABORT_ON_ERROR" or "mapred.reduce.tasks",
+                        'klass': 'settingsField span8',
+                        'autocomplete': 'off'
+                      }
+                    )}
                 </div>
 
                 <div class="control-group">
@@ -287,50 +290,32 @@ ${layout.menubar(section='query')}
               % endif
             </div>
             <div class="card-body">
-              <p>
-
-
-            % if error_messages or log:
-                <ul class="nav nav-tabs">
-                    <li class="active">
-                        <a href="#queryPane" data-toggle="tab">${_('Query')}</a>
-                    </li>
-                    % if error_message or log:
-                      <li>
-                        <a href="#errorPane" data-toggle="tab">
-                        % if log:
-                            ${ _('Error Log') }
-                        % else:
-                            ${ _('No server logs for this query.') }
-                        % endif
-                        </a>
-                    </li>
-                    % endif
-                </ul>
-
-                <div class="tab-content">
-                    <div class="active tab-pane" id="queryPane">
-                        ${query()}
-                    </div>
-                    % if error_message or log:
-                        <div class="tab-pane" id="errorPane">
-                        % if log:
-                            <pre>${ log }</pre>
-                        % endif
-                        </div>
-                    % endif
-                </div>
-            % else:
               <div class="tab-content">
                 <div id="queryPane">
-                  ${query()}
+
+                  <div data-bind="css: {'hide': query.errors().length == 0}" class="hide alert alert-error">
+                    <p><strong>${_('Your query has the following error(s):')}</strong></p>
+                    <div data-bind="foreach: query.errors">
+                      <p data-bind="text: $data" class="queryErrorMessage"></p>
+                    </div>
+                  </div>
+
+                  <textarea class="hide" tabindex="1" name="query" id="queryField"></textarea>
+
+                  <div class="actions">
+                    <button data-bind="click: tryExecuteQuery" type="button" id="executeQuery" class="btn btn-primary" tabindex="2">${_('Execute')}</button>
+                    <button data-bind="click: trySaveQuery, css: {'hide': !$root.query.id() || $root.query.id() == -1}" type="button" class="btn hide">${_('Save')}</button>
+                    <button data-bind="click: trySaveAsQuery" type="button" class="btn">${_('Save as...')}</button>
+                    <button data-bind="click: tryExplainQuery" type="button" id="explainQuery" class="btn">${_('Explain')}</button>
+                    &nbsp; ${_('or create a')} &nbsp;<a type="button" class="btn" href="${ url('beeswax:execute_query') }">${_('New query')}</a>
+                    <br /><br />
+                </div>
+
                 </div>
               </div>
-            % endif
-              </p>
             </div>
-        </div>
-    </div>
+          </div>
+      </div>
 
     <div class="span2" id="navigator">
       <div class="card card-small">
@@ -372,19 +357,18 @@ ${layout.menubar(section='query')}
         <a href="#" class="close" data-dismiss="modal">&times;</a>
         <h3>${_('Choose a name')}</h3>
     </div>
-    <div class="modal-body">
       <form class="form-horizontal">
-        <div class="control-group">
-            <label class="control-label">${_('Name')}</label>
-            <div class="controls">
-              ${comps.field(form.saveform['name'], klass="input-xlarge")}
-            </div>
+        <div class="control-group" id="saveas-query-name">
+          <label class="control-label">${_('Name')}</label>
+          <div class="controls">
+            <input data-bind="value: $root.query.name" type="text" class="input-xlarge">
+          </div>
         </div>
         <div class="control-group">
-            <label class="control-label">${_('Description')}</label>
-            <div class="controls">
-              ${comps.field(form.saveform['desc'], klass="input-xlarge")}
-            </div>
+          <label class="control-label">${_('Description')}</label>
+          <div class="controls">
+            <input data-bind="value: $root.query.description" type="text" class="input-xlarge">
+          </div>
         </div>
       </form>
     </div>
@@ -412,6 +396,9 @@ ${layout.menubar(section='query')}
     </div>
 </div>
 
+<script src="/static/ext/js/knockout-min.js" type="text/javascript" charset="utf-8"></script>
+<script src="/static/ext/js/knockout.mapping-2.3.2.js" type="text/javascript" charset="utf-8"></script>
+<script src="/beeswax/static/js/beeswax.vm.js"></script>
 <script src="/static/ext/js/codemirror-3.11.js"></script>
 <link rel="stylesheet" href="/static/ext/css/codemirror.css">
 <script src="/static/js/codemirror-hql.js"></script>
@@ -674,14 +661,14 @@ ${layout.menubar(section='query')}
           e.preventDefault();
           $("input[name=" + _prefix + "-add]").attr("value", "");
           $("<input>").attr("type", "hidden").attr("name", $(this).attr("name")).attr("value", "True").appendTo($("#advancedSettingsForm"));
-          checkAndSubmit();
+          tryExecuteQuery();
         });
       });
 
       $("a[data-form-prefix]").click(function () {
         var _prefix = $(this).attr("data-form-prefix");
         $("<input>").attr("type", "hidden").attr("name", _prefix + "-add").attr("value", "True").appendTo($("#advancedSettingsForm"));
-        checkAndSubmit();
+        tryExecuteQuery();
       });
 
       $(".file_resourcesField").each(function () {
@@ -712,10 +699,10 @@ ${layout.menubar(section='query')}
       var executeQuery = function () {
         $("input[name='button-explain']").remove();
         $("<input>").attr("type", "hidden").attr("name", "button-submit").attr("value", "Execute").appendTo($("#advancedSettingsForm"));
-        checkAndSubmit();
+        tryExecuteQuery();
       }
 
-      $("#executeQuery").click(executeQuery);
+      // $("#executeQuery").click(executeQuery);
       $("#executeQuery").tooltip({
         title: '${_("Press \"tab\", then \"enter\".")}'
       });
@@ -729,7 +716,7 @@ ${layout.menubar(section='query')}
         $("#downloadQuery").click(function () {
           $("<input>").attr("type", "hidden").attr("name", "button-submit").attr("value", "Execute").appendTo($("#advancedSettingsForm"));
           $("<input>").attr("type", "hidden").attr("name", "download").attr("value", "true").appendTo($("#advancedSettingsForm"));
-          checkAndSubmit();
+          tryExecuteQuery();
         });
       % endif
 
@@ -740,7 +727,7 @@ ${layout.menubar(section='query')}
         $("<input>").attr("type", "hidden").attr("name", "saveform-desc")
                 .attr("value", description).appendTo($("#advancedSettingsForm"));
         $("<input>").attr("type", "hidden").attr("name", "saveform-save").attr("value", "Save").appendTo($("#advancedSettingsForm"));
-        checkAndSubmit();
+        tryExecuteQuery();
       });
 
       $("#saveQueryAs").click(function () {
@@ -753,13 +740,13 @@ ${layout.menubar(section='query')}
                 .attr("value", $("input[name='saveform-name']").val()).appendTo($("#advancedSettingsForm"));
         $("<input>").attr("type", "hidden").attr("name", "saveform-desc")
                 .attr("value", $("input[name='saveform-desc']").val()).appendTo($("#advancedSettingsForm"));
-        checkAndSubmit();
+        tryExecuteQuery();
       });
 
       $("#explainQuery").click(function () {
         $("input[name='button-execute']").remove();
         $("<input>").attr("type", "hidden").attr("name", "button-explain").attr("value", "Explain").appendTo($("#advancedSettingsForm"));
-        checkAndSubmit();
+        tryExecuteQuery();
       });
 
       initQueryField();
@@ -956,21 +943,6 @@ ${layout.menubar(section='query')}
         $.totalStorage("${app_name}_temp_query", codeMirror.getValue());
       });
 
-      function getHighlightedQuery() {
-        var selection = codeMirror.getSelection();
-        if (selection != "") {
-          return selection;
-        }
-        return null;
-      }
-
-      function checkAndSubmit() {
-        var query = getHighlightedQuery() || codeMirror.getValue();
-        $(".query").val(query);
-        $.totalStorage("${app_name}_temp_query", null);
-        $("#advancedSettingsForm").submit();
-      }
-
       % if app_name == 'impala':
         $("#refresh-dyk").popover({
           'title': "${_('Missing some tables? In order to update the list of tables/metadata seen by Impala, execute one of these queries:')}",
@@ -1005,6 +977,72 @@ ${layout.menubar(section='query')}
 
     // hack for select default rendered fields
     $("select").addClass("input-medium");
+
+  function getHighlightedQuery() {
+    var selection = codeMirror.getSelection();
+    if (selection != "") {
+      return selection;
+    }
+    return null;
+  }
+
+  function tryExecuteQuery() {
+    var query = getHighlightedQuery() || codeMirror.getValue();
+    viewModel.query.query(query);
+    viewModel.executeQuery();
+  }
+
+  function tryExplainQuery() {
+    var query = getHighlightedQuery() || codeMirror.getValue();
+    viewModel.query.query(query);
+    viewModel.explainQuery();
+  }
+
+  function trySaveQuery() {
+    var query = getHighlightedQuery() || codeMirror.getValue();
+    viewModel.query.query(query);
+    if (viewModel.query.id() && viewModel.query.id() != -1) {
+      viewModel.saveQuery();
+    }
+  }
+
+  function trySaveAsQuery() {
+    var query = getHighlightedQuery() || codeMirror.getValue();
+    viewModel.query.query(query);
+    $('#saveAsQueryModal').modal('show');
+  }
+
+  function modalSaveAsQuery() {
+    if (viewModel.query.query() && viewModel.query.name()) {
+      viewModel.query.id(-1);
+      viewModel.saveQuery();
+      $('#saveas-query-name').removeClass('error');
+      $('#saveAsQueryModal').modal('hide');
+    } else if (viewModel.query.name()) {
+      $.jHueNotify.error("${_('No query provided to save.')}");
+      $('#saveAsQueryModal').modal('hide');
+    } else {
+      $('#saveas-query-name').addClass('error');
+    }
+  }
+
+  function checkLastDatabase(server, database) {
+    var key = "hueBeeswaxLastDatabase-" + server;
+    if (database != $.totalStorage(key)) {
+      $.totalStorage(key, database);
+    }
+  }
+
+  function getLastDatabase(server) {
+    var key = "hueBeeswaxLastDatabase-" + server;
+    return $.totalStorage(key);
+  }
+
+
+  // Knockout
+  viewModel = new BeeswaxViewModel("${app_name}");
+  viewModel.fetchDatabases();
+  ko.applyBindings(viewModel);
 </script>
 
 ${ commonfooter(messages) | n,unicode }
