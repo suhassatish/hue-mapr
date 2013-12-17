@@ -152,15 +152,15 @@ ${layout.menubar(section='query')}
       $("#cancel-btn").click(function() {
         var _this = this;
         $(_this).button('loading');
-        $.post("${ url(app_name + ':cancel_operation', query.id) }",
-          function(response) {
-            if (response['status'] != 0) {
-              $(document).trigger("error", "${ _('Problem: ') }" + response['message']);
-            } else {
-              $(document).trigger("info", "${ _('Query canceled!') }")
-            }
-          }
-        );
+        // $.post("${ url(app_name + ':cancel_operation', query.id) }",
+        //   function(response) {
+        //     if (response['status'] != 0) {
+        //       $(document).trigger("error", "${ _('Problem: ') }" + response['message']);
+        //     } else {
+        //       $(document).trigger("info", "${ _('Query canceled!') }")
+        //     }
+        //   }
+        // );
         return false;
       });
     % endif
