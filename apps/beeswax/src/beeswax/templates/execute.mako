@@ -994,6 +994,178 @@ ${layout.menubar(section='query')}
           }
           return nRow;
         }
+      }
+    });
+
+    var selectedLine = -1;
+    var errorWidget = null;
+    if ($(".queryErrorMessage").length > 0) {
+      var err = $(".queryErrorMessage").text().toLowerCase();
+      var firstPos = err.indexOf("line");
+      if (firstPos > -1) {
+        selectedLine = $.trim(err.substring(err.indexOf(" ", firstPos), err.indexOf(":", firstPos))) * 1;
+        errorWidget = codeMirror.addLineWidget(selectedLine - 1, $("<div>").addClass("editorError").html("<i class='fa fa-exclamation-circle'></i> " + err)[0], {coverGutter: true, noHScroll: true})
+      }
+    }
+
+    codeMirror.on("focus", function () {
+      if (codeMirror.getValue() == queryPlaceholder) {
+        codeMirror.setValue("");
+      }
+      if (errorWidget) {
+        errorWidget.clear();
+      }
+      $("#validationResults").empty();
+    });
+
+    % if design and not design.id:
+    if ($.totalStorage("${app_name}_temp_query") != null && $.totalStorage("${app_name}_temp_query") != "") {
+      codeMirror.setValue($.totalStorage("${app_name}_temp_query"));
+    }
+    % endif
+
+    codeMirror.on("blur", function () {
+      $(document.body).off("contextmenu");
+    });
+
+    codeMirror.on("change", function () {
+      $(".query").val(codeMirror.getValue());
+      $.totalStorage("${app_name}_temp_query", codeMirror.getValue());
+    });
+  });
+
+
+  // Edit query name and description.
+  $(document).one('fetched.query', function() {
+    // editor
+    $("#collapse-editor").on("click", function () {
+      if ($("#query .card-body").is(":visible")) {
+        $("#query .card-body").slideUp(100, function () {
+          $(".dataTables_wrapper").jHueTableScroller();
+          $(".resultTable").jHueTableExtender({
+            hintElement: "#jumpToColumnAlert",
+            fixedHeader: true,
+            firstColumnTooltip: true
+          });
+        });
+        $("#collapse-editor i").removeClass("fa-caret-up").addClass("fa-caret-down");
+      }
+      else {
+        $("#query .card-body").slideDown(100, function () {
+          $(".dataTables_wrapper").jHueTableScroller();
+          $(".resultTable").jHueTableExtender({
+            hintElement: "#jumpToColumnAlert",
+            fixedHeader: true,
+            firstColumnTooltip: true
+          });
+        });
+        $("#collapse-editor i").removeClass("fa-caret-down").addClass("fa-caret-up");
+      }
+    });
+    
+    $("#query-name").editable({
+      validate: function (value) {
+        if ($.trim(value) == '') {
+          return "${ _('This field is required.') }";
+        }
+      },
+      success: function(response, newValue) {
+        viewModel.query.name(newValue);
+      },
+      emptytext: "${ _('Query name') }"
+    });
+
+    $("#query-description").editable({
+      success: function(response, newValue) {
+        viewModel.query.description(newValue);
+      },
+      emptytext: "${ _('Empty description') }"
+    });
+  });
+
+
+  // Logs
+  $(document).ready(function(){
+    var labels = {
+      MRJOB: "${_('MR Job')}",
+      MRJOBS: "${_('MR Jobs')}"
+    };
+
+    var logsAtEnd = true;
+
+    $(window).resize(function () {
+      resizeLogs();
+    });
+
+    $("a[href='#log']").on("shown", function () {
+      resizeLogs();
+    });
+
+    $("#log pre").scroll(function () {
+      if ($(this).scrollTop() + $(this).height() + 20 >= $(this)[0].scrollHeight) {
+        logsAtEnd = true;
+      }
+      else {
+        logsAtEnd = false;
+      }
+    });
+
+    function resizeLogs() {
+      // Use fixed subtraction since logs aren't always visible.
+      $("#log pre").css("overflow", "auto").height($(window).height() - 557);
+    }
+  });
+
+
+  // Result Datatable
+  function cleanResultsTable() {
+    if (dataTable) {
+      dataTable.fnClearTable();
+      dataTable.fnDestroy();
+      viewModel.columns.valueHasMutated();
+      viewModel.rows.valueHasMutated();
+      dataTable = null;
+    }
+  }
+
+  function addResults(viewModel, dataTable, index, pageSize) {
+    if (viewModel.hasMoreResults() && index + pageSize > viewModel.rows().length) {
+      $(document).one('fetched.results', function() {
+        dataTable.fnAddData(viewModel.rows.slice(index, index+pageSize));
+      });
+      viewModel.fetchResults();
+    } else {
+      dataTable.fnAddData(viewModel.rows.slice(index, index+pageSize));
+    }
+  }
+
+  function resultsTable() {
+    if (!dataTable) {
+      dataTable = $(".resultTable").dataTable({
+        "bPaginate": false,
+        "bLengthChange": false,
+        "bInfo": false,
+        "bAutoWidth": false,
+        "oLanguage": {
+          "sEmptyTable": "${_('No data available')}",
+          "sZeroRecords": "${_('No matching records')}"
+        },
+        "fnDrawCallback": function( oSettings ) {
+          $(".resultTable").jHueTableExtender({
+            hintElement: "#jumpToColumnAlert",
+            fixedHeader: true,
+            firstColumnTooltip: true
+          });
+        },
+        "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
+          // Make sure null values are seen as NULL.
+          for(var j = 0; j < aData.length; ++j) {
+            if (aData[j] == null) {
+              $(nRow).find('td:eq('+j+')').html("NULL");
+            }
+          }
+          return nRow;
+        }
       });
       $(".dataTables_filter").hide();
       $(".dataTables_wrapper").jHueTableScroller();
