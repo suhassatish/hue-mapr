@@ -23,17 +23,21 @@ function sparkViewModel() {
   self.autoContext = ko.observable(true);
   self.contexts = ko.observableArray(); // List of contexts
   self.selectedContext = ko.observable(0);
-  self.classPathes = ko.observableArray(); // Read from upload or edit manually or better API
-  self.classPath = ko.observable('spark.jobserver.WordCountExample');
+  self.classPath = ko.observable('');
+
   self.query = ko.mapping.fromJS({
     'id': -1,
     'jobId': null,
-    'context': null,
-    'query': '', // query == params
     'name': null,
     'description': null,
-    'errors': []
+    'errors': [],
+    'appName': '',
+    'classPath': '',
+    'context': '',
+    'autoContext': true,
+    'params': [],
   });
+
   self.rows = ko.observableArray();
   self.resultsEmpty = ko.observable(false);
 
@@ -41,7 +45,7 @@ function sparkViewModel() {
     'read': function() {
       if (self.appNames().length > 0) {
         return self.appNames()[self.selectedAppName()];
-      } else{
+      } else {
         return null;
       }
     },
@@ -58,7 +62,7 @@ function sparkViewModel() {
     'read': function() {
       if (self.contexts().length > 0) {
         return self.contexts()[self.selectedContext()];
-      } else{
+      } else {
         return null;
       }
     },
@@ -74,9 +78,14 @@ function sparkViewModel() {
   self.updateResults = function(results) {
     self.rows.removeAll();
     var newRows = [];
-    $.each(results, function(key, value) {
-      newRows.push([key, value]);
-    });
+    // Is a list of map
+    if ($.inArray($.type(results), ['array', 'object']) != -1) {
+      $.each(results, function(key, value) {
+        newRows.push([key, value]);
+      });
+    } else {
+      newRows.push([0, results]);
+    }
     self.rows(newRows);
   };
 
@@ -90,7 +99,7 @@ function sparkViewModel() {
     });
     self.appNames(newAppNames);
 
-    var last = $.totalStorage('hueSparkLastAppName') || (newAppNames.length > 0 ? newAppNames[0].name() : null);
+    var last = newAppNames.length > 0 ? newAppNames[0].name() : null;
     if (last) {
       self.appName(last);
     }
@@ -103,10 +112,18 @@ function sparkViewModel() {
     });
     self.contexts(newContexts);
 
-    var last = $.totalStorage('hueSparkLastContext') || (newContexts.length > 0 ? newContexts[0].name() : null);
+    var last = newContexts.length > 0 ? newContexts[0].name() : null;
     if (last) {
       self.context(last);
     }
+  };
+
+  self.addParam = function() {
+    self.query.params.push({name: "", value: ""});
+  };
+
+  self.removeParam = function() {
+    self.query.params.remove(this);
   };
 
   function createDropdownItem(item) {
@@ -116,12 +133,22 @@ function sparkViewModel() {
     };
   };
 
-  self.updateQuery = function(design) {
-    self.query.query(design.query);
+  self.loadDesign = function(design) {
     self.query.id(design.id);
     self.query.name(design.name);
     self.query.description(design.desc);
-    self.server(design.server);
+
+    self.query.appName(design.appName);
+    self.query.classPath(design.classPath);
+    self.query.autoContext(design.autoContext);
+    self.query.params(design.params);
+
+    self.appName(design.appName);
+    self.chooseAppName(design.appName);
+    self.autoContext(design.autoContext);
+    self.context(design.context);
+    self.chooseContext(design.context);
+    self.classPath(design.classPath);
   };
 
   self.chooseAppName = function(value, e) {
@@ -130,7 +157,6 @@ function sparkViewModel() {
         self.selectedAppName(index);
       }
     });
-    $.totalStorage('hueSparkLastAppName', self.appName().name());
   };
 
   self.chooseContext = function(value, e) {
@@ -139,7 +165,6 @@ function sparkViewModel() {
         self.selectedContext(index);
       }
     });
-    $.totalStorage('hueSparkLastContext', self.context().name());
   };
 
   var error_fn = function(jqXHR, status, errorThrown) {
@@ -150,29 +175,18 @@ function sparkViewModel() {
     }
   };
 
-  self.fetchQuery = function(id) {
-    var _id = id || self.query.id();
-    if (_id && _id != -1) {
-      var request = {
-        url: '/spark/api/query/' + _id + '/get',
-        dataType: 'json',
-        type: 'GET',
-        success: function(data) {
-          self.updateQuery(data.design);
-        },
-        error: error_fn
-      };
-      $.ajax(request);
-    }
-  };
-
   self.saveQuery = function() {
     var self = this;
-    if (self.query.query() && self.query.name()) {
+    if (self.query.name()) {
       var data = ko.mapping.toJS(self.query);
-      data['desc'] = data['description'];
-      data['server'] = self.server().name();
-      var url = '/spark/api/query/';
+      data['saveform-name'] = data['name'];
+      data['saveform-desc'] = data['description'];
+      data['query-appName'] = self.appName().name;
+      data['query-classPath'] = self.classPath();
+      data['query-autoContext'] = self.autoContext();
+      data['query-context'] = self.context().name;
+      data['query-params'] = JSON.stringify(self.query.params());
+      var url = '/spark/api/save_query/';
       if (self.query.id() && self.query.id() != -1) {
         url += self.query.id() + '/';
       }
@@ -181,7 +195,11 @@ function sparkViewModel() {
         dataType: 'json',
         type: 'POST',
         success: function(data) {
-          $(document).trigger('saved.query', data);
+          if (data.status == 0) {
+            $(document).trigger('saved.query', data);
+          } else {
+        	self.query.errors.push(data.message);
+          }
         },
         error: function() {
           $(document).trigger('error.query');
@@ -197,13 +215,15 @@ function sparkViewModel() {
     data.appName = self.appName().name;
     data.classPath = self.classPath();
     data.autoContext = self.autoContext();
-    data.context = self.context().name;
+    data.context = self.context() ? self.context().name : '';
+    data.params = JSON.stringify(self.query.params());
     var request = {
       url: '/spark/api/execute',
       dataType: 'json',
       type: 'POST',
       success: function(data) {
         self.query.errors.removeAll();
+        self.rows.removeAll();
         if (data.status == 0) {
           $(document).trigger('execute.query', data);
           self.query.id(data.design);
@@ -221,8 +241,8 @@ function sparkViewModel() {
   };
 
   self.checkQueryStatus = function() {
-	var timerId = 0;
-	
+  var timerId = 0;
+
     var request = {
       url: '/spark/api/job/' + self.query.jobId(),
       dataType: 'json',
@@ -230,9 +250,8 @@ function sparkViewModel() {
       success: function(data) {
         // Script finished
         if (data.results.status == 'OK' || data.results.status == 'ERROR') {
-    	  clearInterval(timerId);
-    	  self.updateResults(data.results.result);
-
+          clearInterval(timerId);
+          self.updateResults(data.results.result);
           self.resultsEmpty($.isEmptyObject(data.results.result));
           $(document).trigger('executed.query', data);
         }
@@ -243,6 +262,12 @@ function sparkViewModel() {
     timerId = setInterval(function(){
       $.ajax(request);
     }, 1000);
+  };
+
+  self.openQuery = function(jobId) {
+    self.query.jobId(jobId);
+    $(document).trigger('execute.query');
+    self.checkQueryStatus();
   };
 
   self.fetchAppNames = function() {
@@ -280,10 +305,10 @@ function sparkViewModel() {
       success: function(result) {
         self.query.errors.removeAll();
         if (result.status == 'OK') {
-      	  self.contexts().push(createDropdownItem(result.name));
-      	  self.context(result.name);
-      	  self.autoContext(false);
-      	  $(document).trigger('created.context', data);
+          self.contexts.push(createDropdownItem(result.name));
+          self.context(result.name);
+          self.autoContext(false);
+          $(document).trigger('created.context', data);
         } else {
           $(document).trigger('error', result.result);
         }

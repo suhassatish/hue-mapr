@@ -15,7 +15,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import datetime
 import json
 import logging
 
@@ -26,25 +25,15 @@ from desktop.context_processors import get_app_name
 from desktop.lib.exceptions import StructuredException
 
 from beeswax import models as beeswax_models
-from beeswax.forms import SaveForm
-from beeswax.views import authorized_get_history, safe_get_design
+from beeswax.views import safe_get_design, save_design
 
-from spark import conf
-from spark.design import SparkDesign
-from spark.views import save_design
 from spark.job_server_api import get_api
-from spark.forms import SparkForm, UploadApp
-import urllib
+from spark.forms import SparkForm, QueryForm
+from desktop.lib.i18n import smart_str
+from spark.design import SparkDesign
 
 
 LOG = logging.getLogger(__name__)
-
-
-class ResultEncoder(json.JSONEncoder):
-  def default(self, obj):
-    if isinstance(obj, datetime.datetime):
-      return obj.strftime('%Y-%m-%d %H:%M:%S %Z')
-    return super(ResultEncoder, self).default(obj)
 
 
 def error_handler(view_fn):
@@ -111,11 +100,12 @@ def delete_context(request):
   api = get_api(request.user)
   try:
     response = api.delete_context(name)
+  except ValueError:
+    # No json is returned
+    response = {'status': 'OK'}
   except Exception, e:
-    if e.message != 'No JSON object could be decoded':
-      response = json.loads(e.message)
-    else:
-      response = {'status': 'OK'}
+    response = json.loads(e.message)
+
   response['name'] = name
 
   return HttpResponse(json.dumps(response), mimetype="application/json")
@@ -156,21 +146,26 @@ def execute(request, design_id=None):
 #      query_history.last_state = beeswax_models.QueryHistory.STATE.expired.index
 #      query_history.save()
 
+      params = '\n'.join(['%(name)s=%(value)s' % param for param in json.loads(form.cleaned_data['params'])])
+
       try:
         api = get_api(request.user)
 
         results = api.submit_job(
             form.cleaned_data['appName'],
             form.cleaned_data['classPath'],
-            data=form.cleaned_data['query'],
+            data=params,
             context=None if form.cleaned_data['autoContext'] else form.cleaned_data['context'],
             sync=False
         )
-        response['status'] = 0
-        response['results'] = results
-        #response['design'] = design.id
+
+        if results['status'] == 'STARTED':
+          response['status'] = 0
+          response['results'] = results
+        else:
+          response['message'] = str(results[1]['result'])
+        response['design'] = design.id
       except Exception, e:
-        response['status'] = -1
         response['message'] = str(e)
 
     else:
@@ -179,51 +174,6 @@ def execute(request, design_id=None):
   except RuntimeError, e:
     response['message']= str(e)
 
-  return HttpResponse(json.dumps(response, cls=ResultEncoder), mimetype="application/json")
-
-
-@error_handler
-def fetch_results(request, id, first_row=0):
-  """
-  Returns the results of the QueryHistory with the given id.
-
-  The query results MUST be ready.
-
-  If ``first_row`` is 0, restarts (if necessary) the query read.  Otherwise, just
-  spits out a warning if first_row doesn't match the servers conception.
-  Multiple readers will produce a confusing interaction here, and that's known.
-  """
-  first_row = long(first_row)
-  results = type('Result', (object,), {
-                'rows': 0,
-                'columns': [],
-                'has_more': False,
-                'start_row': 0,
-            })
-  fetch_error = False
-  error_message = ''
-
-  query_history = authorized_get_history(request, id, must_exist=True)
-  query_server = query_history.get_query_server_config()
-  design = SQLdesign.loads(query_history.design.data)
-  db = dbms.get(request.user, query_server)
-
-  try:
-    database = design.query.get('database', 'default')
-    db.use(database)
-    datatable = db.execute_and_wait(design)
-    results = db.client.create_result(datatable)
-    status = 0
-  except Exception, e:
-    fetch_error = True
-    error_message = str(e)
-    status = -1
-
-  response = {
-    'status': status,
-    'message': fetch_error and error_message or '',
-    'results': results_to_dict(results)
-  }
   return HttpResponse(json.dumps(response), mimetype="application/json")
 
 
@@ -237,17 +187,20 @@ def save_query(request, design_id=None):
   app_name = get_app_name(request)
   query_type = beeswax_models.SavedQuery.TYPES_MAPPING[app_name]
   design = safe_get_design(request, query_type, design_id)
-
+  form = QueryForm()
+  api = get_api(request.user)
+  app_names = api.jars()
+  print request.POST
   try:
-    save_form = SaveForm(request.POST.copy())
-    query_form = get_query_form(request, design_id)
+    form.bind(request.POST)
+    form.query.fields['appName'].choices = ((key, key) for key in app_names)
 
-    if query_form.is_valid() and save_form.is_valid():
-      design = save_design(request, save_form, query_form, query_type, design, True)
+    if form.is_valid():
+      design = save_design(request, form, query_type, design, True)
       response['design_id'] = design.id
       response['status'] = 0
     else:
-      response['errors'] = query_form.errors
+      response['message'] = smart_str(form.query.errors) + smart_str(form.saveform.errors)
   except RuntimeError, e:
     response['message'] = str(e)
 
@@ -269,29 +222,18 @@ def fetch_saved_query(request, design_id):
   return HttpResponse(json.dumps(response), mimetype="application/json")
 
 
-def results_to_dict(results):
-  data = {}
-  rows = []
-  for row in results.rows():
-    rows.append(dict(zip(results.columns, row)))
-  data['rows'] = rows
-  data['start_row'] = results.start_row
-  data['has_more'] = results.has_more
-  data['columns'] = results.columns
-  return data
-
-
 def design_to_dict(design):
-  sql_design = SQLdesign.loads(design.data)
+  spark_design = SparkDesign.loads(design.data)
   return {
     'id': design.id,
-    'query': sql_design.sql_query,
     'name': design.name,
     'desc': design.desc,
-    'server': sql_design.server,
-    'database': sql_design.database
+    'appName': spark_design.appName,
+    'classPath': spark_design.classPath,
+    'autoContext': spark_design.autoContext,
+    'context': spark_design.context,
+    'params': json.loads(spark_design.params),
   }
-
 
 def get_query_form(request):
   api = get_api(request.user)
@@ -299,7 +241,7 @@ def get_query_form(request):
   app_names = api.jars()
 
   if not app_names:
-    raise RuntimeError(_("Server specified a jar name."))
+    raise RuntimeError(_("Missing application jar list."))
 
   form = SparkForm(request.POST, app_names=app_names)
 
