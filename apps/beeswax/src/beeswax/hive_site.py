@@ -27,7 +27,7 @@ import socket
 
 from desktop.lib import security_util
 
-import beeswax.conf
+from beeswax.conf import HIVE_CONF_DIR, HIVE_SERVER_HOST, HIVE_SERVER_PORT
 from hadoop import confparse
 
 
@@ -44,6 +44,7 @@ _CNF_METASTORE_KERBEROS_PRINCIPAL = 'hive.metastore.kerberos.principal'
 _CNF_HIVESERVER2_KERBEROS_PRINCIPAL = 'hive.server2.authentication.kerberos.principal'
 _CNF_HIVESERVER2_AUTHENTICATION = 'hive.server2.authentication'
 _CNF_HIVESERVER2_IMPERSONATION = 'hive.server2.enable.doAs'
+
 
 # Host is whatever up to the colon. Allow and ignore a trailing slash.
 _THRIFT_URI_RE = re.compile("^thrift://([^:]+):(\d+)[/]?$")
@@ -118,6 +119,10 @@ def get_hiveserver2_authentication():
 def hiveserver2_impersonation_enabled():
   return get_conf().get(_CNF_HIVESERVER2_IMPERSONATION, 'FALSE').upper() == 'TRUE'
 
+def hiveserver2_jdbc_url():
+  return 'jdbc:hive2://%s:%s' % (HIVE_SERVER_HOST.get(), HIVE_SERVER_PORT.get())
+
+
 def _parse_hive_site():
   """
   Parse hive-site.xml and store in _HIVE_SITE_DICT
@@ -125,7 +130,7 @@ def _parse_hive_site():
   global _HIVE_SITE_DICT
   global _HIVE_SITE_PATH
 
-  _HIVE_SITE_PATH = os.path.join(beeswax.conf.HIVE_CONF_DIR.get(), 'hive-site.xml')
+  _HIVE_SITE_PATH = os.path.join(HIVE_CONF_DIR.get(), 'hive-site.xml')
   try:
     data = file(_HIVE_SITE_PATH, 'r').read()
   except IOError, err:
