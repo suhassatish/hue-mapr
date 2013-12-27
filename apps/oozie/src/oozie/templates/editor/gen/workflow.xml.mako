@@ -29,19 +29,40 @@
     % endif
   </global>
   % endif
-  % if mapping.get('is_kerberized_hive'):
+  <%
+    credentials = workflow.credentials
+  %>
+  % if credentials:
   <credentials>
-    <credential name='hive_credentials' type='${ mapping['credential_type'] }'>
+    % if 'hcat' in credentials:
+    <credential name="${ mapping['credential_hcat_xml_name'] }" type="${ mapping['credential_hcat_name'] }">
       <property>
         <name>hcat.metastore.uri</name>
-        <value>${ mapping['thrift_server'] }</value>
+        <value>${ mapping['credential_hcat_uri'] }</value>
       </property>
       <property>
         <name>hcat.metastore.principal</name>
-        <value>${ mapping['hive_principal'] }</value>
+        <value>${ mapping['credential_hcat_principal'] }</value>
       </property>
     </credential>
-   </credentials>
+    % endif
+    % if 'hive2' in credentials:
+    <credential name="${ mapping['credential_hive2_xml_name'] }" type="${ mapping['credential_hive2_name'] }">
+      <property>
+        <name>hive2.jdbc.url</name>
+        <value>${ mapping['credential_hive2_uri'] }</value>
+      </property>
+      <property>
+        <name>hive2.server.principal</name>
+        <value>${ mapping['credential_hive2_principal'] }</value>
+      </property>
+    </credential>
+    % endif
+    % if 'hbase' in credentials:
+    <credential name="${ mapping['credential_hbase_xml_name'] }" type="${ mapping['credential_hbase_name'] }">
+    </credential>
+    % endif
+  </credentials>
   % endif
   % for node in workflow.node_list:
       ${ node.to_xml(mapping) | n }
