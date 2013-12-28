@@ -65,6 +65,111 @@ var connections = (function($) {
         });
         return connection_string;
       });
+      self.jdbcDriver = ko.computed(function() {
+        var jdbc_driver = null;
+        $.each(self.connector(), function(index, form) {
+          if (form.name() == 'connection') {
+            $.each(form.inputs(), function(index, input) {
+              if (input.name() == 'connection.jdbcDriver') {
+                jdbc_driver = input.value();
+              }
+            });
+          }
+        });
+        return jdbc_driver;
+      });
+      self.host = ko.computed(function() {
+        var pattern = null;
+        switch (self.jdbcDriver()) {
+          case 'com.mysql.jdbc.Driver':
+          pattern = /jdbc:mysql:\/\/([^\:\/]+?).*/;
+          break;
+          case 'org.postgresql.Driver':
+          pattern = /jdbc:postgresql:\/\/([^\:\/]+?).*/;
+          break;
+          case 'oracle.jdbc.OracleDriver':
+          pattern = /jdbc:oracle:thin:@([^\:\/]+?).*/;
+          break;
+        }
+        if (pattern) {
+          var res = self.connectionString().match(pattern);
+          if (res) {
+            return res[1];
+          } else {
+            return null;
+          }
+        }
+      });
+      self.port = ko.computed(function() {
+        var pattern = null;
+        switch (self.jdbcDriver()) {
+          case 'com.mysql.jdbc.Driver':
+          pattern = /jdbc:mysql:\/\/([^\:\/]+?):(\d+)\/.*/;
+          break;
+          case 'org.postgresql.Driver':
+          pattern = /jdbc:postgresql:\/\/([^\:\/]+?):(\d+)\/.*/;
+          break;
+          case 'oracle.jdbc.OracleDriver':
+          pattern = /jdbc:oracle:thin:@([^\:\/]+?):(\d+):.*/;
+          break;
+        }
+        if (pattern) {
+          var res = self.connectionString().match(pattern);
+          if (res) {
+            return res[2];
+          } else {
+            return null;
+          }
+        }
+      });
+      self.database = ko.computed(function() {
+        var pattern = null;
+        switch (self.jdbcDriver()) {
+          case 'com.mysql.jdbc.Driver':
+          pattern = /jdbc:mysql:\/\/.*?\/(.*)/;
+          break;
+          case 'org.postgresql.Driver':
+          pattern = /jdbc:postgresql:\/\/.*?\/(.*)/;
+          break;
+          case 'oracle.jdbc.OracleDriver':
+          pattern = /jdbc:oracle:thin:@.*?:.*?:(.*)/;
+          break;
+        }
+        if (pattern) {
+          var res = self.connectionString().match(pattern);
+          if (res) {
+            return res[1];
+          } else {
+            return null;
+          }
+        }
+      });
+      self.username = ko.computed(function() {
+        var username = null;
+        $.each(self.connector(), function(index, form) {
+          if (form.name() == 'connection') {
+            $.each(form.inputs(), function(index, input) {
+              if (input.name() == 'connection.username') {
+                username = input.value();
+              }
+            });
+          }
+        });
+        return username;
+      });
+      self.password = ko.computed(function() {
+        var password = null;
+        $.each(self.connector(), function(index, form) {
+          if (form.name() == 'connection') {
+            $.each(form.inputs(), function(index, input) {
+              if (input.name() == 'connection.password') {
+                password = input.value();
+              }
+            });
+          }
+        });
+        return password;
+      });
     },
     'map': function() {
       var self = this;

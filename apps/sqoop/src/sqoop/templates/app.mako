@@ -15,6 +15,7 @@
 ## limitations under the License.
 <%!
   from desktop.views import commonheader, commonfooter
+  from django.template.defaultfilters import urlencode
   from django.utils.translation import ugettext as _
   from django.core.urlresolvers import reverse
 %>
@@ -218,7 +219,7 @@ ${ commonheader(None, "sqoop", user) | n,unicode }
             <div class="controls">
               <select class="input-xlarge" name="connector" data-bind="'options': $root.connectors, 'optionsText': function(item) { return item.name(); }, 'optionsValue': function(item) { return item.id(); }, 'value': connector_id">
               </select>
-              </div>
+            </div>
           </div>
           <fieldset data-bind="foreach: connector">
             <div data-bind="foreach: inputs">
@@ -243,16 +244,26 @@ ${ commonheader(None, "sqoop", user) | n,unicode }
 <div data-bind="template: {'name': modal.name(), 'if': modal.name()}" id="modal-container" class="modal hide fade"></div>
 
 <div id="chooseFile" class="modal hide fade">
-    <div class="modal-header">
-        <a href="#" class="close" data-dismiss="modal">&times;</a>
-        <h3>${_('Choose a folder')}</h3>
+  <div class="modal-header">
+    <a href="#" class="close" data-dismiss="modal">&times;</a>
+    <h3>${_('Choose a folder')}</h3>
+  </div>
+  <div class="modal-body">
+    <div id="filechooser"></div>
+  </div>
+  <div class="modal-footer"></div>
+</div>
+
+<div id="jHueHdfsAutocomplete" class="popover bottom" style="position:absolute;display:none;max-width:1000px;z-index:33000">
+  <div class="arrow"></div>
+  <div class="popover-inner">
+    <h3 class="popover-title"></h3>
+    <div class="popover-content">
+      <p>
+        <ul class="unstyled"></ul>
+      </p>
     </div>
-    <div class="modal-body">
-        <div id="filechooser">
-        </div>
-    </div>
-    <div class="modal-footer">
-    </div>
+  </div>
 </div>
 
 <script type="text/html" id="delete-job-modal">
@@ -598,8 +609,10 @@ ${ commonheader(None, "sqoop", user) | n,unicode }
 <script src="/static/ext/js/knockout.mapping-2.3.2.js" type="text/javascript" charset="utf-8"></script>
 <script src="/static/ext/js/bootstrap-editable.min.js"></script>
 <script src="/static/ext/js/knockout.x-editable.js"></script>
+<script src="/static/js/jquery.hdfsautocomplete.js" type="text/javascript" charset="utf-8"></script>
 <script src="/sqoop/static/js/cclass.js" type="text/javascript" charset="utf-8"></script>
 <script src="/sqoop/static/js/koify.js" type="text/javascript" charset="utf-8"></script>
+<script src="/sqoop/static/js/sqoop.autocomplete.js" type="text/javascript" charset="utf-8"></script>
 <script src="/sqoop/static/js/sqoop.utils.js" type="text/javascript" charset="utf-8"></script>
 <script src="/sqoop/static/js/sqoop.wizard.js" type="text/javascript" charset="utf-8"></script>
 <script src="/sqoop/static/js/sqoop.forms.js" type="text/javascript" charset="utf-8"></script>
@@ -771,6 +784,88 @@ $(document).on('delete_fail.job', handle_form_errors);
 $(document).on('show_section', function(e, section){
   viewModel.shownSection(section);
 });
+$(document).on('changed.page', function(e, jobWizard) {
+  // Autocomplete fields and table name
+  $('input[name="table.tableName"]').typeahead({
+    'source': function(query, process) {
+      var database = viewModel.connection().database();
+      switch (viewModel.connection().jdbcDriver()) {
+        case 'com.mysql.jdbc.Driver':
+        return autocomplete.tables('mysql', database);
+        case 'org.postgresql.Driver':
+        return autocomplete.tables('postgresql', database);
+        case 'oracle.jdbc.OracleDriver':
+        return autocomplete.tables('oracle', database);
+      }
+      return [];
+    }
+  });
+  $('input[name="table.partitionColumn"],input[name="table.columns"]').typeahead({
+    'source': function(query, process) {
+      var database = viewModel.connection().database();
+      if (viewModel.job()) {
+        var table = viewModel.job().table();
+        switch (viewModel.connection().jdbcDriver()) {
+          case 'com.mysql.jdbc.Driver':
+          return autocomplete.columns('mysql', database, table);
+          break;
+          case 'org.postgresql.Driver':
+          return autocomplete.columns('postgresql', database, table);
+          break;
+          case 'oracle.jdbc.OracleDriver':
+          return autocomplete.columns('oracle', database, table);
+        }
+        return [];
+      }
+    }
+  });
+  // Autocomplete HDFS paths
+  $('input[name="output.outputDirectory"],input[name="input.inputDirectory"]').jHueHdfsAutocomplete({
+    home: "/user/${ user }/",
+    smartTooltip: "${_('Did you know? You can use the tab key or CTRL + Space to autocomplete file and folder names')}"
+  });
+});
+$(document).on('shown_section', (function(){
+  var connectionEditorShown = false;
+  return function(e, section) {
+    if (section == 'connection-editor' && !connectionEditorShown) {
+      connectionEditorShown = true;
+      $('input[name="connection.jdbcDriver"]').typeahead({
+        'source': [
+          'com.mysql.jdbc.Driver',
+          'org.postgresql.Driver',
+          'oracle.jdbc.OracleDriver'
+        ]
+      });
+      $('input[name="connection.connectionString"]').typeahead({
+        'source': function(query, process) {
+          var arr = [];
+          switch (viewModel.connection().jdbcDriver()) {
+            case 'com.mysql.jdbc.Driver':
+            arr = $.map(autocomplete.databases('mysql'), function(value, index) {
+              return 'jdbc:mysql://' + host + ':' + port + '/' + value;
+            });
+            arr.push('jdbc:mysql://[host]:[port]/[database]');
+            break;
+            case 'org.postgresql.Driver':
+            arr = $.map(autocomplete.databases('postgresql'), function(value, index) {
+              return 'jdbc:postgresql://' + host + ':' + port + '/' + value;
+            });
+            arr.push('jdbc:postgresql://[host]:[port]/[database]');
+            break;
+            case 'oracle.jdbc.OracleDriver':
+            arr = $.map(autocomplete.databases('oracle'), function(value, index) {
+              return 'jdbc:oracle:thin:' + host + '@:' + port + ':' + value;
+            });
+            arr.push('jdbc:oracle:thin:@[host]:[port]:[sid]');
+            break;
+          }
+          return arr;
+        }
+      });
+    }
+  };
+})());
 
 $(document).on('keyup', 'input#filter', function() {
   viewModel.filter($('#filter').val());
@@ -962,6 +1057,7 @@ $(document).ready(function () {
       } else {
         viewModel.jobWizard.index(viewModel.jobWizard.getIndex(page));
       }
+      $(document).trigger('changed.page', [viewModel.jobWizard]);
       $("*[rel=tooltip]").tooltip({
         placement: 'right'
       });
@@ -973,6 +1069,7 @@ $(document).ready(function () {
         $("*[rel=tooltip]").tooltip({
           placement: 'right'
         });
+        routie('job/edit/wizard/' + 0);
       });
     },
     "job/new": function () {
@@ -1130,6 +1227,7 @@ $(document).ready(function () {
     placement: 'right'
   });
 });
+
 </script>
 
 ${ commonfooter(messages) | n,unicode }
