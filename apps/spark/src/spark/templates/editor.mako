@@ -66,8 +66,10 @@ ${ common.navbar('editor') }
                 ${ _("Missing, add one?") }
               </a>
               <!-- /ko -->
-              <a data-bind="if: $root.appName" data-toggle="dropdown" href="javascript:void(0);"><strong data-bind="text: $root.appName().nice_name"></strong>
-                <i class="fa fa-caret-down"></i></a>
+              <a data-bind="if: $root.appName" data-toggle="dropdown" href="javascript:void(0);">
+                <strong data-bind="text: $root.appName().nice_name"></strong>
+                <i class="fa fa-caret-down"></i>
+              </a>
               <ul data-bind="foreach: $root.appNames" class="dropdown-menu">
                 <li data-bind="click: $root.chooseAppName, text: nice_name" class="selectable"></li>
               </ul>
@@ -118,7 +120,7 @@ ${ common.navbar('editor') }
             </div>
           </div>
 
-          <div data-bind="visible: query.params().length == 0">${_('There currently no parameters defined.')}</div>
+          <div data-bind="visible: query.params().length == 0">${_('No parameters defined yet.')}</div>
 
           <table class="table-condensed">
             <thead data-bind="visible: query.params().length > 0">
@@ -376,8 +378,15 @@ ${ common.createContextModal() }
       viewModel.openQuery("${ job_id }");
     % endif
     var hash = window.location.hash;
-    if (hash != "" && hash.indexOf("=") > -1 && hash.split("=")[0] == '#jobId') {
-      viewModel.openQuery(hash.split("=")[1]);
+    if (hash != "" && hash.indexOf("=") > -1) {
+      var hashKey = hash.split("=")[0].substr(1);
+      var hashValue = hash.split("=")[1];
+      if (hashKey == 'jobId') {
+        viewModel.openQuery(hashValue);
+      } else if (hashKey == 'applicationId') {
+        viewModel.query.appName(hashValue);
+      }
+
     }
     ko.applyBindings(viewModel);
   });

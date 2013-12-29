@@ -109,9 +109,9 @@ function sparkViewModel() {
     });
     self.appNames(newAppNames);
 
-    var last = newAppNames.length > 0 ? newAppNames[0].name() : null;
-    if (last) {
-      self.appName(last);
+    // Load back appName or guess
+    if (self.query.appName()) {
+      viewModel.setAppName( self.query.appName());
     }
   };
 
@@ -154,7 +154,7 @@ function sparkViewModel() {
     self.query.params(design.params);
 
     self.appName(design.appName);
-    self.chooseAppName(design.appName);
+    self.chooseAppName(self.appName());
     self.autoContext(design.autoContext);
     self.context(design.context);
     self.chooseContext(design.context);
@@ -164,6 +164,15 @@ function sparkViewModel() {
   self.chooseAppName = function(value, e) {
     $.each(self.appNames(), function(index, appName) {
       if (appName.name() == value.name()) {
+        self.selectedAppName(index);
+      }
+    });
+  };
+
+  self.setAppName = function(name) {
+    $.each(self.appNames(), function(index, appName) {
+      if (appName.name() == name) {
+        self.appName(name);
         self.selectedAppName(index);
       }
     });
@@ -194,7 +203,7 @@ function sparkViewModel() {
       data['query-appName'] = self.appName().name;
       data['query-classPath'] = self.classPath();
       data['query-autoContext'] = self.autoContext();
-      data['query-context'] = self.context().name;
+      data['query-context'] = self.context() ? self.context().name : '';
       data['query-params'] = JSON.stringify(self.query.params());
       var url = '/spark/api/save_query/';
       if (self.query.id() && self.query.id() != -1) {
