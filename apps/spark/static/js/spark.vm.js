@@ -14,6 +14,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+var SparkParameter = function (property) {
+  var self = this;
+
+  self.name = ko.observable(property.name);
+  self.value = ko.observable(property.value);
+};
 
 function sparkViewModel() {
   var self = this;
@@ -45,7 +51,7 @@ function sparkViewModel() {
     'classPath': '',
     'context': '',
     'autoContext': true,
-    'params': [],
+    'params': []
   });
 
   self.rows = ko.observableArray();
@@ -129,7 +135,8 @@ function sparkViewModel() {
   };
 
   self.addParam = function() {
-    self.query.params.push({name: "", value: ""});
+//    self.query.params.push({name: "", value: ""});
+    self.query.params.push(new SparkParameter({name: "", value: ""}));
   };
 
   self.removeParam = function() {
@@ -204,7 +211,8 @@ function sparkViewModel() {
       data['query-classPath'] = self.classPath();
       data['query-autoContext'] = self.autoContext();
       data['query-context'] = self.context() ? self.context().name : '';
-      data['query-params'] = JSON.stringify(self.query.params());
+      data['query-params'] = ko.toJSON(self.query.params());
+
       var url = '/spark/api/save_query/';
       if (self.query.id() && self.query.id() != -1) {
         url += self.query.id() + '/';
@@ -235,7 +243,7 @@ function sparkViewModel() {
     data.classPath = self.classPath();
     data.autoContext = self.autoContext();
     data.context = self.context() ? self.context().name : '';
-    data.params = JSON.stringify(self.query.params());
+    data.params = ko.toJSON(self.query.params());
     var request = {
       url: '/spark/api/execute',
       dataType: 'json',
@@ -339,5 +347,19 @@ function sparkViewModel() {
       data: data
     };
     $.ajax(request);
+  };
+
+  self.showFileChooser = function() {
+    var inputPath = this;
+    var path = inputPath.value().substr(0, inputPath.value().lastIndexOf("/"));
+    $("#filechooser").jHueFileChooser({
+      initialPath: path,
+      onFileChoose: function (filePath) {
+        inputPath.value(filePath);
+        $("#chooseFile").modal("hide");
+      },
+      createFolder: false
+    });
+    $("#chooseFile").modal("show");
   };
 }

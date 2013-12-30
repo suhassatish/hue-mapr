@@ -29,6 +29,7 @@ ${ common.navbar('editor') }
   <div class="row-fluid">
     <div class="card card-small">
       <div style="margin-bottom: 10px">
+        % if can_edit_name:
         <h1 class="card-heading simple">
           <a href="javascript:void(0);"
              id="query-name"
@@ -39,7 +40,6 @@ ${ common.navbar('editor') }
              data-placement="right">
           </a>
         </h1>
-        % if can_edit_name:
           <p style="margin-left: 20px">
             <a href="javascript:void(0);"
              id="query-description"
@@ -110,9 +110,13 @@ ${ common.navbar('editor') }
 
   <div class="row-fluid">
     <div class="card card-small">
-      <h1 class="card-heading simple">${_('Parameters')}</h1>
+      <h1 class="card-heading simple">
+        <a id="collapse-editor" href="javascript:void(0)" class="pull-right"><i class="fa fa-caret-up"></i></a>
+        ${_('Parameters')}
+      </h1>
       <div class="card-body">
         <p>
+          <div id="param-pane">
           <div data-bind="css: {'hide': query.errors().length == 0}" class="hide alert alert-error">
             <p><strong>${_('Your app configuration has the following error(s):')}</strong></p>
             <div data-bind="foreach: query.errors">
@@ -132,33 +136,39 @@ ${ common.navbar('editor') }
             </thead>
             <tbody data-bind="foreach: query.params">
               <tr>
-                <td><input type="text" class="span6 required propKey" data-bind="value: name" /></td>
-                <td><input type="text" class="span6 required pathChooserKo" data-bind="fileChooser: $data, value: value" /></td>
+                <td><input type="text" class="input-large required propKey" data-bind="value: name" /></td>
                 <td>
+                <div class="input-append">
+                  <input type="text" data-bind="value: value" class="input-xxlarge" />
+                  <button class="btn fileChooserBtn" data-bind="click: $root.showFileChooser">..</button>
+                </div>
+                </td>
+                <td style="vertical-align: top">
                   <a class="btn" href="#" data-bind="click: $root.removeParam">${ _('Delete') }</a>
                 </td>
               </tr>
             </tbody>
           </table>
+          <div style="margin-top: 20px">
+            <a class="btn" href="#" data-bind="click: $root.addParam">${ _('Add parameter') }</a>
+          </div>
 
-          <a class="btn" href="#" data-bind="click: $root.addParam">${ _('Add parameter') }</a>
-
-          <div class="actions">
+          <div class="actions" style="margin-top: 40px; margin-bottom: 20px">
             <button data-bind="click: tryExecuteQuery, enable: $root.appNames().length > 0 && $root.classPath()"
               type="button" id="executeQuery" class="btn btn-primary disable-feedback"
               tabindex="2" data-loading-text="${ _("Executing...") }">
               ${_('Execute')}
             </button>
-            <button data-bind="click: trySaveQuery, css: {'hide': !$root.query.id() || $root.query.id() == -1}" type="button" class="btn hide">${_('Save')}</button>
-            <button data-bind="click: trySaveAsQuery" type="button" class="btn">${_('Save as...')}</button>
+            <button data-bind="click: trySaveQuery, visible: ($root.query.id() && $root.query.id() != -1)" type="button" class="btn">${_('Save')}</button>
+            <button data-bind="click: trySaveAsQuery, visible: $root.appNames().length > 0" type="button" class="btn">${_('Save as...')}</button>
             &nbsp; ${_('or create a')} &nbsp;<a type="button" class="btn" href="${ url('spark:editor') }">${_('New app configuration')}</a>
             <span class="pull-right">
               <a type="button" class="btn" data-bind="visible: rows().length != 0, attr: {'href': '${ url('spark:download_result') }' + $root.query.jobId()}">${_('Download')}</a>
             </span>
           </div>
-
+        </div>
           <div data-bind="css: {'hide': rows().length == 0}" class="hide">
-            <div class="card card-small scrollable">
+            <div class="scrollable">
               <table class="table table-striped table-condensed resultTable" cellpadding="0" cellspacing="0" data-tablescroller-min-height-disable="true" data-tablescroller-enforce-height="true">
                 <thead>
                   <tr>
@@ -171,7 +181,7 @@ ${ common.navbar('editor') }
           </div>
 
           <div data-bind="css: {'hide': !resultsEmpty()}" class="hide">
-            <div class="card card-small scrollable">
+            <div class="scrollable">
               <div class="row-fluid">
                 <div class="span10 offset1 center empty-wrapper">
                   <i class="fa fa-frown-o"></i>
@@ -183,7 +193,7 @@ ${ common.navbar('editor') }
           </div>
 
           <div id="wait-info" class="hide">
-            <div class="card card-small scrollable">
+            <div class="scrollable">
               <div class="row-fluid">
                 <div class="span10 offset1 center" style="padding: 30px">
                   <!--[if !IE]><!--><i class="fa fa-spinner fa-spin" style="font-size: 60px; color: #DDD"></i><!--<![endif]-->
@@ -225,6 +235,20 @@ ${ common.navbar('editor') }
     <button data-bind="click: modalSaveAsQuery" class="btn btn-primary">${_('Save')}</button>
   </div>
 </div>
+
+<div id="chooseFile" class="modal hide fade">
+  <div class="modal-header">
+      <a href="#" class="close" data-dismiss="modal">&times;</a>
+      <h3>${_('Choose a file')}</h3>
+  </div>
+  <div class="modal-body">
+      <div id="filechooser">
+      </div>
+  </div>
+  <div class="modal-footer">
+  </div>
+</div>
+
 
 ${ common.uploadAppModal() }
 ${ common.createContextModal() }
@@ -389,6 +413,31 @@ ${ common.createContextModal() }
 
     }
     ko.applyBindings(viewModel);
+
+    $("#collapse-editor").on("click", function () {
+      if ($("#param-pane").is(":visible")) {
+        $("#param-pane").slideUp(100, function () {
+          $(".dataTables_wrapper").jHueTableScroller();
+          $(".resultTable").jHueTableExtender({
+            hintElement: "#jumpToColumnAlert",
+            fixedHeader: true,
+            firstColumnTooltip: true
+          });
+        });
+        $("#collapse-editor i").removeClass("fa-caret-up").addClass("fa-caret-down");
+      }
+      else {
+        $("#param-pane").slideDown(100, function () {
+          $(".dataTables_wrapper").jHueTableScroller();
+          $(".resultTable").jHueTableExtender({
+            hintElement: "#jumpToColumnAlert",
+            fixedHeader: true,
+            firstColumnTooltip: true
+          });
+        });
+        $("#collapse-editor i").removeClass("fa-caret-down").addClass("fa-caret-up");
+      }
+    });
   });
 
 
@@ -410,7 +459,12 @@ ${ common.createContextModal() }
   }
 
   function trySaveAsQuery() {
-    $('#saveAsQueryModal').modal('show');
+    if (viewModel.appName() != null && viewModel.appName() != ""){
+      $('#saveAsQueryModal').modal('show');
+    }
+    else {
+
+    }
   }
 
   $('.uploadAppModalBtn').click(function(){
