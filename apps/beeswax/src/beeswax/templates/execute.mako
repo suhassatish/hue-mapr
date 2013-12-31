@@ -203,7 +203,7 @@ ${layout.menubar(section='query')}
              data-placement="right">
           </a>
         %endif
-        <span data-bind="visible: $root.isRunning()">
+        <span data-bind="visible: $root.query.isRunning()">
           <!--[if !IE]><!--><i class="fa fa-spinner fa-spin" style="font-size: 20px; color: #999"></i><!--<![endif]-->
           <!--[if IE]><img src="/static/art/spinner.gif"/><![endif]-->
         </span>
@@ -236,8 +236,8 @@ ${layout.menubar(section='query')}
           <textarea class="hide" tabindex="1" name="query" id="queryField"></textarea>
 
           <div class="actions">
-            <button data-bind="click: tryExecuteQuery, visible: !$root.isRunning()" type="button" id="executeQuery" class="btn btn-primary" tabindex="2">${_('Execute')}</button>
-            <button data-bind="click: tryCancelQuery, visible: $root.isRunning()" class="btn btn-danger" data-loading-text="${ _('Canceling...') }" rel="tooltip" data-original-title="${ _('Cancel the query') }">${ _('Cancel') }</button>
+            <button data-bind="click: tryExecuteQuery, visible: !$root.query.isRunning()" type="button" id="executeQuery" class="btn btn-primary" tabindex="2">${_('Execute')}</button>
+            <button data-bind="click: tryCancelQuery, visible: $root.query.isRunning()" class="btn btn-danger" data-loading-text="${ _('Canceling...') }" rel="tooltip" data-original-title="${ _('Cancel the query') }">${ _('Cancel') }</button>
             <button data-bind="click: trySaveQuery, css: {'hide': !$root.query.id() || $root.query.id() == -1}" type="button" class="btn hide">${_('Save')}</button>
             <button data-bind="click: saveAsModal" type="button" class="btn">${_('Save as...')}</button>
             <button data-bind="click: tryExplainQuery" type="button" id="explainQuery" class="btn">${_('Explain')}</button>
@@ -252,7 +252,18 @@ ${layout.menubar(section='query')}
   </div>
 
   <div class="card card-small scrollable resultsContainer">
-    <a id="expandResults" href="javascript:void(0)" class="view-query-results hide pull-right"><h4 style="margin-right: 20px"><i class="fa fa-expand"></i></h4></a>
+    <a id="expandResults" href="javascript:void(0)" title="${_('See results in full screen')}" rel="tooltip"
+      class="view-query-results hide pull-right"><h4 style="margin-right: 20px"><i class="fa fa-expand"></i></h4></a>
+
+    <a id="save-results" data-bind="click: saveResultsModal" href="javascript:void(0)" title="${_('Save the results to HDFS or a new Hive table')}" rel="tooltip"
+      class="view-query-results hide pull-right"><h4 style="margin-right: 20px"><i class="fa fa-save"></i></h4></a>
+
+    <a id="download-csv" data-bind="attr: {'href': '/beeswax/download/' + $root.query.id() + '/csv'}" href="javascript:void(0)" title="${_('Download the results in CSV format')}" rel="tooltip"
+      class="view-query-results hide pull-right"><h4 style="margin-right: 20px"><i class="fa fa-arrow-circle-o-down"></i></h4></a>
+
+    <a id="download-excel" data-bind="attr: {'href': '/beeswax/download/' + $root.query.id() + '/xls'}" href="javascript:void(0)" title="${_('Download the results for excel')}" rel="tooltip"
+      class="view-query-results hide pull-right"><h4 style="margin-right: 20px"><i class="fa fa-arrow-circle-o-down"></i></h4></a>
+
     <div class="card-body">
       <ul class="nav nav-tabs">
         <!-- ko if: !query.explain() -->
@@ -274,12 +285,12 @@ ${layout.menubar(section='query')}
         </div>
         <!-- ko if: query.explain() -->
         <div class="tab-pane" id="explanation">
-          <pre data-bind="text: viewModel.explanation()"></pre>
+          <pre data-bind="text: $root.query.results.explanation()"></pre>
         </div>
         <!-- /ko -->
         <!-- ko if: !query.explain() -->
         <div class="active tab-pane" id="log">
-          <pre data-bind="text: viewModel.logs().join('\n')"></pre>
+          <pre data-bind="text: $root.query.watch.logs().join('\n')"></pre>
         </div>
         <div class="tab-pane" id="columns">
           <table class="table table-striped table-condensed" cellpadding="0" cellspacing="0">
@@ -294,17 +305,17 @@ ${layout.menubar(section='query')}
           </table>
         </div>
         <div class="tab-pane" id="results">
-          <div data-bind="css: {'hide': rows().length == 0}" class="hide">
+          <div data-bind="css: {'hide': $root.query.results.rows().length == 0}" class="hide">
             <table class="table table-striped table-condensed resultTable" cellpadding="0" cellspacing="0" data-tablescroller-min-height-disable="true" data-tablescroller-enforce-height="true">
               <thead>
-              <tr data-bind="foreach: columns">
+              <tr data-bind="foreach: $root.query.results.columns">
                 <th data-bind="text: $data.name, css: { 'sort-numeric': $.inArray($data.type, ['TINYINT_TYPE', 'SMALLINT_TYPE', 'INT_TYPE', 'BIGINT_TYPE', 'FLOAT_TYPE', 'DOUBLE_TYPE', 'DECIMAL_TYPE']) > -1, 'sort-date': $.inArray($data.type, ['TIMESTAMP_TYPE', 'DATE_TYPE']) > -1, 'sort-string': $.inArray($data.type, ['TINYINT_TYPE', 'SMALLINT_TYPE', 'INT_TYPE', 'BIGINT_TYPE', 'FLOAT_TYPE', 'DOUBLE_TYPE', 'DECIMAL_TYPE', 'TIMESTAMP_TYPE', 'DATE_TYPE']) == -1 }"></th>
               </tr>
               </thead>
             </table>
           </div>
 
-          <div data-bind="css: {'hide': !resultsEmpty()}" class="hide">
+          <div data-bind="css: {'hide': !$root.query.results.empty()}" class="hide">
             <div class="card card-small scrollable">
               <div class="row-fluid">
                 <div class="span10 offset1 center empty-wrapper">
@@ -350,16 +361,13 @@ ${layout.menubar(section='query')}
   <div class="row-fluid">
     <div class="card card-small">
       <h1 class="card-heading simple">${_('Please specify parameters for this query')}</h1>
-
       <div class="card-body">
         <p>
-
         <form method="POST" action="" class="form-horizontal">
           <fieldset>
             <!-- ko foreach: $root.query.parameters -->
             <div class="control-group">
               <label data-bind="text: name" class="control-label"></label>
-
               <div class="controls">
                 <input data-bind="value: value" type="text"/>
               </div>
@@ -424,6 +432,7 @@ ${layout.menubar(section='query')}
   </div>
 </div>
 
+
 <div id="saveAs" class="modal hide fade">
   <div class="modal-header">
     <a href="#" class="close" data-dismiss="modal">&times;</a>
@@ -449,6 +458,55 @@ ${layout.menubar(section='query')}
   <div class="modal-footer">
     <button class="btn" data-dismiss="modal">${_('Cancel')}</button>
     <button data-bind="click: trySaveAsQuery" class="btn btn-primary">${_('Save')}</button>
+  </div>
+</div>
+
+
+<div id="saveResultsModal" class="modal hide fade">
+  <div class="modal-header">
+    <a href="#" class="close" data-dismiss="modal">&times;</a>
+    <h3>${_('Save Query Results')}</h3>
+  </div>
+  <div class="modal-body">
+    <!-- ko if: $root.query.results.save.saveTargetError() -->
+      <h4 data-bind="text: $root.query.results.save.saveTargetError()"></h4>
+    <!-- /ko -->
+    <!-- ko if: $root.query.results.save.targetTableError() -->
+      <h4 data-bind="text: $root.query.results.save.targetTableError()"></h4>
+    <!-- /ko -->
+    <!-- ko if: $root.query.results.save.targetDirectoryError() -->
+      <h4 data-bind="text: $root.query.results.save.targetDirectoryError()"></h4>
+    <!-- /ko -->
+    <form id="saveResultsForm" method="POST" class="form form-inline">
+      <fieldset>
+        <div data-bind="css: {'error': $root.query.results.save.targetTableError()}" class="control-group">
+          <div class="controls">
+            <label class="radio">
+              <input data-bind="checked: $root.query.results.save.type" type="radio" name="save-results-type" value="hive-table">
+              &nbsp;${ _('In a new table') }
+            </label>
+            <span data-bind="visible: $root.query.results.save.type() == 'hive-table'">
+              <input data-bind="value: $root.query.results.save.path" type="text" name="target_table" placeholder="${_('Table name')}">
+            </span>
+          </div>
+        </div>
+        <div data-bind="css: {'error': $root.query.results.save.targetDirectoryError()}" class="control-group">
+          <div class="controls">
+            <label class="radio">
+              <input data-bind="checked: $root.query.results.save.type" type="radio" name="save-results-type" value="hdfs">
+              &nbsp;${ _('In an HDFS directory') }
+            </label>
+            <span data-bind="visible: $root.query.results.save.type() == 'hdfs'">
+              <input data-bind="value: $root.query.results.save.path" type="text" name="target_dir" placeholder="${_('Results location')}" class="pathChooser">
+            </span>
+          </div>
+        </div>
+      </fieldset>
+    </form>
+  </div>
+  <div class="modal-footer">
+    <button class="btn" data-dismiss="modal">${_('Cancel')}</button>
+    <button data-bind="click: trySaveResults" class="btn btn-primary">${_('Save')}</button>
   </div>
 </div>
 
@@ -510,6 +568,11 @@ ${layout.menubar(section='query')}
     width: 40px;
   }
 
+  .control-group label.radio {
+    float: none;
+    width: auto;
+  }
+
   .sidebar-nav {
     margin-bottom: 90px !important;
   }
@@ -546,6 +609,13 @@ ${layout.menubar(section='query')}
   .CodeMirror {
     border: 1px solid #eee;
     margin-bottom: 20px;
+  }
+
+  .editorError {
+    color: #B94A48;
+    background-color: #F2DEDE;
+    padding: 4px;
+    font-size: 11px;
   }
 
   .editorError {
@@ -1062,21 +1132,21 @@ function cleanResultsTable() {
   if (dataTable) {
     dataTable.fnClearTable();
     dataTable.fnDestroy();
-    viewModel.columns.valueHasMutated();
-    viewModel.rows.valueHasMutated();
+    viewModel.query.results.columns.valueHasMutated();
+    viewModel.query.results.rows.valueHasMutated();
     dataTable = null;
   }
 }
 
 function addResults(viewModel, dataTable, index, pageSize) {
-  if (viewModel.hasMoreResults() && index + pageSize > viewModel.rows().length) {
+  if (viewModel.hasMoreResults() && index + pageSize > viewModel.query.results.rows().length) {
     $(document).one('fetched.results', function () {
       $.totalStorage("${app_name}_temp_query", null);
-      dataTable.fnAddData(viewModel.rows.slice(index, index + pageSize));
+      dataTable.fnAddData(viewModel.query.results.rows.slice(index, index + pageSize));
     });
     viewModel.fetchResults();
   } else {
-    dataTable.fnAddData(viewModel.rows.slice(index, index + pageSize));
+    dataTable.fnAddData(viewModel.query.results.rows.slice(index, index + pageSize));
   }
 }
 
@@ -1167,6 +1237,12 @@ function trySaveQuery() {
   }
 }
 
+function saveAsModal() {
+  var query = getHighlightedQuery() || codeMirror.getValue();
+  viewModel.query.query(query);
+  $('#saveAs').modal('show');
+}
+
 function trySaveAsQuery() {
   if (viewModel.query.query() && viewModel.query.name()) {
     viewModel.query.id(-1);
@@ -1181,11 +1257,17 @@ function trySaveAsQuery() {
   }
 }
 
-function saveAsModal() {
-  var query = getHighlightedQuery() || codeMirror.getValue();
-  viewModel.query.query(query);
-  $('#saveAs').modal('show');
+function saveResultsModal() {
+  $('#saveResultsModal').modal('show');
 }
+
+function trySaveResults() {
+  viewModel.saveResults();
+}
+
+$(document).on('saved.results', function() {
+  $('#saveResultsModal').modal('hide');
+});
 
 
 // Querying and click events.
@@ -1290,6 +1372,8 @@ $(document).on('cancelled.query', function (e) {
 });
 
 $(document).ready(function () {
+  $(".pathChooser:not(:has(~ button))").after(getFileBrowseButton($(".pathChooser:not(:has(~ button))")));
+
   $("*[rel=tooltip]").tooltip({
     placement: 'bottom'
   });
@@ -1361,7 +1445,7 @@ $(document).ready(function () {
       showSection('explain-parameter-selection');
     },
     'query/logs': function () {
-      if (viewModel.logs().length == 0) {
+      if (viewModel.query.watch.logs().length == 0) {
         routie('query');
       }
       codeMirror.setSize("95%", 100);
@@ -1371,7 +1455,7 @@ $(document).ready(function () {
       clickHard('.resultsContainer .nav-tabs a[href="#log"]');
     },
     'query/results': function () {
-      if (viewModel.resultsEmpty()) {
+      if (viewModel.query.results.empty()) {
         routie('query');
       } else {
         codeMirror.setSize("95%", 100);
@@ -1382,7 +1466,7 @@ $(document).ready(function () {
       }
     },
     'query/explanation': function () {
-      if (!viewModel.explanation()) {
+      if (!viewModel.query.results.explanation()) {
         routie('query');
       }
       codeMirror.setSize("95%", 100);
