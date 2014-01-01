@@ -64,12 +64,6 @@ function BeeswaxViewModel(server, query_id) {
 
   self.updateDatabases = function(databases) {
     self.databases(databases);
-
-    var key = 'hueBeeswaxLastDatabase-' + self.server();
-    var last = $.totalStorage(key) || ((databases.length > 0) ? databases[0] : null);
-    if (last) {
-      self.database(last);
-    }
   };
 
   self.updateQuery = function(design) {
@@ -180,11 +174,11 @@ function BeeswaxViewModel(server, query_id) {
     var index = 0;
     data[prefix + '-next_form_id'] = arr.length;
     ko.utils.arrayForEach(arr, function(obj) {
-      $.each(members, function(index, member) {
+      $.each(members, function(i, member) {
         data[prefix + '-' + index + '-' + member] = obj[member]();
       });
       data[prefix + '-' + index + '-_exists'] = true;
-      data[prefix + '-' + index + '-_deleted'] = false;
+      data[prefix + '-' + index++ + '-_deleted'] = false;
     });
     return data;
   }
@@ -495,4 +489,21 @@ function showSection(section) {
   $('.section').hide();
   $('#' + section).show();
   $(window).scrollTop(0);
+}
+
+
+// File browser button
+function getFileBrowseButton(inputElement) {
+  return $("<button>").addClass("btn").addClass("fileChooserBtn").text("..").click(function (e) {
+    e.preventDefault();
+    $("#filechooser").jHueFileChooser({
+      initialPath: inputElement.val(),
+      onFileChoose: function (filePath) {
+        inputElement.val(filePath);
+        $("#chooseFile").modal("hide");
+      },
+      createFolder: false
+    });
+    $("#chooseFile").modal("show");
+  });
 }
