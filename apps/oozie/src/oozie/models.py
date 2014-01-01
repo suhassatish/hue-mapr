@@ -682,7 +682,7 @@ class Node(models.Model):
 
     return node
 
-  def find_parameters(self):
+  def find_parameters(self):    
     return find_parameters(self, self.PARAM_FIELDS)
 
   def __unicode__(self):
