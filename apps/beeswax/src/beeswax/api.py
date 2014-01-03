@@ -139,7 +139,7 @@ def watch_query_refresh_json(request, id):
   handle, state = _get_query_handle_and_state(query_history)
   query_history.save_state(state)
 
-  # Show popup message if error, might be better in error tab instead
+  # Show popup message if error, should be better in error tab instead and merged into the result response below
   if query_history.is_failure():
     res = db.get_operation_status(handle)
     if hasattr(res, 'errorMessage') and res.errorMessage:

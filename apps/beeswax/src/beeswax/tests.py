@@ -112,12 +112,11 @@ class TestBeeswaxWithHadoop(BeeswaxSampleProvider):
     return history.id
 
   def test_query_with_error(self):
-    """
-    Creating a table "again" should not work; error should be displayed.
-    """
+    # Creating a table "again" should not work; error should be displayed.
     response = _make_query(self.client, "CREATE TABLE test (foo INT)", wait=True)
-    assert_true("Table test already exists" in response.content)
-    assert_true("Table test already exists" in response.context["error_message"])
+    content = json.loads(response.content)
+    assert_true("AlreadyExistsException" in content.get('error'), content)
+    assert_true("Table test already exists" in content.get('message'), content)
 
   def test_configuration(self):
     # No HS2 API
@@ -258,11 +257,8 @@ for x in sys.stdin:
   def test_query_with_simple_errors(self):
     hql = "SELECT KITTENS ARE TASTY"
     resp = _make_query(self.client, hql, name='tasty kittens', wait=True, local=False)
-    assert_true("ParseException" in resp.content, resp.content)
-    page_context = [context for context in resp.context if 'log' in context][0]
-    log = page_context['log']
-    # No logs as operationHandle=None
-    assert_equal('', log, log)
+    assert_true("ParseException line" in json.loads(resp.content)["error"])
+    assert_true("ParseException line" in json.loads(resp.content)["message"])
 
     # Watch page will fail as operationHandle=None
     query_id = self._verify_query_state(beeswax.models.QueryHistory.STATE.failed)
@@ -342,9 +338,6 @@ for x in sys.stdin:
 
 
   def test_parameterization(self):
-    """
-    Test parameterization
-    """
     response = _make_query(self.client, "SELECT foo FROM test WHERE foo='$x' and bar='$y'", is_parameterized=False)
     # Assert no parameterization was offered
     assert_true(any(["watch_wait.mako" in _template.filename for _template in response.template]), "we should have seen the template for a query executing")

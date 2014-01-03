@@ -39,6 +39,7 @@ import beeswax.conf
 
 from beeswax.server.dbms import get_query_server_config
 from beeswax.server import dbms
+import json
  
 
 HIVE_SERVER_TEST_PORT = find_unused_port()
@@ -176,12 +177,45 @@ def get_shared_beeswax_server():
 REFRESH_RE = re.compile('<\s*meta\s+http-equiv="refresh"\s+content="\d*;([^"]*)"\s*/>', re.I)
 
 
+#def wait_for_query_to_finish(client, response, max=30.0):
+#  start = time.time()
+#  sleep_time = 0.05
+#  # We don't check response.template == "watch_wait.mako" here,
+#  # because Django's response.template stuff is not thread-safe.
+#  while "Waiting for query..." in response.content:
+#    time.sleep(sleep_time)
+#    sleep_time = min(1.0, sleep_time * 2) # Capped exponential
+#    if (time.time() - start) > max:
+#      message = "Query took too long! %d seconds" % (time.time() - start,)
+#      LOG.warning(message)
+#      raise Exception(message)
+#
+#    # Find out url to retry
+#    match = REFRESH_RE.search(response.content)
+#    if match is not None:
+#      url = match.group(1)
+#      url = url.lstrip('url=')
+#    else:
+#      url = response.request['PATH_INFO']
+#    response = client.get(url, follow=True)
+#  return response
+
+
 def wait_for_query_to_finish(client, response, max=30.0):
+  # Take a execute_query() response in input
   start = time.time()
   sleep_time = 0.05
-  # We don't check response.template == "watch_wait.mako" here,
-  # because Django's response.template stuff is not thread-safe.
-  while "Waiting for query..." in response.content:
+
+  if is_finished(response): # aka Has error at submission
+    return response
+
+  content = json.loads(response.content)
+  watch_url = content['watch_url']
+
+  response = client.get(watch_url, follow=True)
+
+  # Loop and check status
+  while not is_finished(response):
     time.sleep(sleep_time)
     sleep_time = min(1.0, sleep_time * 2) # Capped exponential
     if (time.time() - start) > max:
@@ -189,15 +223,13 @@ def wait_for_query_to_finish(client, response, max=30.0):
       LOG.warning(message)
       raise Exception(message)
 
-    # Find out url to retry
-    match = REFRESH_RE.search(response.content)
-    if match is not None:
-      url = match.group(1)
-      url = url.lstrip('url=')
-    else:
-      url = response.request['PATH_INFO']
-    response = client.get(url, follow=True)
+    response = client.get(watch_url, follow=True)
   return response
+
+
+def is_finished(response):
+  status = json.loads(response.content)
+  return 'error' in status or status.get('isSuccess') or status.get('isFailure')
 
 
 def make_query(client, query, submission_type="Execute",
@@ -256,14 +288,16 @@ def make_query(client, query, submission_type="Execute",
     parameters["file_resources-%d-_exists" % i] = 'True'
 
   kwargs.setdefault('follow', True)
+  execute_url = reverse("beeswax:api_execute")
 
   if submission_type == 'Explain':
-    response = client.post(reverse("beeswax:api_execute") + "?explain=true", parameters, **kwargs)
-  else:
-    response = client.post(reverse("beeswax:execute_query"), parameters, **kwargs)
+    execute_url += "?explain=true"        
+
+  response = client.post(execute_url, parameters, **kwargs)
 
   if wait:
     return wait_for_query_to_finish(client, response, max)
+
   return response
 
 
