@@ -32,7 +32,7 @@ from liboozie.utils import config_gen
 
 LOG = logging.getLogger(__name__)
 DEFAULT_USER = 'hue'
-API_VERSION = 'v1'
+API_VERSION = 'v1' # Overridden to v2 for SLA
 
 _XML_CONTENT_TYPE = 'application/xml;charset=UTF-8'
 
@@ -40,14 +40,14 @@ _api_cache = None
 _api_cache_lock = threading.Lock()
 
 
-def get_oozie(user):
+def get_oozie(user, api_version=API_VERSION):
   global _api_cache
-  if _api_cache is None:
+  if _api_cache is None or _api_cache.api_version != api_version:
     _api_cache_lock.acquire()
     try:
-      if _api_cache is None:
+      if _api_cache is None or _api_cache.api_version != api_version:
         secure = SECURITY_ENABLED.get()
-        _api_cache = OozieApi(OOZIE_URL.get(), secure)
+        _api_cache = OozieApi(OOZIE_URL.get(), secure, api_version)
     finally:
       _api_cache_lock.release()
   _api_cache.setuser(user)
@@ -55,8 +55,8 @@ def get_oozie(user):
 
 
 class OozieApi(object):
-  def __init__(self, oozie_url, security_enabled=False):
-    self._url = posixpath.join(oozie_url, API_VERSION)
+  def __init__(self, oozie_url, security_enabled=False, api_version=API_VERSION):
+    self._url = posixpath.join(oozie_url, api_version)
     self._client = HttpClient(self._url, logger=LOG)
     if security_enabled:
       self._client.set_kerberos_auth()
@@ -64,6 +64,7 @@ class OozieApi(object):
     self._security_enabled = security_enabled
     # To store username info
     self._thread_local = threading.local()
+    self.api_version = api_version
 
   def __str__(self):
     return "OozieApi at %s" % (self._url,)
@@ -287,3 +288,16 @@ class OozieApi(object):
     params = self._get_params()
     resp = self._root.get('admin/status', params)
     return resp
+
+  def get_oozie_slas(self, **kwargs):
+    """
+    filter=
+      app_name=my-sla-app
+      id=0000002-131206135002457-oozie-oozi-W
+      nominal_start=2013-06-18T00:01Z
+      nominal_end=2013-06-23T00:01Z
+    """
+    params = self._get_params()
+    params['filter'] = ';'.join(['%s=%s' % (key, val) for key, val in kwargs.iteritems()])
+    resp = self._root.get('sla', params)
+    return resp['slaSummaryList']

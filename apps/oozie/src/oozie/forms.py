@@ -64,7 +64,7 @@ class ParameterForm(forms.Form):
 class WorkflowForm(forms.ModelForm):
   class Meta:
     model = Workflow
-    exclude = ('owner', 'start', 'end')
+    exclude = ('owner', 'start', 'end', 'data')
     widgets = {
       'description': forms.TextInput(attrs={'class': 'span5'}),
       'deployment_dir': forms.TextInput(attrs={'class': 'pathChooser span7'}),
@@ -94,7 +94,7 @@ class ImportJobsubDesignForm(forms.Form):
 
 class NodeForm(forms.ModelForm):
   class Meta:
-    ALWAYS_HIDE = ('workflow', 'children', 'node_type')
+    ALWAYS_HIDE = ('workflow', 'children', 'node_type', 'data')
     model = Node
     exclude = ALWAYS_HIDE
 

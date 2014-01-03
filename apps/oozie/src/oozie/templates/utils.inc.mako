@@ -259,6 +259,51 @@
 </%def>
 
 
+<%def name="slaForm()">
+  <div data-bind="foreach: { 'data': sla, 'afterRender': addSLATextAndPlaceholder }">
+    <div class="controls">
+      <div class="span3">
+        <span></span>
+      </div>
+      <div class="span9">
+        <!-- ko if:  key() == 'enabled' -->
+        <input type="checkbox" data-bind="checked: value"/>
+        <!-- /ko -->
+        <!-- ko if:  key() != 'enabled' -->
+        <input type="text" data-bind="value: value" class="span7">
+        <!-- /ko -->
+      </div>
+    </div>
+  </div>
+</%def>
+
+
+## Would be nice include it in slaForm() somehow
+<%def name="slaGlobal()">
+  function addSLATextAndPlaceholder(elements, $data) {
+    var SLA_TEXT = {
+      'enabled': {'niceName': '${ _("Enabled") }', 'placeHolder': ''},
+      'nominal-time': {'niceName': '${ _("Nominal time") } *', 'placeHolder': '${"$"}{nominal_time}'},
+      'should-start': {'niceName': '${ _("Should start") }', 'placeHolder': '${"$"}{10 * MINUTES}'},
+      'should-end': {'niceName': '${ _("Should end") } *', 'placeHolder': '${"$"}{30 * MINUTES}'},
+      'max-duration': {'niceName': '${ _("Max duration") }', 'placeHolder': '${"$"}{30 * MINUTES}'},
+      'alert-events': {'niceName': '${ _("Alert events") }', 'placeHolder': 'start_miss,end_miss,duration_miss'},
+      'alert-contact': {'niceName': '${ _("Alert contact") }', 'placeHolder': 'joe@example.com,bob@example.com'},
+      'notification-msg': {'niceName': '${ _("Notification message") }', 'placeHolder': '${ _("My Job has encountered an SLA event!") }'},
+      'upstream-apps': {'niceName': '${ _("Upstream apps") }', 'placeHolder': 'dependent-app-1, dependent-app-2'}
+    };
+    var text = SLA_TEXT[$data.key()];
+    if (text) {
+      $(elements).find('input').attr('placeholder', text.placeHolder);
+      $(elements).find('span').text(text.niceName);
+    } else {
+      $(elements).find('input').attr('placeholder', '');
+      $(elements).find('span').text('');
+    }
+  }
+</%def>
+
+
 <%def name="render_constant(label, value)">
   <div class="control-group">
     <label class="control-label">${ label }</label>

@@ -32,7 +32,6 @@ from oozie.decorators import check_job_access_permission, check_job_edition_perm
 from oozie.utils import model_to_dict, format_dict_field_values, format_field_value
 
 
-
 LOG = logging.getLogger(__name__)
 
 
@@ -205,7 +204,12 @@ def _update_workflow_nodes_json(workflow, json_nodes, id_map, user):
     id_map[str(json_node['id'])] = node.id
 
     for key in json_node:
-      if key not in ('node_ptr', 'child_nodes', 'workflow', 'id', 'sub_workflow'):
+      if key == 'data':
+        if isinstance(json_node[key], basestring):
+          node.data = json_node[key]
+        else:
+          node.data = json.dumps(json_node[key])
+      elif key not in ('node_ptr', 'child_nodes', 'workflow', 'id', 'sub_workflow'):
         setattr(node, key, format_field_value(key, json_node[key]))
 
     node.workflow = workflow
@@ -226,14 +230,17 @@ def _update_workflow_nodes_json(workflow, json_nodes, id_map, user):
 
 def _update_workflow_json(json_workflow):
   workflow = Workflow.objects.get(id=json_workflow['id'])
-
   for key in json_workflow:
-    if key not in ('nodes', 'start', 'end', 'job_ptr', 'owner'):
+    if key == 'data':
+      if isinstance(json_workflow[key], basestring):
+        workflow.data = json_workflow[key]
+      else:
+        workflow.data = json.dumps(json_workflow[key])
+    elif key not in ('nodes', 'start', 'end', 'job_ptr', 'owner'):
       setattr(workflow, key, json_workflow[key])
 
   workflow.save()
   workflow.doc.update(name=workflow.name, description=workflow.description)
-
   return workflow
 
 

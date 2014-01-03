@@ -141,7 +141,7 @@ ${layout.menubar(section='query')}
           % endif
           " rel="tooltip" data-original-title="${_("If checked, you will receive an email notification when the query completes.")}">
             <input data-bind="checked: query.email" type="checkbox"/>
-            ${_("Email me on completion.")}
+            ${_("Email me on completion")}
           </label>
         </li>
         % if app_name == 'impala':
@@ -190,10 +190,8 @@ ${layout.menubar(section='query')}
 <div id="querySide" class="span8">
   <div class="card card-small">
     <div style="margin-bottom: 30px">
-      <h1 class="card-heading simple">
-        ${ _('Query Editor') }
         % if can_edit_name:
-          :
+        <h1 class="card-heading simple">
           <a href="javascript:void(0);"
              id="query-name"
              data-type="text"
@@ -202,24 +200,16 @@ ${layout.menubar(section='query')}
              data-original-title="${ _('Query name') }"
              data-placement="right">
           </a>
-        %endif
-        <span data-bind="visible: $root.isRunning()">
-          <!--[if !IE]><!--><i class="fa fa-spinner fa-spin" style="font-size: 20px; color: #999"></i><!--<![endif]-->
-          <!--[if IE]><img src="/static/art/spinner.gif"/><![endif]-->
-        </span>
-      </h1>
-      % if can_edit_name:
-        <p style="margin-left: 20px">
           <a href="javascript:void(0);"
              id="query-description"
              data-type="textarea"
              data-name="description"
              data-value="${design.desc}"
              data-original-title="${ _('Query description') }"
-             data-placement="right">
+             data-placement="right" style="font-size: 14px; margin-left: 10px">
           </a>
-        </p>
-      % endif
+        </h1>
+        %endif
     </div>
     <div class="card-body">
       <div class="tab-content">
@@ -236,13 +226,13 @@ ${layout.menubar(section='query')}
           <textarea class="hide" tabindex="1" name="query" id="queryField"></textarea>
 
           <div class="actions">
-            <button data-bind="click: tryExecuteQuery, visible: !$root.isRunning()" type="button" id="executeQuery" class="btn btn-primary" tabindex="2">${_('Execute')}</button>
+            <button data-bind="click: tryExecuteQuery, visible: !$root.isRunning()" type="button" id="executeQuery" class="btn btn-primary disable-feedback" tabindex="2">${_('Execute')}</button>
             <button data-bind="click: tryCancelQuery, visible: $root.isRunning()" class="btn btn-danger" data-loading-text="${ _('Canceling...') }" rel="tooltip" data-original-title="${ _('Cancel the query') }">${ _('Cancel') }</button>
             <button data-bind="click: trySaveQuery, css: {'hide': !$root.query.id() || $root.query.id() == -1}" type="button" class="btn hide">${_('Save')}</button>
             <button data-bind="click: saveAsModal" type="button" class="btn">${_('Save as...')}</button>
             <button data-bind="click: tryExplainQuery" type="button" id="explainQuery" class="btn">${_('Explain')}</button>
             &nbsp; ${_('or create a')} &nbsp;
-            <a type="button" class="btn" href="${ url('beeswax:execute_query') }">${_('New query')}</a>
+            <button data-bind="click: createNewQuery" type="button" class="btn">${_('New query')}</button>
             <br/><br/>
           </div>
 
@@ -260,7 +250,9 @@ ${layout.menubar(section='query')}
         <!-- /ko -->
         <li><a href="#query" data-toggle="tab">${_('Query')}</a></li>
         <!-- ko if: !query.explain() -->
+        <li><a href="#columns" data-toggle="tab">${_('Columns')}</a></li>
         <li><a href="#results" data-toggle="tab">${_('Results')}</a></li>
+        <li><a href="#chart" data-toggle="tab">${_('Chart')}</a></li>
         <!-- /ko -->
         <!-- ko if: query.explain() -->
         <li><a href="#explanation" data-toggle="tab">${_('Explanation')}</a></li>
@@ -280,12 +272,24 @@ ${layout.menubar(section='query')}
         <div class="active tab-pane" id="log">
           <pre data-bind="text: viewModel.logs().join('\n')"></pre>
         </div>
+        <div class="tab-pane" id="columns">
+          <table class="table table-striped table-condensed" cellpadding="0" cellspacing="0">
+            <thead>
+              <tr><th>${_('Name')}</th></tr>
+            </thead>
+            <tbody data-bind="foreach: columns">
+              <tr>
+                <td><a href="javascript:void(0)" class="column-selector" data-bind="text: $data.name"></a></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
         <div class="tab-pane" id="results">
           <div data-bind="css: {'hide': rows().length == 0}" class="hide">
             <table class="table table-striped table-condensed resultTable" cellpadding="0" cellspacing="0" data-tablescroller-min-height-disable="true" data-tablescroller-enforce-height="true">
               <thead>
               <tr data-bind="foreach: columns">
-                <th data-bind="text: $data"></th>
+                <th data-bind="text: $data.name, css: { 'sort-numeric': $.inArray($data.type, ['TINYINT_TYPE', 'SMALLINT_TYPE', 'INT_TYPE', 'BIGINT_TYPE', 'FLOAT_TYPE', 'DOUBLE_TYPE', 'DECIMAL_TYPE']) > -1, 'sort-date': $.inArray($data.type, ['TIMESTAMP_TYPE', 'DATE_TYPE']) > -1, 'sort-string': $.inArray($data.type, ['TINYINT_TYPE', 'SMALLINT_TYPE', 'INT_TYPE', 'BIGINT_TYPE', 'FLOAT_TYPE', 'DOUBLE_TYPE', 'DECIMAL_TYPE', 'TIMESTAMP_TYPE', 'DATE_TYPE']) == -1 }"></th>
               </tr>
               </thead>
             </table>
@@ -302,6 +306,39 @@ ${layout.menubar(section='query')}
               </div>
             </div>
           </div>
+        </div>
+         <div class="tab-pane" id="chart">
+          <div style="text-align: center">
+          <form class="form-inline">
+            ${_('Chart type')}&nbsp;
+            <div class="btn-group" data-toggle="buttons-radio">
+              <a rel="tooltip" data-placement="top" title="${_('Bars')}" id="blueprintBars" href="javascript:void(0)" class="btn"><i class="fa fa-bar-chart-o"></i></a>
+              <a rel="tooltip" data-placement="top" title="${_('Lines')}" id="blueprintLines" href="javascript:void(0)" class="btn"><i class="fa fa-signal"></i></a>
+              <a rel="tooltip" data-placement="top" title="${_('Map')}" id="blueprintMap" href="javascript:void(0)" class="btn"><i class="fa fa-map-marker"></i></a>
+            </div>&nbsp;&nbsp;
+            <span id="blueprintAxis" class="hide">
+              <label>${_('X-Axis')}
+                <select id="blueprintX" class="blueprintSelect"></select>
+              </label>&nbsp;&nbsp;
+              <label>${_('Y-Axis')}
+              <select id="blueprintY" class="blueprintSelect"></select>
+              </label>&nbsp;&nbsp;
+              <a rel="tooltip" data-placement="top" title="${_('Download image')}" id="blueprintDownload" href="javascript:void(0)" class="btn hide"><i class="fa fa-download"></i></a>
+            </span>
+            <span id="blueprintLatLng" class="hide">
+              <label>${_('Latitude')}
+                <select id="blueprintLat" class="blueprintSelect"></select>
+              </label>&nbsp;&nbsp;
+              <label>${_('Longitude')}
+              <select id="blueprintLng" class="blueprintSelect"></select>
+              </label>&nbsp;&nbsp;
+              <label>${_('Label')}
+              <select id="blueprintDesc" class="blueprintSelect"></select>
+              </label>
+            </span>
+          </form>
+          </div>
+          <div id="blueprint" class="empty">${_("Please select a chart type.")}</div>
         </div>
         <!-- /ko -->
       </div>
@@ -476,6 +513,12 @@ ${layout.menubar(section='query')}
 <link href="/static/ext/css/bootstrap-editable.css" rel="stylesheet">
 <script src="/static/ext/js/bootstrap-editable.min.js"></script>
 
+<script src="/static/ext/js/jquery/plugins/jquery.flot.min.js" type="text/javascript" charset="utf-8"></script>
+<script src="/static/ext/js/jquery/plugins/jquery.flot.categories.min.js" type="text/javascript" charset="utf-8"></script>
+<script src="/static/ext/js/leaflet/leaflet.js" type="text/javascript" charset="utf-8"></script>
+<script src="/static/js/jquery.blueprint.js" type="text/javascript" charset="utf-8"></script>
+
+
 <style type="text/css">
   h1 {
     margin-bottom: 5px;
@@ -571,7 +614,13 @@ ${layout.menubar(section='query')}
     z-index: 32000;
   }
 
+  .map {
+    height: 200px;
+  }
+
 </style>
+
+<link href="/static/ext/css/leaflet.css" rel="stylesheet">
 
 <script src="/static/ext/js/jquery/plugins/jquery-fieldselection.js" type="text/javascript"></script>
 <script src="/beeswax/static/js/autocomplete.utils.js" type="text/javascript" charset="utf-8"></script>
@@ -735,6 +784,27 @@ $(document).ready(function () {
     $.totalStorage("${app_name}_last_database", viewModel.database());
   });
 
+  $(document).on("click", ".column-selector", function () {
+    var _t = $(".resultTable");
+    var _col = _t.find("th:econtains(" + $(this).text() + ")");
+    _t.find(".columnSelected").removeClass("columnSelected");
+    _t.find("tr td:nth-child(" + (_col.index() + 1) + ")").addClass("columnSelected");
+    $("a[href='#results']").click();
+  });
+
+  $("a[data-toggle='tab']").on("shown", function (e) {
+    if ($(e.target).attr("href") == "#results" && $(e.relatedTarget).attr("href") == "#columns") {
+      if ($(".resultTable .columnSelected").length > 0) {
+        var _t = $(".resultTable");
+        var _col = _t.find("th:nth-child(" + ($(".resultTable .columnSelected").index() + 1) + ")");
+        _t.parent().animate({
+          scrollLeft: _col.position().left + _t.parent().scrollLeft() - _t.parent().offset().left - 30
+        }, 300);
+      }
+    }
+  });
+
+
 });
 
 
@@ -757,6 +827,7 @@ function reinitializeTable () {
       fixedHeader: true,
       firstColumnTooltip: true
     });
+    $($("a[data-toggle='tab']").parent(".active").find("a").attr("href")).height($(".dataTables_wrapper").height());
   }, 400)
 }
 
@@ -996,13 +1067,176 @@ $(document).ready(function () {
     resizeLogs();
   });
 
-  $("a[data-toggle='tab']").on('shown', function (e) {
+  $("a[data-toggle='tab']").on("shown", function (e) {
     if ($(e.target).attr("href") != "#results"){
       $($(e.target).attr("href")).height($(".dataTables_wrapper").height());
+      if ($(e.target).attr("href") == "#chart") {
+        predictGraph();
+      }
     }
     else {
       reinitializeTable();
     }
+  });
+
+
+  function getMapBounds(lats, lngs) {
+    lats = lats.sort();
+    lngs = lngs.sort();
+    return [
+      [lats[lats.length - 1], lngs[lngs.length - 1]], // north-east
+      [lats[0], lngs[0]] // south-west
+    ]
+  }
+  var map;
+  function generateGraph(graphType) {
+    if (graphType != "") {
+      if (map != null) {
+        try {
+          map.remove();
+        }
+        catch (err) { // do nothing
+        }
+      }
+      $("#blueprintDownload").addClass("hide");
+      $("#blueprint").attr("class", "").attr("style", "").empty();
+      $("#blueprint").data("plugin_jHueBlueprint", null);
+      if (graphType == $.jHueBlueprint.TYPES.MAP) {
+        if ($("#blueprintLat").val() != "-1" && $("#blueprintLng").val() != "-1") {
+          var _latCol = $("#blueprintLat").val() * 1;
+          var _lngCol = $("#blueprintLng").val() * 1;
+          var _descCol = $("#blueprintDesc").val() * 1;
+          var _lats = [];
+          var _lngs = [];
+          $(".resultTable>tbody>tr>td:nth-child(" + _latCol + ")").each(function (cnt) {
+            _lats.push($.trim($(this).text()) * 1);
+          });
+          $(".resultTable>tbody>tr>td:nth-child(" + _lngCol + ")").each(function (cnt) {
+            _lngs.push($.trim($(this).text()) * 1);
+          });
+          //$("#blueprint").addClass("map");
+          $("#blueprint").height($("#blueprint").parent().height() - 100);
+          map = L.map("blueprint").fitBounds(getMapBounds(_lats, _lngs));
+
+          L.tileLayer("http://{s}.tile.osm.org/{z}/{x}/{y}.png", {
+            attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+          }).addTo(map);
+
+          $(".resultTable>tbody>tr>td:nth-child(" + _latCol + ")").each(function (cnt) {
+            if (cnt < 1000) {
+              if (_descCol != "-1") {
+                L.marker([$.trim($(this).text()) * 1, $.trim($(".resultTable>tbody>tr:nth-child(" + (cnt + 1) + ")>td:nth-child(" + _lngCol + ")").text()) * 1]).addTo(map).bindPopup($.trim($(".resultTable>tbody>tr:nth-child(" + (cnt + 1) + ")>td:nth-child(" + _descCol + ")").text()));
+              }
+              else {
+                L.marker([$.trim($(this).text()) * 1, $.trim($(".resultTable>tbody>tr:nth-child(" + (cnt + 1) + ")>td:nth-child(" + _lngCol + ")").text()) * 1]).addTo(map);
+              }
+            }
+          });
+
+        }
+        else {
+          $("#blueprint").addClass("empty").text("${_("Please select the latitude and longitude columns.")}");
+        }
+      }
+      else {
+        if ($("#blueprintX").val() != "-1" && $("#blueprintY").val() != "-1") {
+          var _x = $("#blueprintX").val() * 1;
+          var _y = $("#blueprintY").val() * 1;
+          var _data = [];
+          $(".resultTable>tbody>tr>td:nth-child(" + _x + ")").each(function (cnt) {
+            if (cnt < 1000) {
+              _data.push([$.trim($(this).text()), $.trim($(".resultTable>tbody>tr:nth-child(" + (cnt + 1) + ")>td:nth-child(" + _y + ")").text()) * 1]);
+            }
+          });
+
+          $("#blueprint").jHueBlueprint({
+            data: _data,
+            label: $(".resultTable>thead>tr>th:nth-child(" + _y + ")").text(),
+            type: graphType,
+            color: $.jHueBlueprint.COLORS.BLUE,
+            isCategories: true,
+            fill: true,
+            enableSelection: false,
+            height: 250
+          });
+          if (_data.length > 30){
+            $(".flot-x-axis .flot-tick-label").hide();
+          }
+          $("#blueprintDownload").removeClass("hide");
+        }
+        else {
+          $("#blueprint").addClass("empty").text("${_("Please select the columns you would like to see in this chart.")}");
+        }
+      }
+    }
+  }
+
+  $("#blueprintDownload").on("click", function(){
+    window.open($(".flot-base")[0].toDataURL());
+  });
+
+  function getGraphType() {
+    var _type = "";
+    if ($("#blueprintBars").hasClass("active")) {
+      _type = $.jHueBlueprint.TYPES.BARCHART;
+    }
+    if ($("#blueprintLines").hasClass("active")) {
+      _type = $.jHueBlueprint.TYPES.LINECHART;
+    }
+    if ($("#blueprintMap").hasClass("active")) {
+      _type = $.jHueBlueprint.TYPES.MAP;
+    }
+    return _type;
+  }
+
+  var hasBeenPredicted = false;
+  function predictGraph() {
+    if (!hasBeenPredicted) {
+      hasBeenPredicted = true;
+      var _firstAllString, _firstAllNumeric;
+      for (var i = 1; i < $(".resultTable>thead>tr>th").length; i++) {
+        var _isNumeric = true;
+        $(".resultTable>tbody>tr>td:nth-child(" + (i + 1) + ")").each(function (cnt) {
+          if (!$.isNumeric($.trim($(this).text()))) {
+            _isNumeric = false;
+          }
+        });
+        if (_firstAllString == null && !_isNumeric) {
+          _firstAllString = i + 1;
+        }
+        if (_firstAllNumeric == null && _isNumeric) {
+          _firstAllNumeric = i + 1;
+        }
+      }
+      if (_firstAllString != null && _firstAllNumeric != null) {
+        $("#blueprintBars").addClass("active");
+        $("#blueprintAxis").removeClass("hide");
+        $("#blueprintLatLng").addClass("hide");
+        $("#blueprintX").val(_firstAllString);
+        $("#blueprintY").val(_firstAllNumeric);
+      }
+    }
+    generateGraph(getGraphType());
+  }
+
+  $(".blueprintSelect").on("change", function () {
+    generateGraph(getGraphType())
+  });
+
+  $("#blueprintBars").on("click", function () {
+    $("#blueprintAxis").removeClass("hide");
+    $("#blueprintLatLng").addClass("hide");
+    generateGraph($.jHueBlueprint.TYPES.BARCHART)
+  });
+  $("#blueprintLines").on("click", function () {
+    $("#blueprintAxis").removeClass("hide");
+    $("#blueprintLatLng").addClass("hide");
+    generateGraph($.jHueBlueprint.TYPES.LINECHART)
+  });
+  $("#blueprintMap").on("click", function () {
+    $("#blueprintAxis").addClass("hide");
+    $("#blueprintLatLng").removeClass("hide");
+    generateGraph($.jHueBlueprint.TYPES.MAP)
   });
 
   $("#log pre").scroll(function () {
@@ -1052,6 +1286,7 @@ function resultsTable() {
       "bPaginate": false,
       "bLengthChange": false,
       "bInfo": false,
+      "bDestroy": true,
       "bAutoWidth": false,
       "oLanguage": {
         "sEmptyTable": "${_('No data available')}",
@@ -1068,10 +1303,29 @@ function resultsTable() {
           }
         }
         return nRow;
-      }
+      },
+      "aoColumnDefs": [
+        {
+          "sType": "numeric",
+          "aTargets": [ "sort-numeric" ]
+        },
+        {
+          "sType": "string",
+          "aTargets": [ "sort-string" ]
+        },
+        {
+          "sType": "date",
+          "aTargets": [ "sort-date" ]
+        }
+      ]
     });
     $(".dataTables_filter").hide();
     reinitializeTable();
+    var _options = '<option value="-1">${ _("Please select a column")}</option>';
+    $(viewModel.columns()).each(function(cnt, item){
+      _options += '<option value="'+(cnt + 1)+'">'+ item.name +'</option>';
+    });
+    $(".blueprintSelect").html(_options);
 
     // Automatic results grower
     var dataTableEl = $(".dataTables_wrapper");
@@ -1178,6 +1432,11 @@ function tryCancelQuery() {
   viewModel.cancelQuery();
 }
 
+function createNewQuery() {
+  $.totalStorage("${app_name}_temp_query", null);
+  location.href="${ url('beeswax:execute_query') }";
+}
+
 function checkLastDatabase(server, database) {
   var key = "hueBeeswaxLastDatabase-" + server;
   if (database != $.totalStorage(key)) {
@@ -1203,6 +1462,12 @@ function clickHard(el) {
 
 viewModel = new BeeswaxViewModel("${app_name}", ${design.id and design.id or -1});
 viewModel.fetchDatabases();
+var subscription = viewModel.databases.subscribe(function() {
+  if (viewModel.query.id() > 0) {
+    viewModel.fetchQuery();
+  }
+  subscription.dispose();
+});
 if (viewModel.query.id() > 0) {
   // Code mirror and ko.
   viewModel.query.query.subscribe((function () {
@@ -1224,15 +1489,16 @@ ko.applyBindings(viewModel);
 
 // Server error handling.
 $(document).on('server.error', function (e, data) {
-  $(document).trigger('error', "${_('Server error occured: ')}" + data.error);
+  $(document).trigger('error', "${_('Server error occured: ')}" + data.message ? data.message : data.error);
 });
 $(document).on('server.unmanageable_error', function (e, responseText) {
   $(document).trigger('error', "${_('Unmanageable server error occured: ')}" + responseText);
 });
 
 // Other
-$(document).on('saved.query', function (e) {
+$(document).on('saved.query', function (e, id) {
   $(document).trigger('info', "${'Query saved.'}");
+  window.location.href = "/beeswax/execute/" + id;
 });
 $(document).on('error_cancel.query', function (e, message) {
   $(document).trigger("error", "${ _('Problem: ') }" + message);
@@ -1298,7 +1564,7 @@ $(document).ready(function () {
     'query': function () {
       showSection('query-editor');
       $('.resultsContainer').hide();
-      codeMirror.setSize("95%", $(window).height() - 270 - $("#queryPane .alert-error").outerHeight() - $(".nav-tabs").outerHeight());
+      codeMirror.setSize("99%", $(window).height() - 270 - $("#queryPane .alert-error").outerHeight() - $(".nav-tabs").outerHeight());
     },
     'query/execute/params': function () {
       if (viewModel.query.parameters().length == 0) {
@@ -1316,7 +1582,7 @@ $(document).ready(function () {
       if (viewModel.logs().length == 0) {
         routie('query');
       }
-      codeMirror.setSize("95%", 100);
+      codeMirror.setSize("99%", 100);
       $('.resultsContainer').show();
       $('.resultsContainer .watch-query').show();
       $('.resultsContainer .view-query-results').hide();
@@ -1326,7 +1592,7 @@ $(document).ready(function () {
       if (viewModel.resultsEmpty()) {
         routie('query');
       } else {
-        codeMirror.setSize("95%", 100);
+        codeMirror.setSize("99%", 100);
         $('.resultsContainer').show();
         $('.resultsContainer .watch-query').hide();
         $('.resultsContainer .view-query-results').show();
@@ -1337,7 +1603,7 @@ $(document).ready(function () {
       if (!viewModel.explanation()) {
         routie('query');
       }
-      codeMirror.setSize("95%", 100);
+      codeMirror.setSize("99%", 100);
       $('.resultsContainer').show();
       $('.resultsContainer .watch-query').hide();
       $('.resultsContainer .view-query-results').show();

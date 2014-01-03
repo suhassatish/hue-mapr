@@ -91,8 +91,12 @@ class MockOozieApi:
   ]
   BUNDLE_ACTION = {u'startTime': u'Mon, 31 Dec 2012 16:00:00 PST', u'actions': [], u'frequency': 1, u'concurrency': 1, u'pauseTime': None, u'group': None, u'toString': u'Coordinator application id[0000022-130210132208494-oozie-oozi-C] status[SUCCEEDED]', u'consoleUrl': None, u'mat_throttling': 12, u'status': u'SUCCEEDED', u'conf': u'<configuration>\r\n  <property>\r\n    <name>oozie.coord.application.path</name>\r\n    <value>hdfs://localhost:8020/user/hue/oozie/deployments/_romain_-oozie-6-1360649203.56</value>\r\n  </property>\r\n  <property>\r\n    <name>oozie.bundle.application.path</name>\r\n    <value>hdfs://localhost:8020/user/hue/oozie/workspaces/_romain_-oozie-22-1360636939.69</value>\r\n  </property>\r\n  <property>\r\n    <name>market</name>\r\n    <value>France</value>\r\n  </property>\r\n  <property>\r\n    <name>user.name</name>\r\n    <value>romain</value>\r\n  </property>\r\n  <property>\r\n    <name>oozie.use.system.libpath</name>\r\n    <value>true</value>\r\n  </property>\r\n  <property>\r\n    <name>oozie.bundle.id</name>\r\n    <value>0000021-130210132208494-oozie-oozi-B</value>\r\n  </property>\r\n  <property>\r\n    <name>nameNode</name>\r\n    <value>hdfs://localhost:8020</value>\r\n  </property>\r\n  <property>\r\n    <name>wf_application_path</name>\r\n    <value>hdfs://localhost:8020/user/hue/oozie/deployments/_romain_-oozie-5-1360649203.07</value>\r\n  </property>\r\n  <property>\r\n    <name>jobTracker</name>\r\n    <value>localhost:8021</value>\r\n  </property>\r\n  <property>\r\n    <name>hue-id-b</name>\r\n    <value>22</value>\r\n  </property>\r\n</configuration>', u'user': u'romain', u'timeOut': 120, u'coordJobPath': u'hdfs://localhost:8020/user/hue/oozie/deployments/_romain_-oozie-6-1360649203.56', u'timeUnit': u'DAY', u'coordJobId': u'0000022-130210132208494-oozie-oozi-C', u'coordJobName': u'DailySleep', u'nextMaterializedTime': u'Fri, 04 Jan 2013 16:00:00 PST', u'coordExternalId': None, u'acl': None, u'lastAction': u'Fri, 04 Jan 2013 16:00:00 PST', u'executionPolicy': u'FIFO', u'timeZone': u'America/Los_Angeles', u'endTime': u'Fri, 04 Jan 2013 16:00:00 PST'}
 
+  WORKFLOWS_SLAS = [
+      {u'actualDuration': 68406, u'appType': u'WORKFLOW_JOB', u'appName': u'Forks', u'actualStart': u'Fri, 06 Dec 2013 14:01:53 PST', u'jobStatus': u'SUCCEEDED', u'id': u'0000002-131206135002457-oozie-oozi-W', u'expectedDuration': 1800000, u'nominalTime': u'Mon, 17 Jun 2013 17:01:00 PDT', u'slaStatus': u'MISS', u'lastModified': u'Fri, 06 Dec 2013 14:03:05 PST', u'actualEnd': u'Fri, 06 Dec 2013 14:03:01 PST', u'expectedEnd': u'Mon, 17 Jun 2013 17:31:00 PDT', u'expectedStart': u'Mon, 17 Jun 2013 17:11:00 PDT', u'user': u'romain'}
+  ]
+
   def __init__(self, *args, **kwargs):
-    pass
+    self.api_version = 'v2'
 
   def setuser(self, user):
     pass
@@ -178,6 +182,19 @@ class MockOozieApi:
 
   def get_job_log(self, jobid):
     return '2013-01-08 16:28:06,487  INFO ActionStartXCommand:539 - USER[romain] GROUP[-] TOKEN[] APP[MapReduce] JOB[0000002-130108101138395-oozie-oozi-W] ACTION[0000002-130108101138395-oozie-oozi-W@:start:] Start action [0000002-130108101138395-oozie-oozi-W@:start:] with user-retry state : userRetryCount [0], userRetryMax [0], userRetryInterval [10]'
+
+  def get_oozie_slas(self, **kwargs):
+    return MockOozieApi.WORKFLOWS_SLAS
+
+  def get_configuration(self):
+    oozie_credentialclasses = """
+           hbase=org.apache.oozie.action.hadoop.HbaseCredentials,
+           hcat=org.apache.oozie.action.hadoop.HCatCredentials,
+           hive2=org.apache.oozie.action.hadoop.Hive2Credentials
+    """
+    return {
+        'oozie.credentials.credentialclasses': oozie_credentialclasses
+    }
 
 
 class OozieMockBase(object):
@@ -1199,12 +1216,22 @@ class TestEditor(OozieMockBase):
       saved = beeswax.conf.HIVE_CONF_DIR
       beeswax.conf.HIVE_CONF_DIR = Getter()
 
+      action1 = Node.objects.get(workflow=self.wf, name='MyHive')
+      action1.credentials = [{'name': 'hcat', 'value': True}, {'name': 'hbase', 'value': False}]
+      action1.save()
+
       xml = self.wf.to_xml(mapping={
-         'is_kerberized_hive': True,
-         'credential_type': 'hcat',
-         'thrift_server': 'thrift://darkside-1234:9999',
-         'hive_principal': 'hive/darkside-1234@test.com'
-      })
+          'credentials': {
+              'hcat': {
+                  'xml_name': 'hcat',
+                  'properties': [
+                      ('hcat.metastore.uri', 'thrift://hue-koh-chang:9999'),
+                      ('hcat.metastore.principal', 'hive')
+                  ]
+              }
+          }
+        }
+      )
 
       assert_true("""
 <workflow-app name="wf-name-1" xmlns="uri:oozie:workflow:0.4">
@@ -1218,19 +1245,19 @@ class TestEditor(OozieMockBase):
             </configuration>
   </global>
   <credentials>
-    <credential name='hive_credentials' type='hcat'>
+    <credential name="hcat" type="hcat">
       <property>
         <name>hcat.metastore.uri</name>
-        <value>thrift://darkside-1234:9999</value>
+        <value>thrift://hue-koh-chang:9999</value>
       </property>
       <property>
         <name>hcat.metastore.principal</name>
-        <value>hive/darkside-1234@test.com</value>
+        <value>hive</value>
       </property>
     </credential>
-   </credentials>
+  </credentials>
     <start to="MyHive"/>
-    <action name="MyHive" cred='hive_credentials'>
+    <action name="MyHive" cred="hcat">
         <hive xmlns="uri:oozie:hive-action:0.2">
             <job-tracker>${jobTracker}</job-tracker>
             <name-node>${nameNode}</name-node>
@@ -1254,9 +1281,72 @@ class TestEditor(OozieMockBase):
         beeswax.conf.HIVE_CONF_DIR = saved
       shutil.rmtree(tmpdir)
 
+    self.wf.node_set.filter(name='action-name-1').delete()
+
+
+  def test_workflow_gen_workflow_sla(self):
+    xml = self.wf.to_xml({'output': '/path'})
+    assert_false('<sla' in xml, xml)
+    assert_false('xmlns="uri:oozie:workflow:0.5"' in xml, xml)
+    assert_false('xmlns:sla="uri:oozie:sla:0.2"' in xml, xml)
+
+    sla = self.wf.sla
+    sla[0]['value'] = True
+    sla[1]['value'] = 'now' # nominal-time
+    sla[3]['value'] = '${ 10 * MINUTES}' # should-end
+    self.wf.sla = sla
+    self.wf.save()
+
+    xml = self.wf.to_xml({'output': '/path'})
+    assert_true('xmlns="uri:oozie:workflow:0.5"' in xml, xml)
+    assert_true('xmlns:sla="uri:oozie:sla:0.2"' in xml, xml)
+    assert_true("""<end name="end"/>
+          <sla:info>
+            <sla:nominal-time>now</sla:nominal-time>
+            <sla:should-end>${ 10 * MINUTES}</sla:should-end>
+          </sla:info>
+</workflow-app>""" in xml, xml)
+
+
+  def test_workflow_gen_action_sla(self):
+    xml = self.wf.to_xml({'output': '/path'})
+    assert_false('<sla' in xml, xml)
+    assert_false('xmlns="uri:oozie:workflow:0.5"' in xml, xml)
+    assert_false('xmlns:sla="uri:oozie:sla:0.2"' in xml, xml)
 
     self.wf.node_set.filter(name='action-name-1').delete()
 
+    action1 = add_node(self.wf, 'action-name-1', 'hive', [self.wf.start], {
+        u'job_xml': 'my-job.xml',
+        u'files': '["hello.py"]',
+        u'name': 'MyHive',
+        u'job_properties': '[]',
+        u'script_path': 'hello.sql',
+        u'archives': '[]',
+        u'prepares': '[]',
+        u'params': '[{"value":"World!","type":"argument"}]',
+        u'description': ''
+    })
+    Link(parent=action1, child=self.wf.end, name="ok").save()
+
+    xml = self.wf.to_xml()
+
+    sla = action1.sla
+    sla[0]['value'] = True
+    sla[1]['value'] = 'now' # nominal-time
+    sla[3]['value'] = '${ 10 * MINUTES}' # should-end
+    action1.sla = sla
+    action1.save()
+
+    xml = self.wf.to_xml({'output': '/path'})
+    assert_true('xmlns="uri:oozie:workflow:0.5"' in xml, xml)
+    assert_true('xmlns:sla="uri:oozie:sla:0.2"' in xml, xml)
+    assert_true("""<error to="kill"/>
+          <sla:info>
+            <sla:nominal-time>now</sla:nominal-time>
+            <sla:should-end>${ 10 * MINUTES}</sla:should-end>
+          </sla:info>
+    </action>""" in xml, xml)
 
 
   def test_create_coordinator(self):
@@ -1352,7 +1442,8 @@ class TestEditor(OozieMockBase):
 """<coordinator-app name="MyCoord"
   frequency="${coord:days(1)}"
   start="2012-07-01T00:00Z" end="2012-07-04T00:00Z" timezone="America/Los_Angeles"
-  xmlns="uri:oozie:coordinator:0.2">
+  xmlns="uri:oozie:coordinator:0.2"
+  >
   <controls>
     <timeout>100</timeout>
     <concurrency>3</concurrency>
@@ -1381,6 +1472,32 @@ class TestEditor(OozieMockBase):
 </coordinator-app>""" in coord.to_xml(), coord.to_xml())
 
 
+  def test_coordinator_gen_sla(self):
+    coord = create_coordinator(self.wf, self.c, self.user)
+    xml = coord.to_xml()
+
+    assert_false('<sla' in xml, xml)
+    assert_false('xmlns="uri:oozie:coordinator:0.4"' in xml, xml)
+    assert_false('xmlns:sla="uri:oozie:sla:0.2"' in xml, xml)
+
+    sla = coord.sla
+    sla[0]['value'] = True
+    sla[1]['value'] = 'now' # nominal-time
+    sla[3]['value'] = '${ 10 * MINUTES}' # should-end
+    coord.sla = sla
+    coord.save()
+
+    xml = coord.to_xml()
+    assert_true('xmlns="uri:oozie:coordinator:0.4"' in xml, xml)
+    assert_true('xmlns:sla="uri:oozie:sla:0.2"' in xml, xml)
+    assert_true("""</workflow>
+          <sla:info>
+            <sla:nominal-time>now</sla:nominal-time>
+            <sla:should-end>${ 10 * MINUTES}</sla:should-end>
+          </sla:info>
+  </action>""" in xml, xml)
+
+
   def test_coordinator_with_data_input_gen_xml(self):
     coord = create_coordinator(self.wf, self.c, self.user)
     create_dataset(coord, self.c)
@@ -1404,7 +1521,8 @@ class TestEditor(OozieMockBase):
 """<coordinator-app name="MyCoord"
   frequency="${coord:days(1)}"
   start="2012-07-01T00:00Z" end="2012-07-04T00:00Z" timezone="America/Los_Angeles"
-  xmlns="uri:oozie:coordinator:0.2">
+  xmlns="uri:oozie:coordinator:0.2"
+  >
   <controls>
     <timeout>100</timeout>
     <concurrency>3</concurrency>
@@ -3177,6 +3295,18 @@ class TestDashboard(OozieMockBase):
 
     assert_true(response.context['workflow_graph'] is None)
     assert_equal(Document.objects.available_docs(Workflow, self.user).count(), workflow_count)
+
+  def test_list_oozie_sla(self):
+    response = self.c.get(reverse('oozie:list_oozie_sla'))
+    assert_true('Oozie Dashboard' in response.content, response.content)
+
+    response = self.c.get(reverse('oozie:list_oozie_sla') + "?format=json")
+    for sla in MockOozieApi.WORKFLOWS_SLAS:
+      assert_equal({"oozie_slas": []}, json.loads(response.content), response.content)
+
+    response = self.c.post(reverse('oozie:list_oozie_sla') + "?format=json", {'job_name': 'kochang'})
+    for sla in MockOozieApi.WORKFLOWS_SLAS:
+      assert_true('MISS' in response.content, response.content)
 
 
 class GeneralTestsWithOozie(OozieBase):

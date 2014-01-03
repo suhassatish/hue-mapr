@@ -81,6 +81,7 @@ ${ layout.menubar(section='workflows') }
   <div class="span10">
     <div id="properties" class="section hide">
     <div class="card card-small">
+
       <div class="alert alert-info"><h3 data-bind="text: name()"></h3></div>
       <div class="card-body">
         <p>
@@ -92,7 +93,7 @@ ${ layout.menubar(section='workflows') }
         </div>
 
       <%
-      workflows.key_value_field(workflow_form['parameters'], {
+      workflows.key_value_field(workflow_form['parameters'].label, workflow_form['parameters'].help_text, {
       'name': 'parameters',
       'remove': '$root.removeParameter',
       'add': '$root.addParameter',
@@ -100,22 +101,30 @@ ${ layout.menubar(section='workflows') }
       %>
 
       <%
-      workflows.key_value_field(workflow_form['job_properties'], {
+      workflows.key_value_field(workflow_form['job_properties'].label, workflow_form['job_properties'].help_text, {
       'name': 'job_properties',
       'remove': '$root.removeJobProperty',
       'add': '$root.addJobProperty',
       })
       %>
 
-        <div class="control-group ">
+        <div class="control-group">
           <label class="control-label">
             <a href="#" id="advanced-btn" onclick="$('#advanced-container').toggle('hide')">
-              <i class="fa fa-share"></i> ${ _('advanced') }</a>
+              <i class="fa fa-share"></i> ${ _('Advanced') }</a>
           </label>
           <div class="controls"></div>
         </div>
 
       <div id="advanced-container" class="hide">
+        <div id="slaEditord" class="control-group">
+          <label class="control-label">
+            ${ _('SLA') }
+          </label>
+
+          ${ utils.slaForm() }
+        </div>
+
         % if user_can_edit_job:
           ${ utils.render_field_with_error_js(workflow_form['deployment_dir'], workflow_form['deployment_dir'].name, extra_attrs={'data-bind': 'value: %s' % workflow_form['deployment_dir'].name}) }
         % endif
@@ -614,7 +623,8 @@ function workflow_read_only_handler() {
 var kill_view_model = null;
 function workflow_load_success(data) {
   if (data.status == 0) {
-    workflow.reload(data.data);
+    var workflow_model = new WorkflowModel(data.data);
+    workflow.reload(workflow_model);
 
     //// Kill node
     kill_view_model = ManageKillModule($, workflow, nodeModelChooser, Node, NodeModel);
@@ -637,7 +647,9 @@ function save_workflow() {
   }
 }
 
-// Fetch all nodes from server.
+var OOZIE_CREDENTIALS = ${ credentials | n,unicode };
+
+// Fetch workflow properties from server.
 var workflow_model = new WorkflowModel({
   id: ${ workflow.id },
   name: "${ workflow.name }",
@@ -648,7 +660,8 @@ var workflow_model = new WorkflowModel({
   deployment_dir: "${ workflow.deployment_dir }",
   is_shared: "${ workflow.is_shared }" == "True",
   parameters: ${ workflow.parameters_escapejs | n,unicode },
-  job_properties: ${ workflow.job_properties_escapejs | n,unicode }
+  job_properties: ${ workflow.job_properties_escapejs | n,unicode },
+  data: ${ workflow.data_js_escaped | n,unicode }
 });
 var registry = new Registry();
 var workflow = new Workflow({
@@ -662,7 +675,7 @@ var import_jobsub_action = new ImportJobsubAction({workflow: workflow});
 var import_workflow_action = new ImportWorkflowAction({workflow: workflow});
 var modal = new Modal($('#node-modal'));
 
-// Load data.
+// Fetch nodes
 import_jobsub_action.fetchWorkflows({ success: import_jobsub_load_success });
 import_workflow_action.fetchWorkflows({ success: import_workflow_load_success });
 {
@@ -899,6 +912,7 @@ ko.applyBindings(workflow, $('#workflowControls')[0]);
 ko.applyBindings(import_view_model, $('#importAction')[0]);
 ko.applyBindings(import_view_model.oozie(), $('#importOozieAction')[0]);
 
+
 window.onbeforeunload = function (e) {
   if (workflow.is_dirty()) {
     var message = "${ _('You have unsaved changes in this workflow.') }";
@@ -1033,9 +1047,12 @@ function checkModelDirtiness() {
   }
 }
 
+${ utils.slaGlobal() }
+
 </script>
 
 ${ utils.path_chooser_libs(True) }
+
 
 <script>
   $(document).ready(function(){
