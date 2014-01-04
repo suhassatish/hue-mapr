@@ -427,7 +427,7 @@ def execute_query(request, design_id=None):
     'error_message': error_message,
     'form': form,
     'log': log,
-    'autocomplete_base_url': reverse(get_app_name(request) + ':api_autocomplete', kwargs={}),
+    'autocomplete_base_url': reverse(get_app_name(request) + ':api_autocomplete_databases', kwargs={}),
     'on_success_url': on_success_url,
     'can_edit_name': design.id and not design.is_auto,
   })
@@ -596,6 +596,7 @@ def view_results(request, id, first_row=0):
     results.start_row = first_row
 
     context.update({
+      'id': id,
       'results': data,
       'has_more': results.has_more,
       'next_row': results.start_row + len(data),
@@ -605,31 +606,28 @@ def view_results(request, id, first_row=0):
       'download_urls': download_urls,
       'save_form': save_form,
       'can_save': query_history.owner == request.user,
-      'next_json_set': reverse(get_app_name(request) + ':view_results', kwargs={
-        'id': str(id),
-        'first_row': results.start_row + len(data)
-      }) + ('?context=' + context_param or '') + '&format=json'
+      'next_json_set':
+        reverse(get_app_name(request) + ':view_results', kwargs={
+            'id': str(id),
+            'first_row': results.start_row + len(data)
+          }
+        )
+        + ('?context=' + context_param or '') + '&format=json'
     })
 
   if request.GET.get('format') == 'json':
-    context = {
-      'columns': massage_columns_for_json(columns),
-      'results': data,
-      'has_more': results.has_more,
-      'next_row': results.start_row + len(data),
-      'start_row': results.start_row,
-      'next_json_set': reverse(get_app_name(request) + ':view_results', kwargs={
-        'id': str(id),
-        'first_row': results.start_row + len(data)
-      }) + ('?context=' + context_param or '') + '&format=json'
-    }
+    context['columns'] = massage_columns_for_json(columns)
+    del context['save_form']
+    del context['query']
     return HttpResponse(json.dumps(context), mimetype="application/json")
-
-  return render('watch_results.mako', request, context)
+  else:
+    return render('watch_results.mako', request, context)
 
 
 def save_results(request, id):
   """
+  DEPRECATED. Need to get rid of watch_wait dependency first.
+
   Save the results of a query to an HDFS directory or Hive table.
   """
   query_history = authorized_get_history(request, id, must_exist=True)
@@ -714,8 +712,6 @@ def install_examples(request):
     response['message'] = _('A POST request is required.')
 
   return HttpResponse(json.dumps(response), mimetype="application/json")
-
-
 
 
 @login_notrequired
