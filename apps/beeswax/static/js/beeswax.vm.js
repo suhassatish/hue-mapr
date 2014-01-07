@@ -18,10 +18,7 @@
 function BeeswaxViewModel(server, query_id) {
   var self = this;
 
-  self.server = ko.observable(server);
-  self.databases = ko.observableArray();
-  self.selectedDatabase = ko.observable(0);
-  self.query = ko.mapping.fromJS({
+  var QUERY_DEFAULTS = {
     'id': query_id,
     'query': '',
     'name': null,
@@ -51,7 +48,12 @@ function BeeswaxViewModel(server, query_id) {
       'url': null,
     },
     'isRunning': false
-  });
+  };
+
+  self.server = ko.observable(server);
+  self.databases = ko.observableArray();
+  self.selectedDatabase = ko.observable(0);
+  self.query = ko.mapping.fromJS(QUERY_DEFAULTS);
 
   self.hasMoreResults = ko.computed(function() {
     return self.query.results.url() != null;
@@ -82,6 +84,10 @@ function BeeswaxViewModel(server, query_id) {
     },
     'deferEvaluation': true
   });
+
+  self.resetQuery = function() {
+    ko.mapping.fromJS(QUERY_DEFAULTS, self.query);
+  };
 
   self.updateDatabases = function(databases) {
     self.databases(databases);
@@ -511,6 +517,32 @@ function BeeswaxViewModel(server, query_id) {
     );
   };
 
+  self.closeQuery = function() {
+    var self = this;
+    if (self.query.id()) {
+      var data = {};
+      var url = '/' + self.server() + '/api/query/' + self.query.id() + '/close';
+      var request = {
+        url: url,
+        dataType: 'json',
+        type: 'POST',
+        success: function(data) {
+          if (data.status == 0) {
+            $(document).trigger('closed.query', data);
+            self.resetQuery();
+          } else {
+            $(document).trigger('error_close.query');
+          }
+        },
+        error: function(data) {
+          $(document).trigger('error_close.results');
+        },
+        data: data
+      };
+      $.ajax(request);
+    }
+  };
+
   self.saveResults = function() {
     var self = this;
     if (self.query.id()) {
@@ -577,6 +609,7 @@ function getFileBrowseButton(inputElement) {
       initialPath: inputElement.val(),
       onFileChoose: function (filePath) {
         inputElement.val(filePath);
+        inputElement.trigger("change");
         $("#chooseFile").modal("hide");
       },
       createFolder: false
