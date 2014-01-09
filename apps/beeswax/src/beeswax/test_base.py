@@ -181,7 +181,10 @@ def wait_for_query_to_finish(client, response, max=30.0):
   if is_finished(response): # aka Has error at submission
     return response
 
-  content = json.loads(response.content)
+  try:
+    content = json.loads(response.content)
+  finally:
+    raise AssertionError(response)
   watch_url = content['watch_url']
 
   response = client.get(watch_url, follow=True)
