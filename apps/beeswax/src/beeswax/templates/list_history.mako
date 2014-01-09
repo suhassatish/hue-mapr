@@ -124,9 +124,6 @@ ${ layout.menubar(section='history') }
             </thead>
             <tbody>
             % for query in page.object_list:
-              <%
-                qcontext = query.design.get_query_context()
-              %>
               <tr class="histRow">
                 <td data-sort-value="${time.mktime(query.submission_date.timetuple())}">${query.submission_date.strftime("%x %X")}</td>
                 <td>${show_saved_query(query.design, query)}</td>
@@ -140,8 +137,8 @@ ${ layout.menubar(section='history') }
                 <td>${query.owner}</td>
                 <td>${models.QueryHistory.STATE[query.last_state]}</td>
                 <td>
-                  % if qcontext and query.last_state not in (models.QueryHistory.STATE.expired.index, models.QueryHistory.STATE.failed.index):
-                    <a href="${ url(app_name + ':watch_query', id=query.id) }?context=${qcontext|u}" data-row-selector="true">${_('Results')}</a>
+                  % if query.last_state not in (models.QueryHistory.STATE.expired.index, models.QueryHistory.STATE.failed.index):
+                    <a href="${ url(app_name + ':execute_query') }?query_id=${query.id}" data-row-selector="true">${_('Results')}</a>
                   % else:
                     ~
                   % endif

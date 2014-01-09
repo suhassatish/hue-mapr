@@ -225,7 +225,7 @@ def explain_directly(request, query, design, query_server):
 
 
 @error_handler
-def execute(request, query_id=None):
+def execute(request, design_id=None):
   response = {'status': -1, 'message': ''}
 
   if request.method != 'POST':
@@ -234,7 +234,7 @@ def execute(request, query_id=None):
   app_name = get_app_name(request)
   query_server = get_query_server_config(app_name)
   query_type = beeswax.models.SavedQuery.TYPES_MAPPING[app_name]
-  design = safe_get_design(request, query_type, query_id)
+  design = safe_get_design(request, query_type, design_id)
 
   try:
     query_form = get_query_form(request)
@@ -286,7 +286,7 @@ def execute(request, query_id=None):
 
 
 @error_handler
-def save_query(request, query_id=None):
+def save_query_design(request, design_id=None):
   response = {'status': -1, 'message': ''}
 
   if request.method != 'POST':
@@ -294,7 +294,7 @@ def save_query(request, query_id=None):
 
   app_name = get_app_name(request)
   query_type = beeswax.models.SavedQuery.TYPES_MAPPING[app_name]
-  design = safe_get_design(request, query_type, query_id)
+  design = safe_get_design(request, query_type, design_id)
 
   try:
     query_form = get_query_form(request)
@@ -312,7 +312,7 @@ def save_query(request, query_id=None):
 
 
 @error_handler
-def fetch_saved_query(request, query_id):
+def fetch_saved_design(request, design_id):
   response = {'status': 0, 'message': ''}
 
   if request.method != 'GET':
@@ -320,7 +320,7 @@ def fetch_saved_query(request, query_id):
 
   app_name = get_app_name(request)
   query_type = beeswax.models.SavedQuery.TYPES_MAPPING[app_name]
-  design = safe_get_design(request, query_type, query_id)
+  design = safe_get_design(request, query_type, design_id)
 
   response['design'] = design_to_dict(design)
   return HttpResponse(json.dumps(response), mimetype="application/json")

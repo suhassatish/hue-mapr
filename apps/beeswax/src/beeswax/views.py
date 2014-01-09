@@ -340,96 +340,29 @@ Queries Views
 
 def execute_query(request, design_id=None):
   """
-  Deprecated except for testing I guess.
-
   View function for executing an arbitrary query.
   It understands the optional GET/POST params:
 
-    on_success_url
-      If given, it will be displayed when the query is successfully finished.
-      Otherwise, it will display the view query results page by default.
+    query_id
+      If given, it will tell the front end to show the desired query history results.
   """
+  if 'query_id' in request.GET:
+    query_id = int(request.GET.get('query_id'))
+  else:
+    query_id = None
+
+  # Check perms.
   authorized_get_design(request, design_id)
 
-  error_message = None
-  form = QueryForm()
-  action = request.path
-  log = None
   app_name = get_app_name(request)
   query_type = SavedQuery.TYPES_MAPPING[app_name]
   design = safe_get_design(request, query_type, design_id)
-  on_success_url = request.REQUEST.get('on_success_url')
-  databases = []
-  query_server = get_query_server_config(app_name)
-  db = dbms.get(request.user, query_server)
-
-  try:
-    databases = get_db_choices(request)
-  except Exception, ex:
-    error_message, log = expand_exception(ex, db)
-
-  if request.method == 'POST':
-    form.bind(request.POST)
-    form.query.fields['database'].choices =  databases # Could not do it in the form
-
-    to_explain = request.POST.has_key('button-explain')
-    to_submit = request.POST.has_key('button-submit')
-
-    # Always validate the saveform, which will tell us whether it needs explicit saving
-    if form.is_valid():
-      to_save = form.saveform.cleaned_data['save']
-      to_saveas = form.saveform.cleaned_data['saveas']
-
-      if to_saveas and not design.is_auto:
-        # Save As only affects a previously saved query
-        design = design.clone()
-
-      if to_submit or to_save or to_saveas or to_explain:
-        explicit_save = to_save or to_saveas
-        if explicit_save:
-          request.info(_('Query saved!'))
-        design = save_design(request, form, query_type, design, explicit_save)
-        action = reverse(app_name + ':execute_query', kwargs={'design_id': design.id})
-
-      if to_explain or to_submit:
-        query_str = form.query.cleaned_data["query"]
-
-        # (Optional) Parameterization.
-        parameterization = get_parameterization(request, query_str, form, design, to_explain)
-        if parameterization:
-          return parameterization
-
-        try:
-          query = HQLdesign(form, query_type=query_type)
-          if to_explain:
-            return explain_directly(request, query, design, query_server)
-          else:
-            download = request.POST.has_key('download')
-            return execute_directly(request, query, query_server, design, on_success_url=on_success_url, download=download)
-        except Exception, ex:
-          error_message, log = expand_exception(ex, db)
-  else:
-    if design.id is not None:
-      data = HQLdesign.loads(design.data).get_query_dict()
-      form.bind(data)
-      form.saveform.set_data(design.name, design.desc)
-    else:
-      # New design
-      form.bind()
-    form.query.fields['database'].choices = databases # Could not do it in the form
-
-  if not databases:
-    request.error(_('No databases are available. Permissions could be missing.'))
 
   return render('execute.mako', request, {
-    'action': action,
     'design': design,
-    'error_message': error_message,
-    'form': form,
-    'log': log,
     'autocomplete_base_url': reverse(get_app_name(request) + ':api_autocomplete_databases', kwargs={}),
-    'on_success_url': on_success_url,
     'can_edit_name': design.id and not design.is_auto,
+    'query_id': query_id
   })
 
 
