@@ -434,16 +434,20 @@ def design_to_dict(design):
 
 
 def query_history_to_dict(request, query_history):
-  return {
+  query_history_dict = {
     'id': query_history.id,
     'state': query_history.last_state,
     'query': query_history.query,
     'has_results': query_history.has_results,
     'statement_number': query_history.statement_number,
-    'design': design_to_dict(query_history.design),
     'watch_url': reverse(get_app_name(request) + ':api_watch_query_refresh_json', kwargs={'id': query_history.id}),
     'results_url': reverse(get_app_name(request) + ':view_results', kwargs={'id': query_history.id, 'first_row': 0})
   }
+
+  if query_history.design:
+    query_history_dict['design'] = design_to_dict(query_history.design)
+
+  return query_history_dict
 
 
 def get_query_form(request):

@@ -175,6 +175,14 @@ def get_shared_beeswax_server():
 
 def wait_for_query_to_finish(client, response, max=30.0):
   # Take a async API execute_query() response in input
+
+  if response.get('Content-Type', None) != 'application/json':
+    assert_true(response.context is not None, response)
+    assert_true(response.context.has_key('query'))
+    assert_true(response.context['query'].id > 0)
+    watch_url = reverse("beeswax:api_watch_query_refresh_json", kwargs={'id': response.context['query'].id})
+    response = client.get(watch_url, follow=True)
+
   start = time.time()
   sleep_time = 0.05
 
@@ -185,6 +193,7 @@ def wait_for_query_to_finish(client, response, max=30.0):
   watch_url = content['watch_url']
 
   response = client.get(watch_url, follow=True)
+
 
   # Loop and check status
   while not is_finished(response):

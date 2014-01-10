@@ -586,8 +586,18 @@ for x in sys.stdin:
 
     # Retrieve that design. It's the first one since it's most recent
     design = beeswax.models.SavedQuery.objects.all()[0]
-    resp = cli.get('/beeswax/execute/%s' % (design.id,))
+    resp = cli.get('/beeswax/execute/design/%s' % design.id)
+    assert_true('query' in resp.context, resp.context)
+    assert_true(resp.context['query'] is None, resp.context)
     assert_equal(design, resp.context['design'], resp.context)
+
+    # Retrieve that query history. It's the first one since it's most recent
+    query_history = beeswax.models.QueryHistory.objects.all()[0]
+    resp = cli.get('/beeswax/execute/query/%s' % query_history.id)
+    assert_true('query' in resp.context, resp.context)
+    assert_true(resp.context['query'] is not None, resp.context)
+    assert_true('design' in resp.context, resp.context)
+    assert_true(resp.context['design'] is not None, resp.context)
 
     resp = cli.get(reverse('beeswax:api_fetch_saved_design', kwargs={'design_id': design.id}))
     content = json.loads(resp.content)
@@ -894,28 +904,11 @@ for x in sys.stdin:
       'partitions-next_form_id': '0',
       'create': 'Create table',
     }, follow=True)
+    assert_true(any([_template.filename for _template in resp.template if _template.filename == 'execute.mako']))
 
-    templates = [_template.filename for _template in resp.template]
-
-    if any(['watch_wait.mako' in template for template in templates]):
-      assert_equal_mod_whitespace("""
-          CREATE EXTERNAL TABLE `default.my_table`
-          (
-           `my_col` string
-          )
-          COMMENT "Yo>>>>dude"
-          ROW FORMAT DELIMITED
-            FIELDS TERMINATED BY ','
-            COLLECTION ITEMS TERMINATED BY '\\002'
-            MAP KEYS TERMINATED BY '\\003'
-            STORED AS TextFile LOCATION "/tmp/foo"
-      """, resp.context['query'].query)
-      assert_true('on_success_url=%2Fmetastore%2Ftable%2Fdefault%2Fmy_table' in resp.context['fwd_params'], resp.context['fwd_params'])
-    else:
-      # Create was fast
-      templates = [_template.filename for _template in resp.template]
-      assert_true(any(['describe_table.mako' in template for template in templates]), templates)
-      assert_true('Table : my_table' in resp.content, resp.content)
+    # Ensure we can see table.
+    response = self.client.get("/metastore/table/default/my_table")
+    assert_true("my_col" in response.content)
 
 
   def test_create_table_timestamp(self):
@@ -1195,13 +1188,7 @@ for x in sys.stdin:
       'use_default_location': True,
     }, follow=True)
 
-    templates = [_template.filename for _template in resp.template]
-
-    if [template for template in templates if "watch_wait.mako" in template]:
-      assert_equal_mod_whitespace("CREATE DATABASE my_db COMMENT \"foo\"", resp.context['query'].query, resp.content)
-    else:
-      # Create was fast
-      assert_true([template for template in templates if 'databases.mako' in template], templates)
+    assert_true(any([_template.filename for _template in resp.template if _template.filename == 'execute.mako']))
 
     resp = wait_for_query_to_finish(self.client, resp, max=180.0)
     assert_true('my_db' in resp.context['databases'], resp)
