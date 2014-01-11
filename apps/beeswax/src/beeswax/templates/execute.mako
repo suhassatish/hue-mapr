@@ -1962,6 +1962,33 @@ ko.applyBindings(viewModel);
   queryEvents();
 % endif
 
+
+// Knockout
+viewModel = new BeeswaxViewModel("${app_name}");
+% if query:
+  viewModel.design.history.id(${query.id});
+  viewModel.fetchQueryHistory();
+  $(document).on('fetched.query', function(e) {
+    viewModel.watchQueryLoop();
+  });
+% elif design.id:
+  viewModel.design.id(${design.id});
+  viewModel.fetchDesign();
+% endif
+if (viewModel.design.id() > 0 || viewModel.design.history.id() > 0) {
+  // Code mirror and ko.
+  var codeMirrorSubscription = viewModel.design.query.subscribe(function(value) {
+    codeMirror.setValue(value);
+    codeMirrorSubscription.dispose();
+  });
+}
+viewModel.design.fileResources.subscribe(function() {
+  // File chooser button for file resources.
+  $(".pathChooser:not(:has(~ button))").after(getFileBrowseButton($(".pathChooser:not(:has(~ button))")));
+});
+viewModel.fetchDatabases();
+ko.applyBindings(viewModel);
+
 </script>
 
 ${ commonfooter(messages) | n,unicode }
