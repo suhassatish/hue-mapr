@@ -26,7 +26,7 @@ ${ commonheader(_('Waiting for query...'), app_name, user) | n,unicode }
 ${layout.menubar(section='query')}
 
 ## Required for unit tests
-<!-- <meta http-equiv="refresh" content="3;${url(app_name + ':watch_query', query.id)}?${fwd_params}" /> -->
+<!-- <meta http-equiv="refresh" content="3;${url(app_name + ':watch_query_refresh_json', query.id)}?${fwd_params}" /> -->
 
 <div class="container-fluid">
     <div class="row-fluid">
