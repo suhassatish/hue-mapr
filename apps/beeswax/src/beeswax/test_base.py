@@ -187,6 +187,7 @@ def wait_for_query_to_finish(client, response, max=30.0):
 
   response = client.get(watch_url, follow=True)
 
+
   # Loop and check status
   while not is_finished(response):
     time.sleep(sleep_time)

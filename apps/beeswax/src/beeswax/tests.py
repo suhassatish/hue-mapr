@@ -905,6 +905,7 @@ for x in sys.stdin:
       'partitions-next_form_id': '0',
       'create': 'Create table',
     }, follow=True)
+    assert_true(any([_template.filename for _template in resp.template if _template.filename == 'execute.mako']))
 
     # Ensure we can see table.
     response = self.client.get("/metastore/table/default/my_table")
