@@ -24,10 +24,7 @@ import grp
 import logging
 import threading
 import subprocess
-try:
-  import json
-except ImportError:
-  import simplejson as json
+import json
 
 import ldap
 import ldap_access
@@ -73,7 +70,7 @@ def list_permissions(request):
   return render("list_permissions.mako", request, dict(permissions=HuePermission.objects.all()))
 
 
-def list_for_autocomplete(request):
+def list_for_autocomplete(request):  
   if request.ajax:
     response = {
       'users': massage_users_for_json(User.objects.all()),
