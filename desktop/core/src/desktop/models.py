@@ -330,6 +330,17 @@ class DocumentManager(models.Manager):
           doc.delete()
     except Exception, e:
       LOG.warn(force_unicode(e))
+      
+    # Delete duplicated permissions
+#    try:
+#      for doc in DocumentPermission.objects.values('doc').annotate(dcount=Count('doc')).filter(dcount__gte=2):
+#        if doc.content_type is None:
+#          doc.delete()
+#    except Exception, e:
+#      LOG.warn(force_unicode(e))
+#      
+#      
+#    DocumentPermission.objects.fannotate(num_authors=Count('authors')).filter(num_authors__gt=1)
 
 
 class Document(models.Model):
@@ -547,7 +558,7 @@ class DocumentPermission(models.Model):
 
 
   objects = DocumentPermissionManager()
-  #unique_together = ('doc', 'perms')
+  unique_together = ('doc', 'perms')
 
 
 # HistoryTable
