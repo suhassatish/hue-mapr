@@ -204,6 +204,7 @@ ${ layout.menubar(section='sla', dashboard=True) }
   }
 
   var slaTable;
+
   $(document).ready(function () {
     $("a[data-row-selector='true']").jHueRowSelector();
 
@@ -211,8 +212,8 @@ ${ layout.menubar(section='sla', dashboard=True) }
 
     $("input[name='start_0']").val(moment().subtract('days', 7).format("MM/DD/YYYY"));
     $("input[name='start_1']").val(moment().subtract('days', 7).format("hh:mm A"));
-    $("input[name='end_0']").val(moment().format("MM/DD/YYYY"));
-    $("input[name='end_1']").val(moment().format("hh:mm A"));
+    $("input[name='end_0']").val(moment().add('days', 1).format("MM/DD/YYYY"));
+    $("input[name='end_1']").val(moment().add('days', 1).format("hh:mm A"));
 
 
     $.getJSON("${url('oozie:list_oozie_workflows')}?format=json&justsla=true", function (data) {
@@ -244,6 +245,9 @@ ${ layout.menubar(section='sla', dashboard=True) }
         "sEmptyTable": "${_('No data available')}",
         "sZeroRecords": "${_('No matching records')}"
       },
+      "aaSorting":[
+        [4, "desc"]
+      ],
       "fnDrawCallback": function (oSettings) {
         $("a[data-row-selector='true']").jHueRowSelector();
       }

@@ -156,6 +156,7 @@ def import_wizard(request, database='default'):
         # We should have a valid delim form
         s2_delim_form = CreateByImportDelimForm(request.POST)
         if not s2_delim_form.is_valid():
+          print s2_delim_form.errors
           # Go back to picking delimiter
           do_s2_user_delim, do_s3_column_def, do_hive_create = True, False, False
       if do_hive_create:
