@@ -14,8 +14,8 @@ It features:
       * Beeswax application for executing Hive queries
       * Impala App for executing Impala queries
       * Spark Editor and Dashboard
-      * Pig Editor for submitting Pig scripts
       * Oozie App for submitting and monitoring workflows, coordinators and bundles
+      * Pig Editor for submitting Pig scripts
       * HBase Browser for exploring and modifying HBase tables and data
       * Table Browser for accessing Hive metadata and HCatalog
       * Search App for querying Solr and Solr Cloud
@@ -34,7 +34,7 @@ Getting Started
 ===============
 To build and get the development server running::
 
-    $ git clone http://github.com/cloudera/hue.git
+    $ git clone http://github.com/mapr/hue.git
     $ cd hue
     $ make apps
     $ build/env/bin/hue runserver

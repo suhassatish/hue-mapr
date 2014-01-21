@@ -305,6 +305,9 @@ EMAIL_HOST_PASSWORD = desktop.conf.SMTP.PASSWORD.get()
 EMAIL_USE_TLS = desktop.conf.SMTP.USE_TLS.get()
 DEFAULT_FROM_EMAIL = desktop.conf.SMTP.DEFAULT_FROM.get()
 
+# DEFAULT_USER and DEFAULT_WEBHDFS_USER used in webhdfs.py
+DEFAULT_HDFS_SUPERUSER = desktop.conf.DEFAULT_HDFS_SUPERUSER.get()
+DEFAULT_USER = desktop.conf.DEFAULT_USER.get()        
 # Used for securely creating sessions.  Should be unique and not shared with anybody.
 SECRET_KEY = desktop.conf.SECRET_KEY.get()
 if SECRET_KEY == "":
@@ -348,4 +351,8 @@ SKIP_SOUTH_TESTS = True
 
 # Set up environment variable so Kerberos libraries look at our private
 # ticket cache
-os.environ['KRB5CCNAME'] = desktop.conf.KERBEROS.CCACHE_PATH.get()
+#os.environ['KRB5CCNAME'] = desktop.conf.KERBEROS.CCACHE_PATH.get()
+
+#######
+if desktop.conf.AUTH.USER_GROUP_MEMBERSHIP_SYNCHRONIZATION_BACKEND.get():
+  MIDDLEWARE_CLASSES.append('desktop.middleware.UserGroupSynchronizationMiddleware')

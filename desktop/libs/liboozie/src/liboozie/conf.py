@@ -36,7 +36,7 @@ SECURITY_ENABLED = Config(
 
 REMOTE_DEPLOYMENT_DIR = Config(
   key="remote_deployement_dir",
-  default="/user/hue/oozie/deployments",
+  default="/oozie/deployments",
   help=_t("Location on HDFS where the workflows/coordinators are deployed when submitted by a non-owner."))
 
 
@@ -73,7 +73,7 @@ def config_validator(user):
     def get_fully_qualifying_key(self): return self.value
 
   for cluster in get_all_hdfs().values():
-    res.extend(validate_path(ConfigMock('/user/oozie/share/lib'), is_dir=True, fs=cluster,
+    res.extend(validate_path(ConfigMock('/oozie/share/lib'), is_dir=True, fs=cluster,
                              message=_('Oozie Share Lib not installed in default location.')))
 
   return res
