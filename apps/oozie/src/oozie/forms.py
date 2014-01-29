@@ -338,7 +338,7 @@ class CoordinatorForm(forms.ModelForm):
 
   class Meta:
     model = Coordinator
-    exclude = ('owner', 'deployment_dir', 'frequency_number', 'frequency_unit')
+    exclude = ('owner', 'deployment_dir')
     widgets = {
       'description': forms.TextInput(attrs={'class': 'span5'}),
       'parameters': forms.widgets.HiddenInput(),
