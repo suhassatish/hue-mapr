@@ -74,7 +74,7 @@ def find_variables(data):
     if not isinstance(val, basestring):
       return
     for match in Template.pattern.finditer(val):
-      name = match.group('named') or match.group('braced')
+      name = match.group('braced')
       if name is not None:
         found.add(name)
 
