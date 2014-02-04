@@ -216,6 +216,12 @@ var NodeModule = function($, IdGeneratorTable, NodeFields) {
       };
     }
 
+    // Manage custom 'data' here
+    if ('sla' in self.model) {
+      var data = self.model['sla'];
+      self.sla = ko.observableArray(self.model['sla']);
+    }
+
     self.initialize.apply(self, arguments);
 
     return self;
