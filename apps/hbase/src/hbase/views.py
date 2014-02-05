@@ -16,7 +16,6 @@
 # limitations under the License.
 
 
-import base64
 import json
 import logging
 import re
@@ -24,6 +23,8 @@ import StringIO
 import urllib
 
 from avro import datafile, io
+import base64
+from avro import schema, datafile, io
 
 from django.http import HttpResponse
 from django.utils.translation import ugettext as _
