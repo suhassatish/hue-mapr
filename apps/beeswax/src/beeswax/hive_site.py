@@ -130,7 +130,7 @@ def _parse_hive_site():
   global _HIVE_SITE_DICT
   global _HIVE_SITE_PATH
 
-  _HIVE_SITE_PATH = os.path.join(beeswax.conf.HIVE_CONF_DIR.get(), 'hive-site.xml')
+  _HIVE_SITE_PATH = os.path.join(HIVE_CONF_DIR.get(), 'hive-site.xml')
   try:
     data = file(_HIVE_SITE_PATH, 'r').read()
   except IOError, err:
