@@ -352,7 +352,3 @@ SKIP_SOUTH_TESTS = True
 # Set up environment variable so Kerberos libraries look at our private
 # ticket cache
 #os.environ['KRB5CCNAME'] = desktop.conf.KERBEROS.CCACHE_PATH.get()
-
-#######
-if desktop.conf.AUTH.USER_GROUP_MEMBERSHIP_SYNCHRONIZATION_BACKEND.get():
-  MIDDLEWARE_CLASSES.append('desktop.middleware.UserGroupSynchronizationMiddleware')
