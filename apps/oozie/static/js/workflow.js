@@ -474,6 +474,8 @@ var WorkflowModule = function($, NodeModelChooser, Node, ForkNode, DecisionNode,
 
     module.prototype.initialize.apply(self, arguments);
 
+    self.sla = self.model['sla']; // Need to persists here for some reason
+
     return self;
   };
 
