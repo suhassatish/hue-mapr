@@ -133,6 +133,7 @@ class TestRemoteUserLogin(object):
   reset = []
 
   def setUp(self):
+    User.objects.all().delete()
     self.backends = settings.AUTHENTICATION_BACKENDS
     settings.AUTHENTICATION_BACKENDS = ('desktop.auth.backend.RemoteUserDjangoBackend',)
     self.reset.append( conf.AUTH.BACKEND.set_for_testing('desktop.auth.backend.RemoteUserDjangoBackend') )
@@ -140,7 +141,6 @@ class TestRemoteUserLogin(object):
     self.c = Client()
 
   def tearDown(self):
-    User.objects.all().delete()
     settings.AUTHENTICATION_BACKENDS = self.backends
     for finish in self.reset:
       finish()
