@@ -1,0 +1,203 @@
+## Licensed to Cloudera, Inc. under one
+## or more contributor license agreements.    See the NOTICE file
+## distributed with this work for additional information
+## regarding copyright ownership.  Cloudera, Inc. licenses this file
+## to you under the Apache License, Version 2.0 (the
+## "License"); you may not use this file except in compliance
+## with the License.  You may obtain a copy of the License at
+##
+##       http://www.apache.org/licenses/LICENSE-2.0
+##
+## Unless required by applicable law or agreed to in writing, software
+## distributed under the License is distributed on an "AS IS" BASIS,
+## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+## See the License for the specific language governing permissions and
+## limitations under the License.
+<%!
+  from desktop import conf
+  from django.core.urlresolvers import reverse
+  from django.utils.translation import ugettext as _
+  from desktop.views import commonheader, commonfooter
+%>
+${ commonheader("Welcome to Hue", "login", user, "50px") | n,unicode }
+
+<style type="text/css">
+  body {
+    background-color: #FFF;
+  }
+
+  @-webkit-keyframes spinner {
+    from {
+      -webkit-transform: rotateY(0deg);
+    }
+    to {
+      -webkit-transform: rotateY(-360deg);
+    }
+  }
+
+  #logo {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    margin-bottom: 10px;
+    background: #FFF url("/static/art/hue-login-logo-ellie.png") 50% 14px no-repeat;
+    width: 130px;
+    height: 130px;
+    -webkit-border-radius: 65px;
+    -moz-border-radius: 65px;
+    border-radius: 65px;
+    border: 1px solid #EEE;
+  }
+
+  #logo.waiting {
+    -webkit-animation-name: spinner;
+    -webkit-animation-timing-function: linear;
+    -webkit-animation-iteration-count: infinite;
+    -webkit-animation-duration: 2s;
+    -webkit-transform-style: preserve-3d;
+  }
+
+  .login-content {
+    width: 360px;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .input-prepend {
+    width: 100%;
+  }
+
+  .input-prepend .add-on {
+    min-height: 38px;
+    line-height: 38px;
+    color: #999;
+  }
+
+  .login-content input {
+    width: 85%;
+    min-height: 38px;
+    font-size: 18px;
+  }
+
+  .login-content .input-prepend.error input, .login-content .input-prepend.error .add-on {
+    border-top-color: #dd4b39;
+    border-bottom-color: #dd4b39;
+  }
+
+  .login-content .input-prepend.error input {
+    border-right-color: #dd4b39;
+  }
+
+  .login-content .input-prepend.error .add-on {
+    border-left-color: #dd4b39;
+  }
+
+  .login-content input[type='submit'] {
+    height: 44px;
+    min-height: 44px;
+    font-weight: normal;
+    text-shadow: none;
+  }
+
+  hr {
+    border-top-color: #DEDEDE;
+  }
+
+  ul.errorlist {
+    text-align: left;
+    margin-top: -4px;
+    margin-bottom: 4px;
+  }
+
+  ul.errorlist li {
+    font-size: 13px;
+    font-weight: normal;
+    font-style: normal;
+  }
+
+  input.error {
+    border-color: #b94a48;
+    -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+    -moz-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+    box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+  }
+
+  .well {
+    border: 1px solid #D8D8D8;
+    border-radius: 3px 3px 3px 3px;
+    background-color: #F7F7F7;
+  }
+
+  .footer {
+    position: fixed;
+    bottom: 0;
+    background-color: #338BB8;
+    height: 6px;
+    width: 100%;
+  }
+
+  h3 {
+    color: #666;
+    font-size: 24px;
+    font-weight: 400;
+    margin-bottom: 20px;
+  }
+</style>
+
+
+<div class="footer"></div>
+
+<div class="container">
+  <div class="row">
+    <div class="login-content center">
+      <div id="logo"></div>
+
+      <form method="POST" action="${ reverse('useradmin.views.change_pass', kwargs={'username': user.username}) }" class="well">
+
+        <h3>${_('Change your password!')}</h3>
+
+        <div class="alert alert-block">
+          ${_('Since this is your first time logging in, choose a good password. Be sure to remember it!')}
+        </div>
+
+        <div class="input-prepend hide">
+          <span class="add-on"><i class="fa fa-user"></i></span>
+          ${ form['username'] | n,unicode }
+        </div>
+
+        <div class="input-prepend">
+          <span class="add-on"><i class="fa fa-lock"></i></span>
+          ${ form['password1'] | n,unicode }
+        </div>
+        ${ form['password1'].errors | n,unicode }
+
+        <div class="input-prepend">
+          <span class="add-on"><i class="fa fa-lock"></i></span>
+          ${ form['password2'] | n,unicode }
+        </div>
+        ${ form['password2'].errors | n,unicode }
+
+        <hr/>
+
+        <input type="submit" class="btn btn-large btn-primary" value="${_('Change')}"/>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  $(document).ready(function () {
+    $("form").on("submit", function () {
+      window.setTimeout(function () {
+        $("#logo").addClass("waiting");
+      }, 1000);
+    });
+
+    $("ul.errorlist").each(function () {
+      $(this).prev().addClass("error");
+    });
+  });
+</script>
+
+${ commonfooter(messages) | n,unicode }

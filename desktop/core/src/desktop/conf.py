@@ -398,7 +398,15 @@ AUTH = ConfigSection(
     FORCE_USERNAME_LOWERCASE = Config("force_username_lowercase",
                                       help=_("Force usernames to lowercase when creating new users from LDAP."),
                                       type=coerce_bool,
-                                      default=False)
+                                      default=False),
+    CHANGE_DEFAULT_PASSWORD = Config(
+      key="change_default_password",
+      help=_("When set to true this will allow you to specify a password for "
+             "the user when you create the user and then force them to change "
+             "their password upon first login.  The default is false."),
+      type=coerce_bool,
+      default=False,
+    )
 ))
 
 LDAP = ConfigSection(
@@ -524,16 +532,7 @@ OAUTH = ConfigSection(
       help=_("The Authorize URL."),
       type=str,
       default="https://api.twitter.com/oauth/authorize"
-    ),
-
-    CHANGE_DEFAULT_PASSWORD = Config(
-      key="change_default_password",
-      help=_("When set to true this will allow you to specify a password for "
-             "the user when you create the user and then force them to change "
-             "their password upon first login.  The default is false."),
-      type=str,
-      default="false",
-    ),
+    )
   )
 )
 

@@ -91,63 +91,9 @@ class UserChangeForm(django.contrib.auth.forms.UserChangeForm):
     return user
 
 
-class PasswordChangeForm(django.contrib.auth.forms.UserChangeForm):
-  """
-  Same as the django form for now.
-  """
-
-  username = forms.RegexField(
-      label=_t("Username"),
-      max_length=30,
-      regex='^%s$' % (get_username_re_rule(),),
-      help_text = _t("Required. 30 characters or fewer. No whitespaces or colons."),
-      error_messages = {'invalid': _t("Whitespaces and ':' not allowed") })
-  password1 = forms.CharField(label=_t("Password"), widget=forms.PasswordInput, required=False)
-  password2 = forms.CharField(label=_t("Password confirmation"), widget=forms.PasswordInput, required=False)
-  old_password = forms.CharField(label=_("Old password"), widget=forms.PasswordInput)
-
-  def __init__(self, *args, **kwargs):
-    super(PasswordChangeForm, self).__init__(*args, **kwargs)
-
-    if self.instance.id:
-      self.fields['username'].widget.attrs['readonly'] = True
-
-  class Meta(django.contrib.auth.forms.UserChangeForm.Meta):
-    fields = ["username", "old_password", "password1", "password2"]
-
-  def clean_old_password(self):
-      """
-      Validates that the old_password field is correct.
-      """
-      old_password = self.cleaned_data["old_password"]
-      user = super(PasswordChangeForm, self).save(commit=False)
-      if not user.check_password(old_password):
-          raise forms.ValidationError(_("Your old password was entered incorrectly. Please enter it again."))
-      return old_password
-
-  def clean_password2(self):
-    password1 = self.cleaned_data.get("password1", "")
-    password2 = self.cleaned_data["password2"]
-    if password1 != password2:
-      raise forms.ValidationError(_t("Passwords do not match."))
-    return password2
-
-  def clean_password1(self):
-    password = self.cleaned_data.get("password1", "")
-    if self.instance.id is None and password == "":
-      raise forms.ValidationError(_("You must specify a password when changing your password."))
-    return self.cleaned_data.get("password1", "")
-
-  def save(self, commit=True):
-    """
-    Update password if it's set.
-    """
-    user = super(PasswordChangeForm, self).save(commit=False)
-    if self.cleaned_data["password1"]:
-      user.set_password(self.cleaned_data["password1"])
-    if commit:
-      user.save()
-    return user
+class ChangePasswordForm(UserChangeForm):
+  password1 = forms.CharField(label=_t("Password"), widget=forms.PasswordInput(attrs={'maxlength': 30, 'placeholder': _t("Password")}))
+  password2 = forms.CharField(label=_t("Password confirmation"), widget=forms.PasswordInput(attrs={'maxlength': 30, 'placeholder': _t("Password (again)")}))
 
 
 class SuperUserChangeForm(UserChangeForm):

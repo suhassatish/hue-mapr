@@ -20,6 +20,7 @@ from nose.tools import assert_true, assert_false, assert_equal
 from django.contrib.auth.models import User
 from django.test.client import Client
 from django.conf import settings
+from django.core.urlresolvers import reverse
 
 from desktop import conf, middleware
 from desktop.auth import backend
@@ -33,11 +34,16 @@ from useradmin.tests import LdapTestConnection
 
 
 class TestLoginWithHadoop(PseudoHdfsTestBase):
+  reset = []
 
   def setUp(self):
     # Simulate first login ever
     User.objects.all().delete()
     self.c = Client()
+
+  def tearDown(self):
+    for finish in self.reset:
+      finish()
 
   def test_login(self):
     response = self.c.get('/accounts/login/')
@@ -68,6 +74,33 @@ class TestLoginWithHadoop(PseudoHdfsTestBase):
     assert_true('/beeswax' in response.content, response.content)
     # Custom login process should not do 'http-equiv="refresh"' but call the correct view
     # 'Could not create home directory.' won't show up because the messages are consumed before
+  
+  def test_login_change_password(self):
+    self.reset.append(conf.AUTH.CHANGE_DEFAULT_PASSWORD.set_for_testing(True))
+
+    response = self.c.post('/accounts/login/', dict(username="foo2", password="foo2"), follow=True)
+    assert_equal(200, response.status_code, "Expected ok status.")
+    assert_true('password1' in response.content, response.content)
+
+    response = self.c.post(reverse('useradmin.views.change_pass', kwargs={'username': 'foo2'}), {
+      'username': "foo2",
+      'password1': "foo3",
+      'password2': "foo3"
+    }, follow=True)
+    assert_equal(200, response.status_code, "Expected ok status.")
+    assert_true('/beeswax' in response.content, response.content)
+
+    # Logout and log back in using new password
+    self.c.logout()
+    response = self.c.post('/accounts/login/', dict(username="foo2", password="foo3"), follow=True)
+    assert_equal(200, response.status_code, "Expected ok status.")
+    assert_true('/beeswax' in response.content, response.content)
+
+    # Logout and log back in using old password (fail)
+    self.c.logout()
+    response = self.c.post('/accounts/login/', dict(username="foo2", password="foo2"), follow=True)
+    assert_equal(200, response.status_code, "Expected ok status.")
+    assert_true('Invalid username or password' in response.content, response.content)
 
 
 class TestLdapLogin(PseudoHdfsTestBase):

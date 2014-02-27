@@ -22,5 +22,4 @@ MENU_INDEX = 60
 
 PERMISSION_ACTIONS = (
   ("access_view:useradmin:edit_user", "Access to profile page on User Admin"),
-  ("access_view:useradmin:change_pass", "Access to change password page on first login"),
 )

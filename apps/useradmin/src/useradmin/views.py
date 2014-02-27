@@ -37,6 +37,7 @@ from django.utils.translation import ugettext as _
 from django.forms.util import ErrorList
 from django.shortcuts import redirect
 from django.http import HttpResponse
+from django.utils import timezone
 
 import desktop.conf
 from hadoop.fs.exceptions import WebHdfsException
@@ -44,7 +45,7 @@ from useradmin.models import HuePermission, UserProfile, LdapGroup
 from useradmin.models import get_profile, get_default_user_group
 from useradmin.forms import SyncLdapUsersGroupsForm, AddLdapGroupsForm,\
   AddLdapUsersForm, PermissionsEditForm, GroupEditForm, SuperUserChangeForm,\
-  UserChangeForm, PasswordChangeForm
+  UserChangeForm, ChangePasswordForm
 
 
 LOG = logging.getLogger(__name__)
@@ -241,38 +242,29 @@ def change_pass(request, username):
   if request.user.username != username and not request.user.is_superuser:
     raise PopupException(_("You must be a superuser to add or edit another user."), error_code=401)
 
-  if username is not None:
+  try:
     instance = User.objects.get(username=username)
-  else:
-    raise PopupException(_("You can't change the password for user None."), error_code=401)
-
-  form_class = PasswordChangeForm
+  except User.DoesNotExist:
+    raise PopupException(_('User %s does not exist.') % username)
 
   if request.method == 'POST':
-    form = form_class(request.POST, instance=instance)
+    form = ChangePasswordForm(request.POST, instance=instance)
     if form.is_valid(): # All validation rules pass
-      if instance is None:
-        raise PopupException(_("You can't change the password for user None."), error_code=401)
-      else:
-        global __users_lock
-        __users_lock.acquire()
-        try:
-          # form.instance (and instance) now carry the new data
-          orig = User.objects.get(username=username)
+      # form.instance (and instance) now carry the new data
+      User.objects.get(username=username)
 
-          # All ok
-          form.save()
-          request.info(_('User information updated'))
-        finally:
-          __users_lock.release()
+      # All ok
+      user = form.save()
+      user.last_login = timezone.now()
+      user.save()
+      request.info(_('User information updated'))
 
-      return redirect(reverse('desktop.views.home'))
-      """return redirect(reverse('about:index', kwargs={'username': username}))"""
+    return redirect(reverse('desktop.views.home'))
   else:
     initial = {}
-    form = form_class(instance=instance, initial=initial)
+    form = ChangePasswordForm(instance=instance, initial=initial)
 
-  return render('change_pass.mako', request, dict(form=form, username=username))
+  return render('change_pass.mako', request, {'form': form, 'username': username})
 
 
 def edit_group(request, name=None):
