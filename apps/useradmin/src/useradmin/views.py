@@ -44,7 +44,7 @@ from useradmin.models import HuePermission, UserProfile, LdapGroup
 from useradmin.models import get_profile, get_default_user_group
 from useradmin.forms import SyncLdapUsersGroupsForm, AddLdapGroupsForm,\
   AddLdapUsersForm, PermissionsEditForm, GroupEditForm, SuperUserChangeForm,\
-  UserChangeForm
+  UserChangeForm, PasswordChangeForm
 
 
 LOG = logging.getLogger(__name__)
@@ -227,6 +227,52 @@ def edit_user(request, username=None):
     form = form_class(instance=instance, initial=initial)
 
   return render('edit_user.mako', request, dict(form=form, username=username))
+
+
+def change_pass(request, username):
+  """
+  change_pass(request, username) -> reply
+
+  @type request:        HttpRequest
+  @param request:       The request object
+  @type username:       string
+  @param username:      No Default
+  """
+  if request.user.username != username and not request.user.is_superuser:
+    raise PopupException(_("You must be a superuser to add or edit another user."), error_code=401)
+
+  if username is not None:
+    instance = User.objects.get(username=username)
+  else:
+    raise PopupException(_("You can't change the password for user None."), error_code=401)
+
+  form_class = PasswordChangeForm
+
+  if request.method == 'POST':
+    form = form_class(request.POST, instance=instance)
+    if form.is_valid(): # All validation rules pass
+      if instance is None:
+        raise PopupException(_("You can't change the password for user None."), error_code=401)
+      else:
+        global __users_lock
+        __users_lock.acquire()
+        try:
+          # form.instance (and instance) now carry the new data
+          orig = User.objects.get(username=username)
+
+          # All ok
+          form.save()
+          request.info(_('User information updated'))
+        finally:
+          __users_lock.release()
+
+      return redirect(reverse('desktop.views.home'))
+      """return redirect(reverse('about:index', kwargs={'username': username}))"""
+  else:
+    initial = {}
+    form = form_class(instance=instance, initial=initial)
+
+  return render('change_pass.mako', request, dict(form=form, username=username))
 
 
 def edit_group(request, name=None):

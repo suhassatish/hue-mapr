@@ -74,6 +74,13 @@ def first_login_ever():
       return True
   return False
 
+def users_first_login(self):
+  """ Return true if user has never logged in before. """
+  backends = get_backends()
+  for backend in backends:
+    if isinstance(backend, AllowFirstUserDjangoBackend) and self.last_login == self.date_joined:
+      return True
+  return False
 
 def get_backend_name():
   return get_backends() and get_backends()[0].__class__.__name__
@@ -98,8 +105,14 @@ def dt_login(request):
         # Must login by using the AuthenticationForm.
         # It provides 'backends' on the User object.
         user = auth_form.get_user()
+        is_users_first_login = users_first_login(user)
+        LOG.warn('is_users_first_login: %s' % is_users_first_login)
+        require_pass_first_login = OAUTH.CHANGE_DEFAULT_PASSWORD.get()
+        LOG.warn('require_pass_first_login: %s' % require_pass_first_login) 
         login(request, user)
 
+        if is_users_first_login and require_pass_first_login:
+          return HttpResponseRedirect(urlresolvers.reverse('useradmin.views.change_pass', kwargs={'username': user.username}))
         if request.session.test_cookie_worked():
           request.session.delete_test_cookie()
 

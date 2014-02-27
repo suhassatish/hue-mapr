@@ -525,6 +525,15 @@ OAUTH = ConfigSection(
       type=str,
       default="https://api.twitter.com/oauth/authorize"
     ),
+
+    CHANGE_DEFAULT_PASSWORD = Config(
+      key="change_default_password",
+      help=_("When set to true this will allow you to specify a password for "
+             "the user when you create the user and then force them to change "
+             "their password upon first login.  The default is false."),
+      type=str,
+      default="false",
+    ),
   )
 )
 
