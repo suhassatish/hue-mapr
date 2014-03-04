@@ -19,8 +19,12 @@ import logging
 
 from django.contrib.auth.models import User
 
+from desktop.conf import LDAP
+
 from models import UserProfile
 from views import import_ldap_users
+
+import ldap_access
 
 
 LOG = logging.getLogger(__name__)
@@ -44,5 +48,10 @@ class LdapSynchronizationMiddleware(object):
 
     # Cache should be cleared when user logs out.
     if self.USER_CACHE_NAME not in request.session:
-      request.session[self.USER_CACHE_NAME] = import_ldap_users(user.username, sync_groups=True, import_by_dn=False)
+      if LDAP.LDAP_SERVERS.get():
+        server = next(LDAP.LDAP_SERVERS.__iter__())
+        connection = ldap_access.get_connection(LDAP.LDAP_SERVERS.get()[server], LDAP.SEARCH_BIND_AUTHENTICATION.get())
+      else:
+        connection = ldap_access.get_connection(LDAP, LDAP.SEARCH_BIND_AUTHENTICATION.get())
+      request.session[self.USER_CACHE_NAME] = import_ldap_users(connection, user.username, sync_groups=True, import_by_dn=False)
       request.session.modified = True
