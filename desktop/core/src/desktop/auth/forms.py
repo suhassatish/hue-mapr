@@ -18,13 +18,19 @@
 import datetime
 
 from django.conf import settings
+from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import AuthenticationForm as AuthAuthenticationForm, UserCreationForm as AuthUserCreationForm
-from django.forms import CharField, TextInput, PasswordInput, ValidationError
+from django.forms import CharField, TextInput, PasswordInput, ChoiceField, ValidationError
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _t, ugettext as _
 
 from desktop import conf
+
+if conf.LDAP.LDAP_SERVERS.get():
+  SERVER_CHOICES = [(ldap_server_record_key, ldap_server_record_key) for ldap_server_record_key in conf.LDAP.LDAP_SERVERS.get()]
+else:
+  SERVER_CHOICES = [('LDAP', 'LDAP')]
 
 
 class AuthenticationForm(AuthAuthenticationForm):
@@ -38,6 +44,9 @@ class AuthenticationForm(AuthAuthenticationForm):
 
   username = CharField(label=_t("Username"), max_length=30, widget=TextInput(attrs={'maxlength': 30, 'placeholder': _t("Username"), "autofocus": "autofocus"}))
   password = CharField(label=_t("Password"), widget=PasswordInput(attrs={'placeholder': _t("Password")}))
+
+  def authenticate(self):
+    return super(AuthenticationForm, self).clean()
 
   def clean(self):
     if conf.AUTH.EXPIRES_AFTER.get() > -1:
@@ -64,7 +73,31 @@ class AuthenticationForm(AuthAuthenticationForm):
         # This means the user managed to get their username wrong.
         pass
 
-    return super(AuthenticationForm, self).clean()
+    return self.authenticate()
+
+
+class ActiveDirectoryAuthenticationForm(AuthenticationForm):
+  """
+  Adds NT_DOMAINS selector.
+  """
+  servers = ChoiceField(choices=SERVER_CHOICES)
+
+  def authenticate(self):
+    username = self.cleaned_data.get('username')
+    password = self.cleaned_data.get('password')
+    server = self.cleaned_data.get('servers')
+
+    if username and password:
+      self.user_cache = authenticate(username=username,
+                                     password=password,
+                                     server=server)
+      if self.user_cache is None:
+        raise ValidationError(
+          self.error_messages['invalid_login'])
+      elif not self.user_cache.is_active:
+        raise ValidationError(self.error_messages['inactive'])
+    self.check_for_test_cookie()
+    return self.cleaned_data
 
 
 class UserCreationForm(AuthUserCreationForm):
@@ -81,3 +114,7 @@ class UserCreationForm(AuthUserCreationForm):
       data['password1'] = data['password']
       data['password2'] = data['password']
     super(UserCreationForm, self).__init__(data=data, *args, **kwargs)
+
+
+class ActiveDirectoryUserCreationForm(UserCreationForm):
+  server = ChoiceField(choices=SERVER_CHOICES)
