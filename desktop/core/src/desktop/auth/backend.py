@@ -178,7 +178,6 @@ class AllowFirstUserDjangoBackend(django.contrib.auth.backends.ModelBackend):
     """ Return true if no one has ever logged in to Desktop yet. """
     return User.objects.count() == 0
 
-
 class OAuthBackend(DesktopBackendBase):
   """
   Deprecated, use liboauth.backend.OAuthBackend instead

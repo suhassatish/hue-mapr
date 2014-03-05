@@ -90,6 +90,12 @@ class UserChangeForm(django.contrib.auth.forms.UserChangeForm):
       self.save_m2m()
     return user
 
+
+class ChangePasswordForm(UserChangeForm):
+  password1 = forms.CharField(label=_t("Password"), widget=forms.PasswordInput(attrs={'maxlength': 30, 'placeholder': _t("Password")}))
+  password2 = forms.CharField(label=_t("Password confirmation"), widget=forms.PasswordInput(attrs={'maxlength': 30, 'placeholder': _t("Password (again)")}))
+
+
 class SuperUserChangeForm(UserChangeForm):
   class Meta(UserChangeForm.Meta):
     fields = ["username", "is_active"] + UserChangeForm.Meta.fields + ["is_superuser", "groups"]
