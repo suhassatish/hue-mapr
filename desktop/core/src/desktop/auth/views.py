@@ -22,6 +22,7 @@ except:
   pass
 
 import cgi
+import datetime
 import logging
 import urllib
 
@@ -34,13 +35,13 @@ from django.contrib.sessions.models import Session
 from django.http import HttpResponseRedirect
 from django.utils.translation import ugettext as _
 from hadoop.fs.exceptions import WebHdfsException
-from useradmin.views import ensure_home_directory
+from useradmin.views import ensure_home_directory, get_profile
 
 from desktop.auth.forms import UserCreationForm, AuthenticationForm
 from desktop.lib.django_util import render
 from desktop.lib.django_util import login_notrequired
 from desktop.log.access import access_warn, last_access_map
-from desktop.conf import OAUTH
+from desktop.conf import OAUTH, AUTH
 
 LOG = logging.getLogger(__name__)
 
@@ -73,6 +74,16 @@ def first_login_ever():
       return True
   return False
 
+def users_first_login(user, last_login):
+  """ Return true if user has never logged in before. """
+  backends = get_backends()
+  for backend in backends:
+    # Assuming 1 second is enough time for the database to catch up.
+    # In reality want to see if user.last_login == user.date_joined.
+    profile = get_profile(user)
+    if profile.creation_method == str(profile.CreationMethod.HUE) and last_login - user.date_joined < datetime.timedelta(seconds=1):
+      return True
+  return False
 
 def get_backend_name():
   return get_backends() and get_backends()[0].__class__.__name__
@@ -97,8 +108,15 @@ def dt_login(request):
         # Must login by using the AuthenticationForm.
         # It provides 'backends' on the User object.
         user = auth_form.get_user()
+        # Time based assessment: last login - date joined < 1 second
+        last_login = user.last_login
+        
         login(request, user)
 
+        if AUTH.CHANGE_DEFAULT_PASSWORD.get() and users_first_login(user, last_login):
+          user.last_login = user.date_joined
+          user.save()
+          return HttpResponseRedirect(urlresolvers.reverse('useradmin.views.change_pass', kwargs={'username': user.username}))
         if request.session.test_cookie_worked():
           request.session.delete_test_cookie()
 

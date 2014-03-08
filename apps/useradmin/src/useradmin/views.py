@@ -33,6 +33,7 @@ from django.utils.translation import ugettext as _
 from django.forms.util import ErrorList
 from django.shortcuts import redirect
 from django.http import HttpResponse
+from django.utils import timezone
 
 import desktop.conf
 from desktop.conf import LDAP
@@ -41,7 +42,7 @@ from useradmin.models import HuePermission, UserProfile, LdapGroup
 from useradmin.models import get_profile, get_default_user_group
 from useradmin.forms import SyncLdapUsersGroupsForm, AddLdapGroupsForm,\
   AddLdapUsersForm, PermissionsEditForm, GroupEditForm, SuperUserChangeForm,\
-  UserChangeForm
+  UserChangeForm, ChangePasswordForm
 
 
 
@@ -229,6 +230,43 @@ def edit_user(request, username=None):
     form = form_class(instance=instance, initial=initial)
 
   return render('edit_user.mako', request, dict(form=form, username=username))
+
+
+def change_pass(request, username):
+  """
+  change_pass(request, username) -> reply
+
+  @type request:        HttpRequest
+  @param request:       The request object
+  @type username:       string
+  @param username:      No Default
+  """
+  if request.user.username != username and not request.user.is_superuser:
+    raise PopupException(_("You must be a superuser to add or edit another user."), error_code=401)
+
+  try:
+    instance = User.objects.get(username=username)
+  except User.DoesNotExist:
+    raise PopupException(_('User %s does not exist.') % username)
+
+  if request.method == 'POST':
+    form = ChangePasswordForm(request.POST, instance=instance)
+    if form.is_valid(): # All validation rules pass
+      # form.instance (and instance) now carry the new data
+      User.objects.get(username=username)
+
+      # All ok
+      user = form.save()
+      user.last_login = timezone.now()
+      user.save()
+      request.info(_('User information updated'))
+
+    return redirect(reverse('desktop.views.home'))
+  else:
+    initial = {}
+    form = ChangePasswordForm(instance=instance, initial=initial)
+
+  return render('change_pass.mako', request, {'form': form, 'username': username})
 
 
 def edit_group(request, name=None):
