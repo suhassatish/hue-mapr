@@ -298,7 +298,11 @@ function displayViewModel(params) {
 
   self.lastPage = function () {
     if (!($(".last-page").hasClass("disabled"))) {
-      viewModel.page(Math.min(viewModel.totalPages() - viewModel.totalPages()%50 + 1, viewModel.totalPages()));
+      var _page = viewModel.totalPages();
+      if (_page > 50) {
+        _page = Math.min(viewModel.totalPages() - viewModel.totalPages()%50 + 1, viewModel.totalPages());
+      }
+      viewModel.page(_page);
       viewModel.upperPage(viewModel.totalPages());
       changePage();
     }
@@ -351,7 +355,7 @@ function pageContent(page) {
       _html += "<a id='page" + page + "'><div style='height: " + $("#fileArea").height() + "px'></div></a>";
     }
     else {
-      _html += "<a id='page" + page + "'><div style='display: inline'>" + pages[page] + "</div></a>";
+      _html += "<a id='page" + page + "'><div style='display: inline'>" + $("<span>").text(pages[page]).html() + "</div></a>";
     }
   }
   else {
@@ -359,7 +363,7 @@ function pageContent(page) {
       $("#page" + page).html("<div style='height: " + $("#fileArea").height() + "px'></div>");
     }
     else {
-      $("#page" + page).html("<div style='display: inline'>" + pages[page] + "</div>");
+      $("#page" + page).html("<div style='display: inline'>" + $("<span>").text(pages[page]).html() + "</div>");
     }
 
   }
