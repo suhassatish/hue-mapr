@@ -88,7 +88,7 @@ ${ fb_components.menubar() }
             <div class="form-inline" style="display: inline">
               <span>${_('Page')}</span>
               <input type="text" data-bind="value: page, valueUpdate: 'afterkeydown', event: { change: pageChanged }" style="width: 40px; text-align: center"/>
-              <span data-bind="visible: totalPages() > MAX_PAGES_TO_ENABLE_SCROLLING">
+              <span data-bind="visible: totalPages() > MAX_PAGES_TO_ENABLE_SCROLLING || viewModel.mode() == 'binary'">
               to <input type="text" data-bind="value: upperPage, valueUpdate: 'afterkeydown', event: { change: upperPageChanged }" style="width: 40px; text-align: center"/></span>
               of <span data-bind="text: totalPages"></span>
             </div>
