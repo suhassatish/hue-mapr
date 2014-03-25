@@ -1118,6 +1118,7 @@ ${ commonheader(None, "pig", user) | n,unicode }
     $(document).on("stopLogsRefresh", function () {
       window.clearInterval(logsRefreshInterval);
       $.jHueTitleUpdater.reset();
+      refreshDashboard();
     });
 
     $(document).on("clearLogs", function () {
@@ -1148,12 +1149,6 @@ ${ commonheader(None, "pig", user) | n,unicode }
 
     refreshDashboard();
 
-    var dashboardRefreshInterval = window.setInterval(function () {
-      if (viewModel.runningScripts().length > 0) {
-        refreshDashboard();
-      }
-    }, 3000);
-
     function refreshDashboard() {
       $.getJSON("${ url('pig:dashboard') }", function (data) {
         viewModel.updateDashboard(data);
@@ -1175,43 +1170,47 @@ ${ commonheader(None, "pig", user) | n,unicode }
         }
       });
     }
-
+    var isLogRefreshRunning = false;
     function refreshLogs() {
       if (viewModel.currentScript().watchUrl() != "") {
-        $.getJSON(viewModel.currentScript().watchUrl(), function (data) {
-          if (data.logs.pig) {
-            if ($("#withLogs").is(":hidden")) {
-              $("#withoutLogs").addClass("hide");
-              $("#withLogs").removeClass("hide");
-              resizeLogs();
-            }
-            var _logsEl = $("#withLogs");
-            var newLines = data.logs.pig.split("\n").slice(_logsEl.html().split("<br>").length);
-            if (newLines.length > 0){
-              _logsEl.html(_logsEl.html() + newLines.join("<br>") + "<br>");
-              checkForErrors(newLines);
-            }
-            window.setTimeout(function () {
-              resizeLogs();
-              if (logsAtEnd || forceLogsAtEnd) {
-                _logsEl.scrollTop(_logsEl[0].scrollHeight - _logsEl.height());
-                forceLogsAtEnd = false;
+        if (!isLogRefreshRunning){
+          isLogRefreshRunning = true;
+          $.getJSON(viewModel.currentScript().watchUrl(), function (data) {
+            isLogRefreshRunning = false;
+            if (data.logs.pig) {
+              if ($("#withLogs").is(":hidden")) {
+                $("#withoutLogs").addClass("hide");
+                $("#withLogs").removeClass("hide");
+                resizeLogs();
               }
-            }, 100);
-          }
-          if (data.workflow && data.workflow.isRunning) {
-            viewModel.currentScript().actions(data.workflow.actions);
-            if (data.workflow.actions != null && data.workflow.actions.length > 0) {
-              $.jHueTitleUpdater.set(data.workflow.actions[data.workflow.actions.length-1].progress + "%");
+              var _logsEl = $("#withLogs");
+              var newLines = data.logs.pig.split("\n").slice(_logsEl.html().split("<br>").length);
+              if (newLines.length > 0){
+                _logsEl.html(_logsEl.html() + newLines.join("<br>") + "<br>");
+                checkForErrors(newLines);
+              }
+              window.setTimeout(function () {
+                resizeLogs();
+                if (logsAtEnd || forceLogsAtEnd) {
+                  _logsEl.scrollTop(_logsEl[0].scrollHeight - _logsEl.height());
+                  forceLogsAtEnd = false;
+                }
+              }, 100);
             }
-          }
-          else {
-            viewModel.currentScript().actions(data.workflow.actions);
-            viewModel.currentScript().isRunning(false);
-            $(document).trigger("stopLogsRefresh");
-            $.jHueTitleUpdater.reset();
-          }
-        });
+            if (data.workflow && data.workflow.isRunning) {
+              viewModel.currentScript().actions(data.workflow.actions);
+              if (data.workflow.actions != null && data.workflow.actions.length > 0) {
+                $.jHueTitleUpdater.set(data.workflow.actions[data.workflow.actions.length-1].progress + "%");
+              }
+            }
+            else {
+              viewModel.currentScript().actions(data.workflow.actions);
+              viewModel.currentScript().isRunning(false);
+              $(document).trigger("stopLogsRefresh");
+              $.jHueTitleUpdater.reset();
+            }
+          });
+        }
       }
       else {
         $(document).trigger("stopLogsRefresh");
