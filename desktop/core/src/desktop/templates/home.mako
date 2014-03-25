@@ -148,6 +148,7 @@ ${ commonheader(_('Welcome Home'), "home", user) | n,unicode }
                        title="${ _('Remove selected project') }" rel="tooltip" data-placement="right"></i>
              </div>
            </li>
+
            <!-- ko template: { name: 'tag-template', foreach: myTags } -->
            <!-- /ko -->
            <li data-bind="visible: myTags().length == 0">
@@ -155,6 +156,15 @@ ${ commonheader(_('Welcome Home'), "home", user) | n,unicode }
                <i class="fa fa-plus-circle"></i> ${_('You currently own no projects. Click here to add one now!')}
              </a>
            </li>
+
+
+          <li class="importDocuments toggable-section">
+             <a href="javascript:void(0)"><i class="fa fa-upload"></i> ${_('Import')}</a>
+           </li>
+           <li class="exportDocuments toggable-section">
+             <a href="/doc/export"><i class="fa fa-download"></i> ${_('Export')}</a>
+           </li>
+
           <li class="nav-header tag-shared-header">
             ${_('Shared with me')}
           </li>
@@ -281,6 +291,21 @@ ${ commonheader(_('Welcome Home'), "home", user) | n,unicode }
       <a id="tagsNewBtn" href="#" class="btn btn-primary disable-feedback">${ _('Add') }</a>
     </div>
   </form>
+</div>
+
+<div id="uploadArchiveModal" class="modal hide fade">
+  <div class="modal-header">
+    <a href="#" class="close" data-dismiss="modal">&times;</a>
+    <h3>${_('Choose an archive')}</h3>
+  </div>
+  <div class="modal-body">
+    <div id="archiveUploader" class="uploader">
+      <noscript>
+        <p>${_('Enable JavaScript to use the file uploader.')}</p>
+      </noscript>
+    </div>
+  </div>
+  <div class="modal-footer"></div>
 </div>
 
 <div id="removeTagModal" class="modal hide fade">
@@ -439,8 +464,54 @@ ${ commonheader(_('Welcome Home'), "home", user) | n,unicode }
         }
       });
 
-
     });
+
+    var num_of_pending_uploads = 0;
+    var uploader = new qq.FileUploader({
+      element:document.getElementById("archiveUploader"),
+      action:"/desktop/api/doc/upload_docs",
+      template:'<div class="qq-uploader">' +
+              '<div class="qq-upload-drop-area"><span>${_('Drop files here to upload')}</span></div>' +
+              '<div class="qq-upload-button">${_('Upload a zip file')}</div>' +
+              '<ul class="qq-upload-list"></ul>' +
+              '</div>',
+      fileTemplate:'<li>' +
+              '<span class="qq-upload-file"></span>' +
+              '<span class="qq-upload-spinner"></span>' +
+              '<span class="qq-upload-size"></span>' +
+              '<a class="qq-upload-cancel" href="#">${_('Cancel')}</a>' +
+              '<span class="qq-upload-failed-text">${_('Failed')}</span>' +
+              '</li>',
+      params:{
+        dest:"",
+        fileFieldLabel:"archive"
+      },
+      onComplete:function (id, fileName, responseJSON) {
+        num_of_pending_uploads--;
+        if (num_of_pending_uploads == 0) {
+          if (responseJSON.status == 0) {
+            $("#uploadArchiveModal").modal('hide');
+          }
+        }
+      },
+      onSubmit:function (id, fileName, responseJSON) {
+        num_of_pending_uploads++;
+      },
+      debug:false
+    });
+
+    $(".importDocuments").on("click", function () {
+      $("#uploadArchiveModal").modal({
+        keyboard:true,
+        show:true
+      });
+    });
+
+    function toggleSpecificSection(section, filter, isMine){
+      section.siblings().removeClass("active");
+      populateTable(filter, isMine);
+      section.addClass("active");
+    }
 
 
     viewModel.selectedTag.subscribe(function (value) {

@@ -245,6 +245,23 @@ class SavedQuery(models.Model):
   class Meta:
     ordering = ['-mtime']
 
+  @property
+  def filename(self):
+    return "%(name)s-%(owner)s.hive" % {
+      'name': self.name,
+      'owner': self.owner.username
+    }
+
+  @property
+  def filedata(self):
+    return self.get_design().hql_query
+
+  @filedata.setter
+  def filedata(self, value):
+    design = self.get_design()
+    design.hql_query = value
+    self.data = design.dumps()
+
   def get_design(self):
     try:
       return HQLdesign.loads(self.data)

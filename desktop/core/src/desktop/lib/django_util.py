@@ -32,12 +32,16 @@ from django.http import QueryDict, HttpResponse, HttpResponseRedirect
 from django.shortcuts import render_to_response as django_render_to_response
 from django.template.loader import render_to_string as django_render_to_string
 from django.template import RequestContext
+from django.utils.translation import ugettext as _
 from django.db import models
 
 import desktop.conf
 import desktop.lib.thrift_util
 from desktop.lib import django_mako
 from desktop.lib.json_utils import JSONEncoderForHTML
+
+
+LOG = logging.getLogger(__name__)
 
 # Values for template_lib parameter
 DJANGO = 'django'
@@ -443,3 +447,84 @@ def timesince(d=None, now=None, abbreviate=False, separator=','):
       else:
         s += ugettext('%(separator)s %(number)d %(type)s') % {'separator': separator, 'number': count2, 'type': name2(count2)}
   return s
+
+def model_to_dict(model):
+  from django.db import models
+
+  dictionary = {}
+  for field in model._meta.fields:
+    try:
+      attr = getattr(model, field.name, None)
+      if isinstance(attr, models.Model):
+        dictionary[field.name] = attr.id
+      elif isinstance(attr, datetime.datetime):
+        dictionary[field.name] = str(attr)
+      else:
+        dictionary[field.name] = attr
+    except:
+      LOG.debug(_("Could not set field %s") % field.name, exc_info=True)
+  return dictionary
+
+def get_all_related_objects(model_object):
+  """
+  Add all related objects to metadata, iteratively.
+  """
+  def add_related_objects(obj, queue, object_list, visited):
+    for rel in obj._meta.get_all_related_objects(include_hidden=True):
+      try:
+        if hasattr(obj, rel.get_accessor_name()):
+          obj_or_rel = getattr(obj, rel.get_accessor_name())
+          if isinstance(obj_or_rel, (models.Manager, models.ManyToManyRel, models.ManyToOneRel, models.OneToOneRel)):
+            for rel_obj in obj_or_rel.all():
+              if rel_obj not in visited:
+                visited[rel_obj] = True
+                queue.insert(0, rel_obj)
+                object_list.append(rel_obj)
+          elif obj_or_rel:
+            if obj_or_rel not in visited:
+              visited[obj_or_rel] = True
+              queue.insert(0, obj_or_rel)
+              object_list.append(obj_or_rel)
+      except:
+        LOG.debug("Could not add related objects for %s" % obj, exc_info=True)
+
+  related_objects_visited = {}
+  related_objects_queue = []
+  related_objects = []
+
+  # Initialize
+  add_related_objects(model_object, related_objects_queue, related_objects, related_objects_visited)
+
+  while related_objects_queue:
+    obj = related_objects_queue.pop()
+    add_related_objects(obj, related_objects_queue, related_objects, related_objects_visited)
+
+  return related_objects
+
+def get_all_parent_objects(model_object):
+  """
+  Add all related objects to metadata, iteratively.
+  """
+  def add_parent_objects(obj, queue, object_list, visited):
+    for model in obj._meta.get_parent_list():
+      try:
+        parent = model.objects.get(pk=obj.pk)
+        if parent not in visited:
+          visited[parent] = True
+          queue.insert(0, parent)
+          object_list.append(parent)
+      except:
+        LOG.exception("Could not add parent object of model %s for child %s" % (model, obj))
+
+  related_objects_visited = {}
+  related_objects_queue = []
+  related_objects = []
+
+  # Initialize
+  add_parent_objects(model_object, related_objects_queue, related_objects, related_objects_visited)
+
+  while related_objects_queue:
+    obj = related_objects_queue.pop()
+    add_parent_objects(obj, related_objects_queue, related_objects, related_objects_visited)
+
+  return related_objects

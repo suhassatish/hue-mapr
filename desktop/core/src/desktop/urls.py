@@ -77,12 +77,19 @@ dynamic_patterns += patterns('desktop.views',
   (r'^$', 'index'),
 )
 
+dynamic_patterns += patterns('desktop.views',
+  (r'^doc/export$', 'export_documents')
+)
+
 dynamic_patterns += patterns('desktop.api',
   # Tags
   (r'^desktop/api/tag/add_tag$', 'add_tag'),
   (r'^desktop/api/tag/remove_tag$', 'remove_tag'),
   (r'^desktop/api/doc/tag$', 'tag'),
   (r'^desktop/api/doc/update_tags$', 'update_tags'),
+
+  # Upload
+  (r'^desktop/api/doc/upload_docs$', 'upload_docs'),
 
   # Permissions
   (r'^desktop/api/doc/update_permissions', 'update_permissions'),

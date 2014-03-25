@@ -17,6 +17,8 @@
 
 import logging
 from itertools import chain
+import StringIO
+import zipfile
 
 from django.db import models
 from django.db.models import Q
@@ -25,7 +27,10 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes import generic
 from django.utils.translation import ugettext as _, ugettext_lazy as _t
 
-from desktop.lib.i18n import force_unicode
+from django_extensions.db.fields import UUIDField
+
+from desktop.lib.document_serializers import DocumentSerializer, DocumentDeserializer
+from desktop.lib.i18n import force_unicode, smart_str
 from desktop.lib.exceptions_renderable import PopupException
 
 from desktop import appmanager
@@ -163,6 +168,77 @@ class DocumentTag(models.Model):
 
 
 class DocumentManager(models.Manager):
+
+  def remove_existing_documents(self, ser_doc_list):
+    from desktop.lib.django_util import get_all_related_objects, get_all_parent_objects
+
+    for ser_doc in ser_doc_list:
+      try:
+        doc = self.get(uid=ser_doc.doc_id)
+        if doc.content_object:
+          related = set(get_all_parent_objects(doc.content_object)) | set(get_all_related_objects(doc.content_object))
+          for relation in related:
+            try:
+              relation.delete()
+            except:
+              # Metadata that doesn't exist is fine.
+              pass
+        if doc.content_object:
+          doc.content_object.delete()
+        doc.delete()
+      except Document.DoesNotExist:
+        pass
+
+  def compress(self, document_set, fp=StringIO.StringIO()):
+    """
+    Serialize and compress all documents, their corresponding content objects, and 
+    the related objects to the content object (deep search). Provide easy to update files
+    as well.
+    """
+    zfile = zipfile.ZipFile(fp, 'w')
+
+    metadata = []
+    for document in document_set.all():
+      # Skip automatically saved queries.
+      if hasattr(document.content_object, 'is_auto') and document.content_object.is_auto:
+        continue
+
+      # Create user modifiable files.
+      if hasattr(document.content_object, 'filename') and hasattr(document.content_object, 'filedata'):
+        zfile.writestr(smart_str(document.content_object.filename), smart_str(document.content_object.filedata))
+
+      metadata.append(document)
+
+    zfile.writestr(smart_str(".meta"), smart_str(DocumentSerializer().serialize(metadata)))
+    zfile.close()
+
+    return fp
+
+  def decompress(self, fp, **kwargs):
+    zfile = zipfile.ZipFile(fp, 'r')
+    ser_doc_list = DocumentDeserializer(zfile.read('.meta'))
+
+    # Remove the existing documents so that we can replace them.
+    self.remove_existing_documents(ser_doc_list)
+
+    # Save all serialized documents.
+    # This should automatically take care of dependencies as well.
+    for ser_doc in ser_doc_list:
+      ser_doc.save()
+      ser_doc.obj.share_to_default()
+
+    # Look for files that may contain user defined data.
+    # Replace the newly restored objects with that user defined data.
+    for ser_doc in ser_doc_list:
+      if hasattr(ser_doc.obj.content_object, 'filename') and hasattr(ser_doc.obj.content_object, 'filedata'):
+        if ser_doc.obj.content_object.filename in zfile.namelist():
+          ser_doc.obj.content_object.filedata = zfile.read(ser_doc.obj.content_object.filename)
+      ser_doc.obj.content_object.save()
+
+    zfile.close()
+
+    return [ ser_doc.obj for ser_doc in ser_doc_list ]
+
 
   def documents(self, user):
     # Check for READ perm only, not write
@@ -339,6 +415,8 @@ class DocumentManager(models.Manager):
 
 
 class Document(models.Model):
+  uid = UUIDField(version=4)
+
   owner = models.ForeignKey(auth_models.User, db_index=True, verbose_name=_t('Owner'), help_text=_t('User who can own the job.'), related_name='doc_owner')
   name = models.TextField(default='')
   description = models.TextField(default='')

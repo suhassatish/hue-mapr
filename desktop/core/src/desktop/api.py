@@ -27,6 +27,7 @@ from django.core.urlresolvers import reverse
 from django.utils.translation import ugettext as _
 
 from desktop.lib.i18n import force_unicode
+from desktop.forms import UploadArchiveForm
 from desktop.models import Document, DocumentTag
 
 
@@ -260,5 +261,24 @@ def update_permissions(request):
       response['message'] = force_unicode(e)
   else:
     response['message'] = _('POST request only')
+
+  return HttpResponse(json.dumps(response), mimetype="application/json")
+
+
+def upload_docs(request):
+  response = {'status': -1, 'data': _('Error')}
+
+  if request.method != 'POST':
+    response['message'] = _('POST request only')
+
+  form = UploadArchiveForm(request.POST, request.FILES)
+  if form.is_valid():
+    uploaded_file = request.FILES['archive']
+    Document.objects.decompress(uploaded_file, fs=request.fs)
+  else:
+    response['message'] = _('Please provide a Zip file.')
+
+  response['status'] = 0
+  response['data'] = ""
 
   return HttpResponse(json.dumps(response), mimetype="application/json")

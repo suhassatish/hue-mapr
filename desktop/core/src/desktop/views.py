@@ -30,6 +30,7 @@ from django.http import HttpResponse
 from django.core.urlresolvers import reverse
 from django.core.servers.basehttp import FileWrapper
 from django.shortcuts import redirect
+from django.utils.http import http_date
 from django.utils.translation import ugettext as _
 import django.views.debug
 
@@ -44,7 +45,7 @@ from desktop.lib.django_util import login_notrequired, render_json, render
 from desktop.lib.i18n import smart_str
 from desktop.lib.paths import get_desktop_root
 from desktop.log.access import access_log_level, access_warn
-from desktop.models import UserPreferences, Settings
+from desktop.models import UserPreferences, Settings, Document
 from desktop import appmanager
 
 
@@ -63,6 +64,16 @@ def home(request):
     'tours_and_tutorials': Settings.get_settings().tours_and_tutorials
   })
 
+def export_documents(request):
+  documents = Document.objects.get_docs(request.user)
+  zip_file = Document.objects.compress(documents)
+
+  response = HttpResponse(mimetype="application/zip")
+  response["Last-Modified"] = http_date(time.time())
+  response["Content-Length"] = len(zip_file.getvalue())
+  response['Content-Disposition'] = 'attachment; filename="out.zip"'
+  response.write(zip_file.getvalue())
+  return response
 
 @access_log_level(logging.WARN)
 def log_view(request):

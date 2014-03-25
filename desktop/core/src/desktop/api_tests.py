@@ -237,3 +237,21 @@ class TestDocModelPermissions():
     assert_true(doc_id in json.loads(response.context['json_documents']))
     response = self.client_not_me.get('/home')
     assert_true(doc_id in json.loads(response.context['json_documents']))
+
+
+class TestDocModelUpload():
+  def setUp(self):
+    self.client = make_logged_in_client(username="perm_user", groupname="default", recreate=True, is_superuser=False)
+    self.client_not_me = make_logged_in_client(username="not_perm_user", groupname="default", recreate=True, is_superuser=False)
+
+    self.user = User.objects.get(username="perm_user")
+    self.user_not_me = User.objects.get(username="not_perm_user")
+
+    grant_access(self.user.username, self.user.username, "desktop")
+    grant_access(self.user_not_me.username, self.user_not_me.username, "desktop")
+
+    PigScript.objects.filter(owner=self.user).delete()
+    Document.objects.filter(owner=self.user).delete()
+
+  def test_upload(self):
+   pass
