@@ -143,13 +143,14 @@ class OozieApi:
 
   def get_log(self, request, oozie_workflow):
     logs = {}
+    finished = False
 
     for action in oozie_workflow.get_working_actions():
       try:
         if action.externalId:
           data = job_single_logs(request, **{'job': action.externalId})
           if data:
-            matched_logs = self._match_logs(data)
+            finished, matched_logs = self._match_logs(data)
             logs[action.name] = self._make_links(matched_logs)
       except Exception, e:
         LOG.error('An error happen while watching the demo running: %(error)s' % {'error': e})
@@ -166,6 +167,7 @@ class OozieApi:
         'progress': progress,
         'progressPercent': '%d%%' % progress,
         'absoluteUrl': oozie_workflow.get_absolute_url(),
+        'finished': finished,
       }
       workflow_actions.append(appendable)
 
@@ -176,11 +178,11 @@ class OozieApi:
     logs = data['logs'][1]
 
     if OozieApi.RE_LOG_END.search(logs):
-      return re.search(OozieApi.RE_LOG_START_RUNNING, logs).group(1).strip()
+      return True, re.search(OozieApi.RE_LOG_START_RUNNING, logs).group(1).strip()
     else:
       group = re.search(OozieApi.RE_LOG_START_FINISHED, logs)
       i = logs.index(group.group(1)) + len(group.group(1))
-      return logs[i:].strip()
+      return False, logs[i:].strip()
 
   @classmethod
   def _make_links(cls, log):
