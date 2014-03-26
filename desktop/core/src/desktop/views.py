@@ -71,6 +71,10 @@ def home(request):
     'tours_and_tutorials': Settings.get_settings().tours_and_tutorials
   })
 
+def dashboard(request):
+  return render('dashboard.mako', request, {})
+
+
 def augment_docs(docs, user):
   for doc in docs:
     doc.is_mine = doc.owner.username == user.username
