@@ -134,7 +134,7 @@ class QueryHistory(models.Model):
     query.hql_query = hql_query
     self.design.data = query.dumps()
     self.query = hql_query
- 
+
   def is_finished(self):
     is_statement_finished = not self.is_running()
 
@@ -252,14 +252,25 @@ class SavedQuery(models.Model):
       # data is empty
       pass
 
-  def clone(self):
-    """clone() -> A new SavedQuery with a deep copy of the same data"""
-    design = SavedQuery(type=self.type, owner=self.owner)
+  def clone(self, new_owner=None):
+    if new_owner is None:
+      new_owner = self.owner
+    new_name = '%s (copy)' % self.name
+
+    design = SavedQuery(type=self.type, owner=new_owner)
     design.data = copy.deepcopy(self.data)
-    design.name = copy.deepcopy(self.name)
+    design.name = new_name
     design.desc = copy.deepcopy(self.desc)
     design.is_auto = copy.deepcopy(self.is_auto)
+    design.save()
+
+    copy_doc = self.doc.get().copy(name=new_name, owner=new_owner)
+
+    design.doc.all().delete()
+    design.doc.add(copy_doc)
+
     return design
+
 
   @classmethod
   def create_empty(cls, app_name, owner, data):
