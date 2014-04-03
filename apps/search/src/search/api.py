@@ -169,3 +169,43 @@ class SolrApi(object):
       return self._get_json(response)
     except RestException, e:
       raise PopupException(e, title=_('Error while accessing Solr'))
+
+
+
+class SolrSchemaApi(object):
+  """
+  https://cwiki.apache.org/confluence/display/solr/Schema+API
+  """
+  def __init__(self, solr_url, user):
+    self._url = solr_url
+    self._user = user
+    self._client = HttpClient(self._url, logger=LOG)
+    self.security_enabled = SECURITY_ENABLED.get()
+    if self.security_enabled:
+      self._client.set_kerberos_auth()
+    self._root = resource.Resource(self._client)
+
+  def _get_params(self):
+    if self.security_enabled:
+      return (('doAs', self._user ),)
+    return (('user.name', DEFAULT_USER), ('doAs', self._user),)
+
+  @classmethod
+  def _get_json(cls, response):
+    if type(response) != dict:
+      # Got 'plain/text' mimetype instead of 'application/json'
+      try:
+        response = json.loads(response)
+      except ValueError, e:
+        # Got some null bytes in the response
+        LOG.error('%s: %s' % (unicode(e), repr(response)))
+        response = json.loads(response.replace('\x00', ''))
+    return response
+
+  def create_new_schema_fields(self, collection, fields):
+    try:
+      response = self._root.post('%s/schema/fields' % collection, data=json.dumps(fields))
+
+      return self._get_json(response)
+    except RestException, e:
+      raise PopupException(e, title=_('Error while accessing Solr'))

@@ -21,7 +21,7 @@ import logging
 
 from desktop.lib.exceptions_renderable import PopupException
 
-from search.api import SolrApi
+from search.api import SolrApi, SolrSchemaApi
 from search.conf import SOLR_URL
 from search.models import Collection
 from django.utils.translation import ugettext as _
@@ -62,6 +62,11 @@ class SearchController(object):
       LOG.warn('No Single core setup on Solr server: %s' % e)
 
     return solr_cores
+
+  def create_new_collection(self, name, fields):
+    SolrSchemaApi(SOLR_URL.get(), self.user).create_new_schema_fields(name, fields)
+
+    hue_collection, created = Collection.objects.get_or_create(name=name, solr_properties='{}', is_enabled=True, user=self.user)
 
   def add_new_collection(self, attrs):
     if attrs['type'] == 'collection':
