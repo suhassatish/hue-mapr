@@ -128,6 +128,34 @@ class SolrApi(object):
     except Exception, e:
       raise PopupException(e, title=_('Error while accessing Solr'))
 
+  def create_collection(self, name, shards=1, replication=1):
+    try:
+      params = (
+        ('action', 'CREATE'),
+        ('name', name),
+        ('numShards', shards),
+        ('replicationFactor', replication),
+        ('wt', 'json')
+      )
+
+      response = self._root.post('admin/collections', params=params)
+      if 'success' in response:
+        return True
+      else:
+        LOG.error("Could not create collection. Check response:\n" % json.dumps(response, indent=2))
+        return False
+    except RestException, e:
+      raise PopupException(e, title=_('Error while accessing Solr'))
+
+  def add_fields(self, collection, fields):
+    try:
+      
+      response = self._root.post('%s/schema/fields' % collection, data=json.dumps(fields))
+
+      return response
+    except RestException, e:
+      raise PopupException(e, title=_('Error while accessing Solr'))
+
   def cores(self):
     try:
       params = self._get_params() + (
