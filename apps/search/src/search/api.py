@@ -128,6 +128,18 @@ class SolrApi(object):
     except Exception, e:
       raise PopupException(e, title=_('Error while accessing Solr'))
 
+  def create_collection(self, name, shards=1, replication=1):
+    try:
+      params = (
+        ('action', 'CREATE'),
+        ('name', name),
+        ('numShards', shards),
+        ('replicationFactor', replication)
+      )
+      return self._root.post('admin/collections', params=params)['status']
+    except RestException, e:
+      raise PopupException(e, title=_('Error while accessing Solr'))
+
   def cores(self):
     try:
       params = self._get_params() + (
@@ -167,5 +179,31 @@ class SolrApi(object):
         params += (('show', 'schema'),)
       response = self._root.get('%(core)s/admin/luke' % {'core': core}, params=params)
       return self._get_json(response)
+    except RestException, e:
+      raise PopupException(e, title=_('Error while accessing Solr'))
+
+
+class SolrSchemaApi(object):
+  """
+  https://cwiki.apache.org/confluence/display/solr/Schema+API
+  """
+  def __init__(self, solr_url, user):
+    self._url = solr_url
+    self._user = user
+    self._client = HttpClient(self._url, logger=LOG)
+    self.security_enabled = SECURITY_ENABLED.get()
+    if self.security_enabled:
+      self._client.set_kerberos_auth()
+    self._root = resource.Resource(self._client)
+
+  def create_new_schema_fields(self, collection, fields):
+    try:
+      params = (
+        ('wt', 'json')
+      )
+
+      response = self._root.post('%s/schema/fields' % collection, data=json.dumps(fields))
+
+      return response
     except RestException, e:
       raise PopupException(e, title=_('Error while accessing Solr'))

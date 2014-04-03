@@ -27,6 +27,9 @@ from django.shortcuts import redirect
 
 from desktop.lib.django_util import render
 from desktop.lib.exceptions_renderable import PopupException
+from desktop.lib import i18n
+
+from beeswax.create_table import _parse_fields, FILE_READERS, DELIMITERS
 
 from search.api import SolrApi
 from search.conf import SOLR_URL
@@ -148,6 +151,59 @@ def admin_collections(request, is_redirect=False):
     'existing_hue_collections': existing_hue_collections,
     'is_redirect': is_redirect
   })
+
+
+@allow_admin_only
+def admin_collections_create_manual(request):
+  return render('admin_collections_create_manual.mako', request, {})
+
+
+@allow_admin_only
+def admin_collections_create_file(request):
+  return render('admin_collections_create_file.mako', request, {})
+
+
+@allow_admin_only
+def admin_collections_create(request):
+  if request.method != 'POST':
+    raise PopupException(_('POST request required.'))
+
+  response = {'status': -1}
+
+  collection = json.loads(request.POST.get('collection', '{}'))
+
+  if collection:
+    searcher = SearchController(request.user)
+    searcher.create_new_collection(collection.get('name', ''), collection.get('fields', []))
+
+    response['status'] = 0
+    response['message'] = _('Page saved!')
+  else:
+    response['message'] = _('Collection missing.')
+
+  return HttpResponse(json.dumps(response), mimetype="application/json")
+
+
+@allow_admin_only
+def admin_collection_update(request):
+  if request.method != 'POST':
+    raise PopupException(_('POST request required.'))
+
+  response = {'status': -1}
+
+  collection = json.loads(request.POST.get('collection', '{}'))
+
+  if collection:
+    hue_collection = Collection.objects.get(id=collection['id'])
+    searcher = SearchController(request.user)
+    searcher.create_new_collection(collection.get('name', ''), collection.get('fields', []))
+
+    response['status'] = 0
+    response['message'] = _('Page saved!')
+  else:
+    response['message'] = _('Collection missing.')
+
+  return HttpResponse(json.dumps(response), mimetype="application/json")
 
 
 @allow_admin_only
@@ -374,6 +430,26 @@ def admin_collection_schema(request, collection_id):
     'solr_schema': solr_schema.decode('utf-8')
   }
   return HttpResponse(json.dumps(content), mimetype="application/json")
+
+
+@allow_admin_only
+def parse_fields(request):
+  result = {'status': -1, 'message': ''}
+
+  try:
+    file_obj = request.FILES.get(request.REQUEST.get('dest'))
+    delim, reader_type, fields_list = _parse_fields(
+                                        request.REQUEST.get('dest'),
+                                        file_obj,
+                                        i18n.get_site_encoding(),
+                                        [reader.TYPE for reader in FILE_READERS],
+                                        DELIMITERS)
+    result['status'] = 0
+    result['data'] = fields_list
+  except Exception, e:
+    result['message'] = e.message
+
+  return HttpResponse(json.dumps(result), mimetype="application/json")
 
 
 # TODO security
