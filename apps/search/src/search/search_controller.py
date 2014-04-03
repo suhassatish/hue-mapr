@@ -63,6 +63,14 @@ class SearchController(object):
 
     return solr_cores
 
+  def create_new_collection(self, name, fields):
+    api = SolrApi(SOLR_URL.get(), self.user)
+    if api.create_collection(name):
+      api.add_fields(name, fields)
+      hue_collection, created = Collection.objects.get_or_create(name=name, solr_properties='{}', is_enabled=True, user=self.user)
+    else:
+      raise PopupException(_('Could not create collection. Check error logs for more info.'))
+
   def add_new_collection(self, attrs):
     if attrs['type'] == 'collection':
       collections = self.get_new_collections()
