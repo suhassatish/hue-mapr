@@ -25,6 +25,8 @@ from desktop.lib.rest.http_client import HttpClient, RestException
 from desktop.lib.rest import resource
 from django.utils.translation import ugettext as _
 
+from libsearch.api import SolrApi as BaseSolrApi
+
 from search.examples import demo_handler
 from search.conf import EMPTY_QUERY, SECURITY_ENABLED
 
@@ -38,35 +40,17 @@ def utf_quoter(what):
   return urllib.quote(unicode(what).encode('utf-8'), safe='~@#$&()*!+=;,.?/\'')
 
 
-class SolrApi(object):
+class SolrApi(BaseSolrApi):
   """
   http://wiki.apache.org/solr/CoreAdmin#CoreAdminHandler
   """
   def __init__(self, solr_url, user):
-    self._url = solr_url
-    self._user = user
-    self._client = HttpClient(self._url, logger=LOG)
-    self.security_enabled = SECURITY_ENABLED.get()
-    if self.security_enabled:
-      self._client.set_kerberos_auth()
-    self._root = resource.Resource(self._client)
+    super(SolrApi, self).__init__(solr_url, user, SECURITY_ENABLED.get())
 
   def _get_params(self):
     if self.security_enabled:
       return (('doAs', self._user ),)
     return (('user.name', DEFAULT_USER), ('doAs', self._user),)
-
-  @classmethod
-  def _get_json(cls, response):
-    if type(response) != dict:
-      # Got 'plain/text' mimetype instead of 'application/json'
-      try:
-        response = json.loads(response)
-      except ValueError, e:
-        # Got some null bytes in the response
-        LOG.error('%s: %s' % (unicode(e), repr(response)))
-        response = json.loads(response.replace('\x00', ''))
-    return response
 
   @demo_handler
   def query(self, solr_query, hue_core):
@@ -87,85 +71,6 @@ class SolrApi(object):
 
       response = self._root.get('%(collection)s/select' % solr_query, params)
 
-      return self._get_json(response)
-    except RestException, e:
-      raise PopupException(e, title=_('Error while accessing Solr'))
-
-  def suggest(self, solr_query, hue_core):
-    try:
-      params = self._get_params() + (
-          ('q', solr_query['q']),
-          ('wt', 'json'),
-      )
-      response = self._root.get('%(collection)s/suggest' % solr_query, params)
-      if type(response) != dict:
-        response = json.loads(response)
-      return response
-    except RestException, e:
-      raise PopupException(e, title=_('Error while accessing Solr'))
-
-  def collections(self):
-    try:
-      params = self._get_params() + (
-          ('detail', 'true'),
-          ('path', '/clusterstate.json'),
-      )
-      response = self._root.get('zookeeper', params=params)
-      return json.loads(response['znode']['data'])
-    except RestException, e:
-      raise PopupException(e, title=_('Error while accessing Solr'))
-
-  def collection_or_core(self, hue_collection):
-    if hue_collection.is_core_only:
-      return self.core(hue_collection.name)
-    else:
-      return self.collection(hue_collection.name)
-
-  def collection(self, name):
-    try:
-      collections = self.collections()
-      return collections[name]
-    except Exception, e:
-      raise PopupException(e, title=_('Error while accessing Solr'))
-
-  def cores(self):
-    try:
-      params = self._get_params() + (
-          ('wt', 'json'),
-      )
-      return self._root.get('admin/cores', params=params)['status']
-    except RestException, e:
-      raise PopupException(e, title=_('Error while accessing Solr'))
-
-  def core(self, core):
-    try:
-      params = self._get_params() + (
-          ('wt', 'json'),
-          ('core', core),
-      )
-      return self._root.get('admin/cores', params=params)
-    except RestException, e:
-      raise PopupException(e, title=_('Error while accessing Solr'))
-
-  def schema(self, core):
-    try:
-      params = self._get_params() + (
-          ('wt', 'json'),
-          ('file', 'schema.xml'),
-      )
-      return self._root.get('%(core)s/admin/file' % {'core': core}, params=params)
-    except RestException, e:
-      raise PopupException(e, title=_('Error while accessing Solr'))
-
-  def fields(self, core, dynamic=False):
-    try:
-      params = self._get_params() + (
-          ('wt', 'json'),
-          ('fl', '*'),
-      )
-      if not dynamic:
-        params += (('show', 'schema'),)
-      response = self._root.get('%(core)s/admin/luke' % {'core': core}, params=params)
       return self._get_json(response)
     except RestException, e:
       raise PopupException(e, title=_('Error while accessing Solr'))
