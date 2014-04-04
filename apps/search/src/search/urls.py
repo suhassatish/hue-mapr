@@ -23,7 +23,7 @@ urlpatterns = patterns('search.views',
   url(r'^download/(?P<format>(csv|xls))$', 'download', name='download'),
 
   url(r'^admin/collections$', 'admin_collections', name='admin_collections'),
-  url(r'^admin/collections/create$', 'admin_collections_create', name='admin_collections_create'),
+
   url(r'^admin/collections_create_manual$', 'admin_collections_create_manual', name='admin_collections_create_manual'),
   url(r'^admin/collections_create_file$', 'admin_collections_create_file', name='admin_collections_create_file'),
   url(r'^admin/collections_import$', 'admin_collections_import', name='admin_collections_import'),
@@ -37,6 +37,7 @@ urlpatterns = patterns('search.views',
 
   # Ajax
   url(r'^suggest/(?P<collection_id>\w+)/(?P<query>\w+)?$', 'query_suggest', name='query_suggest'),
+  url(r'^admin/collections/create$', 'admin_collections_create', name='admin_collections_create'),
   url(r'^admin/collection/(?P<collection_id>\w+)/schema$', 'admin_collection_schema', name='admin_collection_schema'),
   url(r'^admin/collection/(?P<collection_id>\w+)/solr_properties$', 'admin_collection_solr_properties', name='admin_collection_solr_properties'),
   url(r'^admin/collection_delete$', 'admin_collection_delete', name='admin_collection_delete'),

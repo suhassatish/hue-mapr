@@ -151,6 +151,16 @@ def admin_collections(request, is_redirect=False):
 
 
 @allow_admin_only
+def admin_collections_create_manual(request):
+  return render('admin_collections_create_manual.mako', request, {})
+
+
+@allow_admin_only
+def admin_collections_create_file(request):
+  return render('admin_collections_create_file.mako', request, {})
+
+
+@allow_admin_only
 def admin_collections_create(request):
   if request.method != 'POST':
     raise PopupException(_('POST request required.'))
@@ -170,14 +180,27 @@ def admin_collections_create(request):
 
   return HttpResponse(json.dumps(response), mimetype="application/json")
 
-@allow_admin_only
-def admin_collections_create_manual(request):
-  return render('admin_collections_create_manual.mako', request, {})
-
 
 @allow_admin_only
-def admin_collections_create_file(request):
-  return render('admin_collections_create_file.mako', request, {})
+def admin_collection_update(request):
+  if request.method != 'POST':
+    raise PopupException(_('POST request required.'))
+
+  response = {'status': -1}
+
+  collection = json.loads(request.POST.get('collection', '{}'))
+
+  if collection:
+    hue_collection = Collection.objects.get(id=collection['id'])
+    searcher = SearchController(request.user)
+    searcher.create_new_collection(collection.get('name', ''), collection.get('fields', []))
+
+    response['status'] = 0
+    response['message'] = _('Page saved!')
+  else:
+    response['message'] = _('Collection missing.')
+
+  return HttpResponse(json.dumps(response), mimetype="application/json")
 
 
 @allow_admin_only

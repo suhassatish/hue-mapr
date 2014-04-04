@@ -55,7 +55,7 @@ ${ commonheader(_('Search'), "search", user, "29px") | n,unicode }
             <div data-bind="template: { 'name': wizard.current().name }"></div>
             <br />
             <a data-bind="routie: 'wizard/' + wizard.previous().url(), visible: wizard.hasPrevious" class="btn btn-info" href="javascript:void(0)">${_('Previous')}</a>
-            <a data-bind="routie: 'wizard/' + wizard.next().url(), visible: wizard.hasNext" class="btn btn-info" href="javascript:void(0)">${_('Next')}</a>
+            <a data-bind="routie: 'wizard/' + wizard.next().url(), visible: wizard.hasNext" class="btn btn-info" href="javascript:void(0)">${_('Save collection')}</a>
             <a data-bind="click: save, visible: !wizard.hasNext()" class="btn btn-info" href="javascript:void(0)">${_('Finish')}</a>
           </form>
         </div>

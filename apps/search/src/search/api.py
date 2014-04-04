@@ -128,6 +128,18 @@ class SolrApi(object):
     except Exception, e:
       raise PopupException(e, title=_('Error while accessing Solr'))
 
+  def create_collection(self, name, shards=1, replication=1):
+    try:
+      params = (
+        ('action', 'CREATE'),
+        ('name', name),
+        ('numShards', shards),
+        ('replicationFactor', replication)
+      )
+      return self._root.post('admin/collections', params=params)['status']
+    except RestException, e:
+      raise PopupException(e, title=_('Error while accessing Solr'))
+
   def cores(self):
     try:
       params = self._get_params() + (
@@ -185,27 +197,14 @@ class SolrSchemaApi(object):
       self._client.set_kerberos_auth()
     self._root = resource.Resource(self._client)
 
-  def _get_params(self):
-    if self.security_enabled:
-      return (('doAs', self._user ),)
-    return (('user.name', DEFAULT_USER), ('doAs', self._user),)
-
-  @classmethod
-  def _get_json(cls, response):
-    if type(response) != dict:
-      # Got 'plain/text' mimetype instead of 'application/json'
-      try:
-        response = json.loads(response)
-      except ValueError, e:
-        # Got some null bytes in the response
-        LOG.error('%s: %s' % (unicode(e), repr(response)))
-        response = json.loads(response.replace('\x00', ''))
-    return response
-
   def create_new_schema_fields(self, collection, fields):
     try:
+      params = (
+        ('wt', 'json')
+      )
+
       response = self._root.post('%s/schema/fields' % collection, data=json.dumps(fields))
 
-      return self._get_json(response)
+      return response
     except RestException, e:
       raise PopupException(e, title=_('Error while accessing Solr'))
