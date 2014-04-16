@@ -34,6 +34,11 @@ from useradmin.models import get_default_user_group
 
 LOG = logging.getLogger(__name__)
 
+if desktop_conf.LDAP.LDAP_SERVERS.get():
+  SERVER_CHOICES = [(ldap_server_record_key, ldap_server_record_key) for ldap_server_record_key in desktop_conf.LDAP.LDAP_SERVERS.get()]
+else:
+  SERVER_CHOICES = [('LDAP', 'LDAP')]
+
 
 def get_server_choices():
   if desktop_conf.LDAP.LDAP_SERVERS.get():
@@ -131,6 +136,7 @@ class AddLdapUsersForm(forms.Form):
                                             help_text=_t("Create home directory for user if one doesn't already exist."),
                                             initial=True,
                                             required=False)
+  server = forms.ChoiceField(choices=SERVER_CHOICES)
 
   def __init__(self, *args, **kwargs):
     super(AddLdapUsersForm, self).__init__(*args, **kwargs)
@@ -181,6 +187,7 @@ class AddLdapGroupsForm(forms.Form):
                                                 help_text=_t('Import unimported or new users from the all subgroups.'),
                                                 initial=False,
                                                 required=False)
+  server = forms.ChoiceField(choices=SERVER_CHOICES)
 
   def __init__(self, *args, **kwargs):
     super(AddLdapGroupsForm, self).__init__(*args, **kwargs)
