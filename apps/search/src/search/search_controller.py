@@ -21,7 +21,7 @@ import logging
 
 from desktop.lib.exceptions_renderable import PopupException
 
-from search.api import SolrApi
+from search.api import SolrApi, SolrSchemaApi
 from search.conf import SOLR_URL
 from search.models import Collection
 from django.utils.translation import ugettext as _
