@@ -27,6 +27,18 @@ from django.utils.translation import ugettext_lazy as _t, ugettext as _
 
 from desktop import conf
 
+if conf.LDAP.LDAP_SERVERS.get():
+  SERVER_CHOICES = [(ldap_server_record_key, ldap_server_record_key) for ldap_server_record_key in conf.LDAP.LDAP_SERVERS.get()]
+else:
+  SERVER_CHOICES = [('LDAP', 'LDAP')]
+
+
+def get_server_choices():
+  if conf.LDAP.LDAP_SERVERS.get():
+    return [(ldap_server_record_key, ldap_server_record_key) for ldap_server_record_key in conf.LDAP.LDAP_SERVERS.get()]
+  else:
+    return [('LDAP', 'LDAP')]
+
 
 def get_server_choices():
   if conf.LDAP.LDAP_SERVERS.get():
