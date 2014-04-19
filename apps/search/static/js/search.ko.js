@@ -248,6 +248,7 @@ var Collection = function (vm, collection) {
       }
     }).fail(function (xhr, textStatus, errorThrown) {});
   };
+};
 
   self.removeFacet = function (widget_id) {
     $.each(self.facets(), function (index, facet) {	
