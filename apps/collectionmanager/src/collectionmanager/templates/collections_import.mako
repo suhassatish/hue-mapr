@@ -90,6 +90,7 @@ ${ commonheader(_('Collection Manager'), "collectionmanager", user, "29px") | n,
 <script src="/static/ext/js/knockout-min.js" type="text/javascript" charset="utf-8"></script>
 <script src="/static/ext/js/knockout.mapping-2.3.2.js" type="text/javascript" charset="utf-8"></script>
 <script src="/collectionmanager/static/js/collections.ko.js" type="text/javascript" charset="utf-8"></script>
+<script src="/collectionmanager/static/js/import-collection.ko.js" type="text/javascript" charset="utf-8"></script>
 <script src="/static/ext/chosen/chosen.jquery.min.js" type="text/javascript" charset="utf-8"></script>
 
 <script type="text/javascript">
