@@ -13,9 +13,9 @@ var CreateCollectionViewModel = function(wizard) {
     '\t'
   ];
   var fileTypes = [
-    // 'regex',
     'separated',
-    'log'
+    'log',
+    'regex',
   ];
 
   // Models
@@ -25,6 +25,7 @@ var CreateCollectionViewModel = function(wizard) {
   self.collection = new Collection(self);
   self.fileType = ko.observable().extend({'errors': null});
   self.fieldSeparator = ko.observable().extend({'errors': null});
+  self.regex = ko.observable().extend({'errors': null});
 
   // UI
   self.wizard = wizard;

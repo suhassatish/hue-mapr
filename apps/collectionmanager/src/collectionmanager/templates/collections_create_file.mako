@@ -90,10 +90,19 @@ ${ commonheader(_('Collection Manager'), "collectionmanager", user, "29px") | n,
 </script>
 
 <script type="text/html" id="collection-data-separated">
-  <div class="control-group" data-bind="css: {'error': collection.name.errors().length > 0}">
+  <div class="control-group" data-bind="css: {'error': fieldSeparator.errors().length > 0}">
     <label for="name" class="control-label">${_("Name")}</label>
     <div class="controls">
-      <select data-bind="options: $root.fieldSeparators, value: fieldSeparator" name="type"></select>
+      <select data-bind="options: fieldSeparators, value: fieldSeparator" name="type"></select>
+    </div>
+  </div>
+</script>
+
+<script type="text/html" id="collection-data-regex">
+  <div class="control-group" data-bind="css: {'error': regex.errors().length > 0}">
+    <label for="name" class="control-label">${_("Regular expression")}</label>
+    <div class="controls">
+      <input data-bind="value: regex" placeholder="${_('[a-zA-Z0-9]')}">
     </div>
   </div>
 </script>
@@ -180,6 +189,7 @@ function validateFields() {
 var wizard = new Wizard();
 var root = wizard.getPage('name', 'collection-data', 'separated', validateFileAndNameAndType);
 wizard.getPage('separated', 'collection-data-separated', 'fields', validateFinishUpload);
+wizard.getPage('regex', 'collection-data-regex', 'fields', validateFinishUpload);
 wizard.getPage('fields', 'collection-fields', null, validateFields);
 wizard.rootPage(root);
 wizard.currentPage(wizard.rootPage());
@@ -190,7 +200,7 @@ vm.fileType.subscribe(function(value) {
   if (value == 'log') {
     vm.wizard.getPage('name').next('fields');
   } else {
-    vm.wizard.getPage('name').next('separated');
+    vm.wizard.getPage('name').next(value);
   }
 
   if (uploader && uploader._finish.length == 0) {
