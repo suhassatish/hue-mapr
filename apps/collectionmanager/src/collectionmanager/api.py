@@ -35,16 +35,30 @@ LOG = logging.getLogger(__name__)
 def parse_fields(request):
   result = {'status': -1, 'message': ''}
 
+  file_type = request.POST.get('file-type', 'log')
   try:
-    file_obj = request.FILES.get('collections_file')
-    delim, reader_type, fields_list = _parse_fields(
-                                        'collections_file',
-                                        file_obj,
-                                        i18n.get_site_encoding(),
-                                        [reader.TYPE for reader in FILE_READERS],
-                                        DELIMITERS)
-    result['status'] = 0
-    result['data'] = fields_list
+    file_obj = request.FILES.get('collections-file')
+
+    if file_type == 'separated':
+      delimiter = [request.POST.get('file-separator', None)]
+      delim, reader_type, fields_list = _parse_fields(
+                                          'collections-file',
+                                          file_obj,
+                                          i18n.get_site_encoding(),
+                                          [reader.TYPE for reader in FILE_READERS],
+                                          DELIMITERS)
+      result['status'] = 0
+      result['data'] = fields_list
+    elif file_type == 'log':
+      result['status'] = 0
+      result['data'] = [
+        # Syslog format basically
+        ['priority', 'header', 'message'],
+        ['string', 'string', 'string']
+      ]
+    else:
+      result['status'] = 1
+      result['message'] = _('File type %s not supported.') % file_type
   except Exception, e:
     result['message'] = e.message
 

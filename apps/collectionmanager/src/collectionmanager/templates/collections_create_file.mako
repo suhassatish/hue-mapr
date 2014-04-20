@@ -49,7 +49,7 @@ ${ commonheader(_('Collection Manager'), "collectionmanager", user, "29px") | n,
     <div class="span9">
       <div class="card wizard">
         <h1 class="card-heading simple">${_("Create collection file")}</h1>
-        <div class="card-body" data-bind="if: wizard.currentPage">
+        <div class="card-body" data-bind="if: wizard.currentPage()">
           <form class="form form-horizontal">
             <div data-bind="template: { 'name': wizard.currentPage().name, 'afterRender': createUploader }"></div>
             <br />
@@ -81,19 +81,10 @@ ${ commonheader(_('Collection Manager'), "collectionmanager", user, "29px") | n,
     </div>
   </div>
 
-  <div class="control-group" data-bind="css: {'error': dataType.errors().length > 0}">
+  <div class="control-group" data-bind="css: {'error': fileType.errors().length > 0}">
     <label for="name" class="control-label">${_("Name")}</label>
     <div class="controls">
-      <select data-bind="options: dataTypes, value: dataType" name="type"></select>
-    </div>
-  </div>
-</script>
-
-<script type="text/html" id="collection-data-log">
-  <div class="control-group" data-bind="css: {'error': fieldSeparator.errors().length > 0}">
-    <label for="name" class="control-label">${_("Name")}</label>
-    <div class="controls">
-      <select data-bind="options: $root.fieldSeparators, value: fieldSeparator" name="type"></select>
+      <select data-bind="options: fileTypes, value: fileType" name="type"></select>
     </div>
   </div>
 </script>
@@ -140,7 +131,7 @@ ${ commonheader(_('Collection Manager'), "collectionmanager", user, "29px") | n,
 <script src="/static/ext/chosen/chosen.jquery.min.js" type="text/javascript" charset="utf-8"></script>
 
 <script type="text/javascript">
-function validateFileAndName() {
+function validateFileAndNameAndType() {
   var ret = true;
   if (!vm.collection.name()) {
     vm.collection.name.errors.push("${ _('Name is missing') }");
@@ -149,20 +140,14 @@ function validateFileAndName() {
     vm.collection.name.errors.removeAll();
   }
 
-  ret &= validateFields();
-  return ret;
-}
-
-function validateLog() {
-  if (uploader) {
-    uploader.finishUpload();
-    return true;
-  } else {
-    return false;
+  if (vm.fileType() == 'log' && !validateFinishUpload()) {
+    ret = false;
   }
+
+  return ret && validateFields();
 }
 
-function validateSeparator() {
+function validateFinishUpload() {
   if (uploader) {
     uploader.finishUpload();
     return true;
@@ -192,20 +177,23 @@ function validateFields() {
 }
 
 var wizard = new Wizard();
-var root = wizard.getPage('name', 'collection-data', 'separated', validateFileAndName);
-wizard.getPage('log', 'collection-data-log', 'fields', validateLog);
-wizard.getPage('separated', 'collection-data-separated', 'fields', validateSeparator);
+var root = wizard.getPage('name', 'collection-data', 'separated', validateFileAndNameAndType);
+wizard.getPage('separated', 'collection-data-separated', 'fields', validateFinishUpload);
 wizard.getPage('fields', 'collection-fields', null, validateFields);
 wizard.rootPage(root);
 wizard.currentPage(wizard.rootPage());
 
 var vm = new CreateCollectionViewModel(wizard);
 
-vm.dataType.subscribe(function(value) {
+vm.fileType.subscribe(function(value) {
   if (value == 'log') {
-    vm.wizard.getPage('name').next('log');
+    vm.wizard.getPage('name').next('fields');
   } else {
     vm.wizard.getPage('name').next('separated');
+  }
+
+  if (uploader && uploader._finish.length == 0) {
+    $(uploader._element).change();
   }
 });
 
@@ -223,7 +211,7 @@ var uploader;
 function createUploader() {
   if ($("#upload-index").length > 0) {
     var num_of_pending_uploads = 0;
-    uploader = new qq.CollectionFileUploader({
+    uploader = new CollectionFileUploader({
       element: $("#upload-index")[0],
       action: "/collectionmanager/api/fields/parse/",
       template:'<div class="qq-uploader">' +
@@ -239,7 +227,11 @@ function createUploader() {
               '<span class="qq-upload-failed-text">${_('Failed')}</span>' +
               '</li>',
       params:{
-        fileFieldLabel: 'collections_file'
+        fileFieldLabel: 'collections-file',
+        fileTypeLabel: 'file-type',
+        fieldSeparatorLabel: 'field-separator',
+        fileType: null,
+        fieldSeparator: ',',
       },
       onComplete: function(id, fileName, response) {
         num_of_pending_uploads--;
@@ -251,7 +243,8 @@ function createUploader() {
         }
       },
       onSubmit: function(id, fileName, responseJSON) {
-        uploader._options.params['fieldSeparator'] = vm.fieldSeparator();
+        uploader._options.params.fileType = vm.fileType();
+        uploader._options.params.fieldSeparator = vm.fieldSeparator(); 
         num_of_pending_uploads++;
       },
       multiple: false,
