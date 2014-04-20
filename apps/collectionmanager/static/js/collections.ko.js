@@ -169,18 +169,18 @@ var CreateCollectionViewModel = function(wizard) {
     ',',
     '\t'
   ];
-  var dataTypes = [
-    // 'log',
+  var fileTypes = [
     // 'regex',
-    'separated'
+    'separated',
+    'log'
   ];
 
   // Models
   self.fieldTypes = ko.mapping.fromJS(fieldTypes);
   self.fieldSeparators = ko.mapping.fromJS(fieldSeparators);
-  self.dataTypes = ko.mapping.fromJS(dataTypes);
+  self.fileTypes = ko.mapping.fromJS(fileTypes);
   self.collection = new Collection(self);
-  self.dataType = ko.observable().extend({'errors': null});
+  self.fileType = ko.observable().extend({'errors': null});
   self.fieldSeparator = ko.observable().extend({'errors': null});
 
   // UI
@@ -314,7 +314,7 @@ ko.extenders.errors = function(target, options) {
   return target;
 };
 
-qq.CollectionFileUploader = function(o){
+var CollectionFileUploader = function(o){
   // call parent constructor
   qq.FileUploader.apply(this, arguments);
 
@@ -343,7 +343,8 @@ qq.CollectionFileUploader = function(o){
 
     var formData = new FormData();
     formData.append(params.fileFieldLabel, file);
-    formData.append('field-separator', params.fieldSeparator);
+    formData.append(params.fileTypeLabel, params.fileType);
+    formData.append(params.fieldSeparatorLabel, params.fieldSeparator);
 
     var action = this._options.action;
     xhr.open("POST", action, true);
@@ -351,9 +352,9 @@ qq.CollectionFileUploader = function(o){
   };
 };
 
-qq.extend(qq.CollectionFileUploader.prototype, qq.FileUploader.prototype);
+qq.extend(CollectionFileUploader.prototype, qq.FileUploader.prototype);
 
-qq.extend(qq.CollectionFileUploader.prototype, {
+qq.extend(CollectionFileUploader.prototype, {
   _finish: [],
   _onInputChange: function(input){
     if (this._handler instanceof qq.UploadHandlerXhr) {
@@ -366,9 +367,11 @@ qq.extend(qq.CollectionFileUploader.prototype, {
     this._button.reset();
   },
   finishUpload: function() {
-    $.each(this._finish, function(index, upload) {
+    var upload = null;
+    while(this._finish.length > 0) {
+      upload = this._finish.pop();
       upload();
-    });
+    }
   }
 });
 
