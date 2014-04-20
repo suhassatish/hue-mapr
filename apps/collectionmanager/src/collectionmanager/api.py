@@ -56,6 +56,14 @@ def parse_fields(request):
         ['priority', 'header', 'message'],
         ['string', 'string', 'string']
       ]
+    elif file_type == 'regex':
+      # @TODO: Understand regex use case better.
+      result['status'] = 0
+      result['data'] = [
+        # Syslog format basically
+        ['priority', 'header', 'message'],
+        ['string', 'string', 'string']
+      ]
     else:
       result['status'] = 1
       result['message'] = _('File type %s not supported.') % file_type
