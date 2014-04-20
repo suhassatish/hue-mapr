@@ -128,6 +128,7 @@ ${ commonheader(_('Collection Manager'), "collectionmanager", user, "29px") | n,
 <script src="/static/ext/js/knockout-min.js" type="text/javascript" charset="utf-8"></script>
 <script src="/static/ext/js/knockout.mapping-2.3.2.js" type="text/javascript" charset="utf-8"></script>
 <script src="/collectionmanager/static/js/collections.ko.js" type="text/javascript" charset="utf-8"></script>
+<script src="/collectionmanager/static/js/create-collection.ko.js" type="text/javascript" charset="utf-8"></script>
 <script src="/static/ext/chosen/chosen.jquery.min.js" type="text/javascript" charset="utf-8"></script>
 
 <script type="text/javascript">
@@ -200,6 +201,7 @@ vm.fileType.subscribe(function(value) {
 routie({
   "wizard/:step": function(step) {
     vm.wizard.setPageByUrl(step);
+    routie('wizard/' + vm.wizard.currentPage().url());
   },
   "*": function() {
     routie('wizard/name');
@@ -244,7 +246,7 @@ function createUploader() {
       },
       onSubmit: function(id, fileName, responseJSON) {
         uploader._options.params.fileType = vm.fileType();
-        uploader._options.params.fieldSeparator = vm.fieldSeparator(); 
+        uploader._options.params.fieldSeparator = vm.fieldSeparator();
         num_of_pending_uploads++;
       },
       multiple: false,
