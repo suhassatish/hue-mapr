@@ -41,7 +41,7 @@ ${ commonheader(_('Collection Manager'), "collectionmanager", user, "29px") | n,
           <li class="nav-header">${_('Actions')}</li>
           <li><a href="/collectionmanager/import"><i class="fa fa-plus-circle"></i> ${ _('Import an existing collection') }</a></li>
           <li><a href="/collectionmanager/create/file/"><i class="fa fa-files-o"></i> ${_('Create a new collection from a file')}</a></li>
-          <li><a href="/collectionmanager/create/manual/"><i class="fa fa-wrench"></i> ${_('Create a new collection manually')}</a></li>
+          ## <li><a href="/collectionmanager/create/manual/"><i class="fa fa-wrench"></i> ${_('Create a new collection manually')}</a></li>
         </ul>
       </div>
     </div>
@@ -51,7 +51,7 @@ ${ commonheader(_('Collection Manager'), "collectionmanager", user, "29px") | n,
         <h1 class="card-heading simple">${_("Create collection file")}</h1>
         <div class="card-body" data-bind="if: wizard.currentPage()">
           <form class="form form-horizontal">
-            <div data-bind="template: { 'name': wizard.currentPage().name, 'afterRender': createUploader }"></div>
+            <div data-bind="template: { 'name': wizard.currentPage().name }"></div>
             <br />
             <a data-bind="routie: 'wizard/' + wizard.previousUrl(), visible: wizard.hasPrevious" class="btn btn-info" href="javascript:void(0)">${_('Previous')}</a>
             <a data-bind="routie: 'wizard/' + wizard.nextUrl(), visible: wizard.hasNext" class="btn btn-info" href="javascript:void(0)">${_('Next')}</a>
@@ -61,6 +61,20 @@ ${ commonheader(_('Collection Manager'), "collectionmanager", user, "29px") | n,
       </div>
     </div>
 
+  </div>
+</div>
+
+
+<div id="chooseFile" class="modal hide fade">
+  <div class="modal-header">
+    <a href="#" class="close" data-dismiss="modal">&times;</a>
+    <h3>${_('Choose a file')}</h3>
+  </div>
+  <div class="modal-body">
+    <div id="filechooser">
+    </div>
+  </div>
+  <div class="modal-footer">
   </div>
 </div>
 
@@ -77,7 +91,7 @@ ${ commonheader(_('Collection Manager'), "collectionmanager", user, "29px") | n,
   <div class="control-group">
     <label for="name" class="control-label">${_("Files")}</label>
     <div class="controls">
-      <div id="upload-index"></div>
+      <input data-bind="value: file" type="text" class="span7 fileChooser" placeholder="/user/foo/udf.jar"/>
     </div>
   </div>
 
@@ -150,20 +164,15 @@ function validateFileAndNameAndType() {
     vm.collection.name.errors.removeAll();
   }
 
-  if (vm.fileType() == 'log' && !validateFinishUpload()) {
+  if (vm.fileType() == 'log' && !validateFetchFields()) {
     ret = false;
   }
 
   return ret && validateFields();
 }
 
-function validateFinishUpload() {
-  if (uploader) {
-    uploader.finishUpload();
-    return true;
-  } else {
-    return false;
-  }
+function validateFetchFields() {
+  return vm.fetchFields();
 }
 
 function validateFields() {
@@ -188,8 +197,8 @@ function validateFields() {
 
 var wizard = new Wizard();
 var root = wizard.getPage('name', 'collection-data', 'separated', validateFileAndNameAndType);
-wizard.getPage('separated', 'collection-data-separated', 'fields', validateFinishUpload);
-wizard.getPage('regex', 'collection-data-regex', 'fields', validateFinishUpload);
+wizard.getPage('separated', 'collection-data-separated', 'fields', validateFetchFields);
+wizard.getPage('regex', 'collection-data-regex', 'fields', validateFetchFields);
 wizard.getPage('fields', 'collection-fields', null, validateFields);
 wizard.rootPage(root);
 wizard.currentPage(wizard.rootPage());
@@ -202,70 +211,22 @@ vm.fileType.subscribe(function(value) {
   } else {
     vm.wizard.getPage('name').next(value);
   }
-
-  if (uploader && uploader._finish.length == 0) {
-    $(uploader._element).change();
-  }
 });
 
 routie({
   "wizard/:step": function(step) {
     vm.wizard.setPageByUrl(step);
     routie('wizard/' + vm.wizard.currentPage().url());
+    $(".fileChooser:not(:has(~ button))").after(getFileBrowseButton($(".fileChooser:not(:has(~ button))")));
   },
   "*": function() {
     routie('wizard/name');
   },
 });
 
-var uploader;
-
-function createUploader() {
-  if ($("#upload-index").length > 0) {
-    var num_of_pending_uploads = 0;
-    uploader = new CollectionFileUploader({
-      element: $("#upload-index")[0],
-      action: "/collectionmanager/api/fields/parse/",
-      template:'<div class="qq-uploader">' +
-              '<div class="qq-upload-drop-area"><span>${_('Drop files here to upload')}</span></div>' +
-              '<div class="qq-upload-button">${_('Select files')}</div>' +
-              '<ul class="qq-upload-list"></ul>' +
-              '</div>',
-      fileTemplate:'<li>' +
-              '<span class="qq-upload-file"></span>' +
-              '<span class="qq-upload-spinner"></span>' +
-              '<span class="qq-upload-size"></span>' +
-              '<a class="qq-upload-cancel" href="#">${_('Cancel')}</a>' +
-              '<span class="qq-upload-failed-text">${_('Failed')}</span>' +
-              '</li>',
-      params:{
-        fileFieldLabel: 'collections-file',
-        fileTypeLabel: 'file-type',
-        fieldSeparatorLabel: 'field-separator',
-        fileType: null,
-        fieldSeparator: ',',
-      },
-      onComplete: function(id, fileName, response) {
-        num_of_pending_uploads--;
-        if (response.status != 0) {
-          $(document).trigger("error", "${ _('Error: ') }" + response['data']);
-        } else if (num_of_pending_uploads == 0) {
-          // Infer fields
-          vm.inferFields(response['data']);
-        }
-      },
-      onSubmit: function(id, fileName, responseJSON) {
-        uploader._options.params.fileType = vm.fileType();
-        uploader._options.params.fieldSeparator = vm.fieldSeparator();
-        num_of_pending_uploads++;
-      },
-      multiple: false,
-      debug: false,
-    });
-  }
-}
-
 ko.applyBindings(vm);
+
+$(".fileChooser:not(:has(~ button))").after(getFileBrowseButton($(".fileChooser:not(:has(~ button))")));
 
 </script>
 

@@ -18,6 +18,7 @@
 
 import json
 import logging
+import tablib
 
 from desktop.lib.exceptions_renderable import PopupException
 
@@ -79,7 +80,18 @@ class CollectionManagerController(object):
   def create_new_collection(self, name, fields):
     api = SolrApi(SOLR_URL.get(), self.user, SECURITY_ENABLED.get())
     if api.create_collection(name):
-      api.add_fields(name, fields)
+      # Create only new fields
+      # Fields that already exist, do not overwrite since there is no way to do that, currently.
+      old_field_names = api.fields(name)['schema']['fields'].keys()
+      new_fields = filter(lambda field: field['name'] not in old_field_names, fields)
+      api.add_fields(name, new_fields)
+
       hue_collection, created = Collection.objects.get_or_create(name=name, solr_properties='{}', is_enabled=True, user=self.user)
     else:
       raise PopupException(_('Could not create collection. Check error logs for more info.'))
+
+  def update_collection_index(self, collection_or_core_name, data):
+    api = SolrApi(SOLR_URL.get(), self.user, SECURITY_ENABLED.get())
+    # 'data' first line should be headers.
+    if not api.update(collection_or_core_name, data, content_type='csv'):
+      raise PopupException(_('Could not update index. Check error logs for more info.'))
