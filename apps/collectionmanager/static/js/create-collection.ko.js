@@ -14,8 +14,8 @@ var CreateCollectionViewModel = function(wizard) {
   ];
   var fileTypes = [
     'separated',
-    'log',
-    'regex',
+    // 'log',
+    // 'regex',
   ];
 
   // Models
@@ -23,6 +23,7 @@ var CreateCollectionViewModel = function(wizard) {
   self.fieldSeparators = ko.mapping.fromJS(fieldSeparators);
   self.fileTypes = ko.mapping.fromJS(fileTypes);
   self.collection = new Collection(self);
+  self.file = ko.observable().extend({'errors': null});
   self.fileType = ko.observable().extend({'errors': null});
   self.fieldSeparator = ko.observable().extend({'errors': null});
   self.regex = ko.observable().extend({'errors': null});
@@ -56,10 +57,29 @@ var CreateCollectionViewModel = function(wizard) {
     self.collection.fields(fields);
   };
 
+  self.fetchFields = function() {
+    return $.post("/collectionmanager/api/fields/parse/", {
+      'field-separator': self.fieldSeparator(),
+      'file-type': self.fileType(),
+      'file-path': self.file()
+    })
+    .done(function(data) {
+      if (data.status == 0) {
+        self.inferFields(data.data);
+      } else {
+        $(document).trigger("error", data.message);
+      }
+    })
+    .fail(function (xhr, textStatus, errorThrown) {
+      $(document).trigger("error", xhr.responseText);
+    });
+  };
+
   self.save = function() {
     if (self.wizard.currentPage().validate()) {
       return $.post("/collectionmanager/api/create/", {
         collection: ko.toJSON(self.collection),
+        'file-path': self.file()
       })
       .done(function(data) {
         if (data.status == 0) {
@@ -74,3 +94,21 @@ var CreateCollectionViewModel = function(wizard) {
     }
   };
 };
+
+
+function getFileBrowseButton(inputElement) {
+  return $("<button>").addClass("btn").addClass("fileChooserBtn").text("..").click(function (e) {
+    e.preventDefault();
+    $("#filechooser").jHueFileChooser({
+      initialPath: inputElement.val(),
+      onFileChoose: function (filePath) {
+        inputElement.val(filePath);
+        inputElement.trigger("change");
+        $("#chooseFile").modal("hide");
+      },
+      selectFolder: false,
+      createFolder: false
+    });
+    $("#chooseFile").modal("show");
+  });
+}

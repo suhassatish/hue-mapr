@@ -109,6 +109,7 @@ class SolrApi(object):
         ('name', name),
         ('numShards', shards),
         ('replicationFactor', replication),
+        ('collection.configName', name),
         ('wt', 'json')
       )
 
@@ -169,5 +170,25 @@ class SolrApi(object):
         params += (('show', 'schema'),)
       response = self._root.get('%(core)s/admin/luke' % {'core': core}, params=params)
       return self._get_json(response)
+    except RestException, e:
+      raise PopupException(e, title=_('Error while accessing Solr'))
+
+  def update(self, collection_or_core_name, data, content_type='csv'):
+    try:
+      if content_type == 'csv':
+        params = self._get_params() + (
+          ('wt', 'json'),
+          ('overwrite', 'true'),
+        )
+        content_type = 'application/csv'
+      else:
+        LOG.error("Could not update index for %s. Unsupported content type %s. Allowed content types: csv" % (collection_or_core_name, content_type))
+        return False
+      response = self._root.post('%s/update' % collection_or_core_name,
+                                 contenttype=content_type,
+                                 params=params,
+                                 data=data)
+      print response
+      return True
     except RestException, e:
       raise PopupException(e, title=_('Error while accessing Solr'))

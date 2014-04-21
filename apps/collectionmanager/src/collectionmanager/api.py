@@ -37,16 +37,16 @@ def parse_fields(request):
 
   file_type = request.POST.get('file-type', 'log')
   try:
-    file_obj = request.FILES.get('collections-file')
+    file_obj = request.fs.open(request.POST.get('file-path'))
 
     if file_type == 'separated':
-      delimiter = [request.POST.get('file-separator', None)]
+      delimiter = [request.POST.get('field-separator', ',')]
       delim, reader_type, fields_list = _parse_fields(
                                           'collections-file',
                                           file_obj,
                                           i18n.get_site_encoding(),
                                           [reader.TYPE for reader in FILE_READERS],
-                                          DELIMITERS)
+                                          delimiter)
       result['status'] = 0
       result['data'] = fields_list
     elif file_type == 'log':
@@ -106,8 +106,14 @@ def collections_create(request):
   collection = json.loads(request.POST.get('collection', '{}'))
 
   if collection:
+    # Create collection and add fields
     searcher = CollectionManagerController(request.user)
     searcher.create_new_collection(collection.get('name', ''), collection.get('fields', []))
+
+    # Index data
+    fh = request.fs.open(request.POST.get('file-path'))
+    searcher.update_collection_index(collection.get('name', ''), fh.read())
+    fh.close()
 
     response['status'] = 0
     response['message'] = _('Page saved!')
