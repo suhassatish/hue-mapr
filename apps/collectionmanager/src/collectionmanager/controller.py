@@ -90,8 +90,16 @@ class CollectionManagerController(object):
     else:
       raise PopupException(_('Could not create collection. Check error logs for more info.'))
 
-  def update_collection_index(self, collection_or_core_name, data):
+  def update_collection_index(self, collection_or_core_name, data, indexing_strategy):
     api = SolrApi(SOLR_URL.get(), self.user, SECURITY_ENABLED.get())
     # 'data' first line should be headers.
-    if not api.update(collection_or_core_name, data, content_type='csv'):
-      raise PopupException(_('Could not update index. Check error logs for more info.'))
+    if indexing_strategy == 'separated':
+      if not api.update(collection_or_core_name, data, content_type='csv'):
+        raise PopupException(_('Could not update index. Check error logs for more info.'))
+    elif indexing_strategy == 'mapreduce-batch-indexer':
+      # @TODO(Abe): Oozie indexing strategy
+      # Ensure creation of Oozie job
+      # 
+      pass
+    else:
+      raise PopupException(_('Could not update index. Indexing strategy %s not supported.') % indexing_strategy)

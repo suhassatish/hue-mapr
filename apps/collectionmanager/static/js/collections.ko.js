@@ -182,4 +182,15 @@ ko.extenders.errors = function(target, options) {
   return target;
 };
 
+function validateNotNull(obs, message) {
+  var ret = true;
+  if (!obs()) {
+    obs.errors.push(message);
+    ret = false;
+  } else {
+    obs.errors.removeAll();
+  }
+  return ret;
+}
+
 // End utils
