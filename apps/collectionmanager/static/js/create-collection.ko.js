@@ -14,8 +14,7 @@ var CreateCollectionViewModel = function(wizard) {
   ];
   var fileTypes = [
     'separated',
-    // 'log',
-    // 'regex',
+    'morphlines'
   ];
 
   // Models
@@ -26,32 +25,20 @@ var CreateCollectionViewModel = function(wizard) {
   self.file = ko.observable().extend({'errors': null});
   self.fileType = ko.observable().extend({'errors': null});
   self.fieldSeparator = ko.observable().extend({'errors': null});
-  self.regex = ko.observable().extend({'errors': null});
+  self.morphlines = ko.mapping.fromJS({'name': 'message', 'expression': null});
+  self.morphlines.name = self.morphlines.name.extend({'errors': null});
+  self.morphlines.expression = self.morphlines.expression.extend({'errors': null});
 
   // UI
-  self.wizard = wizard;
+  self.wizard = new Wizard();
 
   self.inferFields = function(data) {
     var fields = [];
-    var field_names = data[0];
-    var first_row = data[1];
-    $.each(first_row, function(index, value) {
-      var type = null;
-      if ($.isNumeric(value)) {
-        if (value.toString().indexOf(".") == -1) {
-          type = 'integer';
-        } else {
-          type = 'float';
-        }
-      } else {
-        if (value.toLowerCase().indexOf("true") > -1 || value.toLowerCase().indexOf("false") > -1) {
-          type = 'boolean';
-        }
-        else {
-          type = 'string';
-        }
-      }
-      fields.push(new Field(self.collection, field_names[index], type));
+    console.log(data);
+    $.each(data, function(index, value) {
+      // 0 => name
+      // 1 => type
+      fields.push(new Field(self.collection, value[0], value[1]));
     });
 
     self.collection.fields(fields);
@@ -60,8 +47,9 @@ var CreateCollectionViewModel = function(wizard) {
   self.fetchFields = function() {
     return $.post("/collectionmanager/api/fields/parse/", {
       'field-separator': self.fieldSeparator(),
-      'file-type': self.fileType(),
-      'file-path': self.file()
+      'type': self.fileType(),
+      'file-path': self.file(),
+      'morphlines': ko.mapping.toJSON(self.morphlines)
     })
     .done(function(data) {
       if (data.status == 0) {
@@ -78,8 +66,9 @@ var CreateCollectionViewModel = function(wizard) {
   self.save = function() {
     if (self.wizard.currentPage().validate()) {
       return $.post("/collectionmanager/api/create/", {
-        collection: ko.toJSON(self.collection),
-        'file-path': self.file()
+        'collection': ko.toJSON(self.collection),
+        'file-path': self.file(),
+        'type': self.fileType()
       })
       .done(function(data) {
         if (data.status == 0) {

@@ -88,7 +88,7 @@ ${ commonheader(_('Collection Manager'), "collectionmanager", user, "29px") | n,
     </div>
   </div>
 
-  <div class="control-group">
+  <div class="control-group" data-bind="css: {'error': file.errors().length > 0}">
     <label for="name" class="control-label">${_("Files")}</label>
     <div class="controls">
       <input data-bind="value: file" type="text" class="span7 fileChooser" placeholder="/user/foo/udf.jar"/>
@@ -112,11 +112,20 @@ ${ commonheader(_('Collection Manager'), "collectionmanager", user, "29px") | n,
   </div>
 </script>
 
-<script type="text/html" id="collection-data-regex">
-  <div class="control-group" data-bind="css: {'error': regex.errors().length > 0}">
-    <label for="name" class="control-label">${_("Regular expression")}</label>
+<script type="text/html" id="collection-data-morphlines">
+  <div class="control-group" data-bind="css: {'error': morphlines.name.errors().length > 0}">
+    <label for="name" class="control-label">${_("Morphlines config name")}</label>
+
     <div class="controls">
-      <input data-bind="value: regex" placeholder="${_('[a-zA-Z0-9]')}">
+      <input type="text" data-bind="value: morphlines.name" class="span6">
+    </div>
+  </div>
+
+  <div class="control-group" data-bind="css: {'error': morphlines.expression.errors().length > 0}">
+    <label for="name" class="control-label">${_("Morphlines config expression")}</label>
+
+    <div class="controls">
+      <textarea data-bind="value: morphlines.expression" placeholder="%{SYSLOGTIMESTAMP:timestamp} %{SYSLOGHOST:hostname} %{DATA:program}(?:\[%{POSINT:pid}\])?: %{GREEDYDATA:msg}" class="span12"></textarea>
     </div>
   </div>
 </script>
@@ -156,61 +165,40 @@ ${ commonheader(_('Collection Manager'), "collectionmanager", user, "29px") | n,
 
 <script type="text/javascript">
 function validateFileAndNameAndType() {
-  var ret = true;
-  if (!vm.collection.name()) {
-    vm.collection.name.errors.push("${ _('Name is missing') }");
-    ret = false;
-  } else {
-    vm.collection.name.errors.removeAll();
+  var ret = validateNotNull(vm.collection.name, "${ _('Name is missing') }");
+  var ret = ret && validateNotNull(vm.file, "${ _('File path is missing') }");
+
+  if (vm.fileType() == 'log') {
+    validateFetchFields()
   }
 
-  if (vm.fileType() == 'log' && !validateFetchFields()) {
-    ret = false;
-  }
-
-  return ret && validateFields();
+  return ret;
 }
 
 function validateFetchFields() {
-  return vm.fetchFields();
+  vm.fetchFields();
+  return true;
 }
 
 function validateFields() {
   var ret = true;
   $.each(vm.collection.fields(), function(index, field) {
-    if (!field.name()) {
-      field.name.errors.push("${ _('Field name is missing') }");
-      ret = false;
-    } else {
-      field.name.errors.removeAll();
-    }
-
-    if (!field.type()) {
-      field.type.errors.push("${ _('Field type is missing') }");
-      ret = false;
-    } else {
-      field.type.errors.removeAll();
-    }
+    ret = ret && validateNotNull(field.name, "${ _('Field name is missing') }");
+    ret = ret && validateNotNull(field.type, "${ _('Field type is missing') }");
   });
   return ret;
 }
 
-var wizard = new Wizard();
-var root = wizard.getPage('name', 'collection-data', 'separated', validateFileAndNameAndType);
-wizard.getPage('separated', 'collection-data-separated', 'fields', validateFetchFields);
-wizard.getPage('regex', 'collection-data-regex', 'fields', validateFetchFields);
-wizard.getPage('fields', 'collection-fields', null, validateFields);
-wizard.rootPage(root);
-wizard.currentPage(wizard.rootPage());
-
-var vm = new CreateCollectionViewModel(wizard);
+var vm = new CreateCollectionViewModel();
+var root = vm.wizard.getPage('name', 'collection-data', 'separated', validateFileAndNameAndType);
+vm.wizard.getPage('separated', 'collection-data-separated', 'fields', validateFetchFields);
+vm.wizard.getPage('morphlines', 'collection-data-morphlines', 'fields', validateFetchFields);
+vm.wizard.getPage('fields', 'collection-fields', null, validateFields);
+vm.wizard.rootPage(root);
+vm.wizard.currentPage(vm.wizard.rootPage());
 
 vm.fileType.subscribe(function(value) {
-  if (value == 'log') {
-    vm.wizard.getPage('name').next('fields');
-  } else {
-    vm.wizard.getPage('name').next(value);
-  }
+  vm.wizard.getPage('name').next(value);
 });
 
 routie({

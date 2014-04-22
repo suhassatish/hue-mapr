@@ -17,6 +17,7 @@
 
 import json
 import logging
+import re
 
 from django.http import HttpResponse
 from django.utils.translation import ugettext as _
@@ -32,14 +33,40 @@ from controller import CollectionManagerController
 LOG = logging.getLogger(__name__)
 
 
+def _get_field_types(row):
+  def test_boolean(value):
+    if value.lower() not in ('false', 'true'):
+      raise ValueError(_("%s is not a boolean value") % value)
+
+  test_fns = [('integer', int), ('float', float), ('boolean', test_boolean)]
+  field_types = []
+  for field in row:
+    field_type = None
+    for test_fn in test_fns:
+      try:
+        test_fn[1](field)
+        field_type = test_fn[0]
+        break
+      except ValueError:
+        pass
+    field_types.append(field_type or 'string')
+  return field_types
+
+
+def _get_type_from_morphline_type(morphline_type):
+  if morphline_type in ('POSINT', 'INT', 'BASE10NUM', 'NUMBER'):
+    return 'integer'
+  else:
+    return 'string'
+
+
 def parse_fields(request):
   result = {'status': -1, 'message': ''}
 
-  file_type = request.POST.get('file-type', 'log')
+  content_type = request.POST.get('type')
   try:
-    file_obj = request.fs.open(request.POST.get('file-path'))
-
-    if file_type == 'separated':
+    if content_type == 'separated':
+      file_obj = request.fs.open(request.POST.get('file-path'))
       delimiter = [request.POST.get('field-separator', ',')]
       delim, reader_type, fields_list = _parse_fields(
                                           'collections-file',
@@ -47,27 +74,31 @@ def parse_fields(request):
                                           i18n.get_site_encoding(),
                                           [reader.TYPE for reader in FILE_READERS],
                                           delimiter)
+      file_obj.close()
+
+      field_names = fields_list[0]
+      field_types = _get_field_types(fields_list[1])
+      result['data'] = zip(field_names, field_types)
       result['status'] = 0
-      result['data'] = fields_list
-    elif file_type == 'log':
-      result['status'] = 0
-      result['data'] = [
-        # Syslog format basically
-        ['priority', 'header', 'message'],
-        ['string', 'string', 'string']
-      ]
-    elif file_type == 'regex':
-      # @TODO: Understand regex use case better.
-      result['status'] = 0
-      result['data'] = [
-        # Syslog format basically
-        ['priority', 'header', 'message'],
-        ['string', 'string', 'string']
-      ]
+    elif content_type == 'morphlines':
+      morphlines = json.loads(request.POST.get('morphlines'))
+      # Look for entries that take on the form %{SYSLOGTIMESTAMP:timestamp}
+      field_results = re.findall(r'\%\{(?P<type>\w+)\:(?P<name>\w+)\}', morphlines['expression'])
+      if field_results:
+        result['data'] = []
+
+        for field_result in field_results:
+          result['data'].append( (field_result[1], _get_type_from_morphline_type(field_result[0])) )
+
+        result['status'] = 0
+      else:
+        result['status'] = 1
+        result['message'] = _('Could not detect any fields.')
     else:
       result['status'] = 1
-      result['message'] = _('File type %s not supported.') % file_type
+      result['message'] = _('Type %s not supported.') % content_type
   except Exception, e:
+    LOG.exception(e.message)
     result['message'] = e.message
 
   return HttpResponse(json.dumps(result), mimetype="application/json")
@@ -112,7 +143,11 @@ def collections_create(request):
 
     # Index data
     fh = request.fs.open(request.POST.get('file-path'))
-    searcher.update_collection_index(collection.get('name', ''), fh.read())
+    if request.POST.get('type') == 'separated':
+      indexing_strategy = 'upload'
+    else:
+      indexing_strategy = 'mapreduce-batch-indexer'
+    searcher.update_collection_index(collection.get('name', ''), fh.read(), indexing_strategy)
     fh.close()
 
     response['status'] = 0
