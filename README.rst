@@ -1,19 +1,25 @@
+.. image:: docs/images/hue_logo.png
+
 Welcome to the repository for Hue
 =================================
 
+`Hue
+<http://gethue.com>`_ is an open source Web UI for doing big data with Hadoop.
 
-Hue is both a Web UI for Hadoop and a framework to create interactive Web
-applications. It features:
+.. image:: docs/images/hue-screen.png
 
-      * FileBrowser for accessing HDFS      
-      * Beeswax application for executing Hive queries
-      * Impala App for executing Cloudera Impala queries
-      * Oozie App for submitting and scheduling workflows and bundles
-      * Pig App for submitting Pig scripts
-      * HBase Browser for exploring and modifying HBase tables and data
-      * Table Browser for accessing Hive metadata
-      * Search app for querying Solr and Solr Cloud
-      * JobBrowser for accessing MapReduce jobs (MR1/MR2-YARN)
+It features:
+
+      * File Browser for accessing HDFS
+      * Hive Editor for developing and running Hive queries
+      * Impala App for executing Impala queries
+      * Search App for querying and exploring data with Solr
+      * Spark Editor and Dashboard
+      * Pig Editor for submitting Pig scripts
+      * Oozie App for submitting and monitoring workflows, coordinators and bundles
+      * HBase Browser for visualizing and modifying HBase tables
+      * Metastore Browser for accessing Hive metadata and HCatalog
+      * Job Browser for accessing MapReduce jobs (MR1/MR2-YARN)
       * Job Designer for creating MapReduce/Streaming/Java jobs
       * A Pig/HBase/Sqoop2 shell
       * A Sqoop 2 editor and dashboard
@@ -25,31 +31,34 @@ More user and developer documentation is available at http://gethue.com.
 
 Getting Started
 ===============
-To build and get the core server running::
+To build and get the development server running::
 
     $ git clone http://github.com/cloudera/hue.git
     $ cd hue
     $ make apps
     $ build/env/bin/hue runserver
 
-If using the Beeswax application, start the daemon::
-
-    $ build/env/bin/hue beeswax_server
-
-Now Hue should be running on http://localhost:8000.
+Now Hue should be running on http://localhost:8000 !
 
 The configuration in development mode is ``desktop/conf/pseudo-distributed.ini``.
 
 
-Note: to start all the servers in one command (but lose the automatic reloading after source modification)::
+Note: to start the production server (but lose the automatic reloading after source modification)::
 
    $ build/env/bin/supervisor
 
 To run the tests::
 
+   Install the mini cluster (only once):
+   $ ./tools/jenkins/jenkins.sh slow
+
+   Run all the tests:
    $ build/env/bin/hue test all
-   $ build/env/bin/hue test specific filebrowser
-   $ build/env/bin/hue test specific jobbrowser.tests:test_get_path
+
+   Or just some parts of the tests, e.g.:
+   $ build/env/bin/hue test specific impala
+   $ build/env/bin/hue test specific impala.tests:TestMockedImpala
+   $ build/env/bin/hue test specific impala.tests:TestMockedImpala.test_basic_flow
 
 
 Development Prerequisites
@@ -141,8 +150,8 @@ namespace.  See ``apps/about/src/about/urls.py`` for an example.
 Main Stack
 ==========
 
-   * Python 2.4 - 2.7
-   * Django 1.2 https://docs.djangoproject.com/en/1.2/
+   * Python 2.6 - 2.7
+   * Django 1.4 https://docs.djangoproject.com/en/1.4/
    * Mako
    * jQuery
    * Bootstrap
@@ -152,11 +161,11 @@ Community
 =========
    * User group: http://groups.google.com/a/cloudera.org/group/hue-user
    * Jira: https://issues.cloudera.org/browse/HUE
+   * Reviews: https://review.cloudera.org/dashboard/?view=to-group&group=hue (repo 'hue-rw')
 
 
 License
 =======
 Apache License, Version 2.0
 http://www.apache.org/licenses/LICENSE-2.0
-
 

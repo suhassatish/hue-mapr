@@ -16,8 +16,9 @@
 <%!
 from django.utils.translation import ugettext as _
 %>
+
 % if error_list:
   <a href="${url('about:index')}" title="${_('Misconfiguration detected')}" alt="${_('Misconfiguration detected')}">
-    <i class="icon-warning-sign" style="color:#fef052"></i>
+    <i class="fa fa-exclamation-triangle" style="color:#B94A48"></i>
   </a>
 % endif

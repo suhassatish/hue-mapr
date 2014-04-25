@@ -39,7 +39,7 @@ msgstr "소유자"
 
 #: src/pig/models.py:33
 msgid "User who can modify the job."
-msgstr "Job을 수정할 수 있는 사람입니다."
+msgstr "Job을 수정할 수 있는 사용자입니다."
 
 #: src/pig/models.py:34
 msgid "Is a user document, not a document submission."
@@ -71,12 +71,12 @@ msgstr " (복사)"
 msgid "A POST request is required."
 msgstr "POST 요청이 필요합니다."
 
-#: src/pig/management/commands/pig_setup.py:46
+#: src/pig/management/commands/pig_setup.py:48
 #, python-format
 msgid "Copying examples %(local_dir)s to %(remote_data_dir)s\n"
 msgstr "예제 %(local_dir)s을(를) %(remote_data_dir)s(으)로 복사\n"
 
-#: src/pig/management/commands/pig_setup.py:53
+#: src/pig/management/commands/pig_setup.py:55
 #, python-format
 msgid "Copying data %(local_dir)s to %(remote_data_dir)s\n"
 msgstr "데이터 %(local_dir)s을(를) %(remote_data_dir)s(으)로 복사\n"
@@ -85,15 +85,15 @@ msgstr "데이터 %(local_dir)s을(를) %(remote_data_dir)s(으)로 복사\n"
 msgid "Editor"
 msgstr "편집기"
 
-#: src/pig/templates/app.mako:29
+#: src/pig/templates/app.mako:37
 msgid "Scripts"
 msgstr "스크립트"
 
-#: src/pig/templates/app.mako:30
+#: src/pig/templates/app.mako:38
 msgid "Dashboard"
 msgstr "대시보드"
 
-#: src/pig/templates/app.mako:40
+#: src/pig/templates/app.mako:50
 msgid "Search for script name or content"
 msgstr "스크립트 이름 또는 콘텐츠 검색"
 
@@ -106,7 +106,7 @@ msgstr "이 스크립트 실행"
 msgid "Run"
 msgstr "실행"
 
-#: src/pig/templates/app.mako:45
+#: src/pig/templates/app.mako:55
 msgid "Copy this script"
 msgstr "이 스크립트 복사"
 
@@ -114,7 +114,7 @@ msgstr "이 스크립트 복사"
 msgid "Copy"
 msgstr "복사"
 
-#: src/pig/templates/app.mako:46
+#: src/pig/templates/app.mako:56
 msgid "Delete this script"
 msgstr "이 스크립트 삭제"
 
@@ -122,7 +122,7 @@ msgstr "이 스크립트 삭제"
 msgid "Delete"
 msgstr "삭제"
 
-#: src/pig/templates/app.mako:50
+#: src/pig/templates/app.mako:60
 msgid "Create a new script"
 msgstr "새 스크립트 생성"
 
@@ -145,7 +145,7 @@ msgstr "이름"
 msgid "Script"
 msgstr "스크립트"
 
-#: src/pig/templates/app.mako:77
+#: src/pig/templates/app.mako:87
 msgid "There are no scripts matching the search criteria."
 msgstr "검색 기준과 일치하는 스크립트가 없습니다."
 

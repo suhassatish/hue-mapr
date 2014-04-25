@@ -15,10 +15,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-try:
-  import json
-except ImportError:
-  import simplejson as json
+import json
 import logging
 import re
 import csv
@@ -31,21 +28,26 @@ from django.utils.encoding import smart_str
 from desktop.lib import thrift_util
 from desktop.lib.exceptions_renderable import PopupException
 
-from hbase.server.hbase_lib import get_thrift_attributes, get_thrift_type, get_client_type
+from hbase.server.hbase_lib import get_thrift_type, get_client_type
 from hbase import conf
 
 LOG = logging.getLogger(__name__)
 
-#format methods similar to Thrift API, for similarity with catch-all
+
+# Format methods similar to Thrift API, for similarity with catch-all
 class HbaseApi(object):
+
   def query(self, action, *args):
     try:
-      if hasattr(self,action):
+      if hasattr(self, action):
         return getattr(self, action)(*args)
       cluster = args[0]
       return self.queryCluster(action, cluster, *args[1:])
     except Exception, e:
-      raise PopupException(_("Api Error: %s") % e.message)
+      if 'Could not connect to' in e.message:
+        raise PopupException(_("HBase Thrift 1 server cannot be contacted: %s") % e.message)
+      else:
+        raise PopupException(_("Api Error: %s") % e.message)
 
   def queryCluster(self, action, cluster, *args):
     client = self.connectCluster(cluster)
@@ -73,7 +75,7 @@ class HbaseApi(object):
       for cluster in clusters:
         if cluster["name"] == name:
           return cluster
-    except Exception, e:
+    except:
       pass
     raise PopupException(_("Cluster by the name of %s does not exist in configuration.") % name)
 
@@ -87,6 +89,14 @@ class HbaseApi(object):
                                   use_sasl=False,
                                   timeout_seconds=None)
 
+  def get(self, cluster, tableName, row, column, attributes):
+    client = self.connectCluster(cluster)
+    return client.get(tableName, smart_str(row), smart_str(column), attributes)
+
+  def getVerTs(self, cluster, tableName, row, column, timestamp, numVersions, attributesargs):
+    client = self.connectCluster(cluster)
+    return client.getVerTs(tableName, smart_str(row), smart_str(column), timestamp, numVersions, attributesargs)
+
   def createTable(self, cluster, tableName, *columns):
     client = self.connectCluster(cluster)
     client.createTable(tableName, [get_thrift_type('ColumnDescriptor')(name=column) for column in columns])
@@ -94,12 +104,12 @@ class HbaseApi(object):
 
   def getTableList(self, cluster):
     client = self.connectCluster(cluster)
-    return [{'name': name,'enabled': client.isTableEnabled(name)} for name in client.getTableNames()]
+    return [{'name': name, 'enabled': client.isTableEnabled(name)} for name in client.getTableNames()]
 
-  def getRows(self, cluster, tableName, columns, startRowKey, numRows, prefix = False):
+  def getRows(self, cluster, tableName, columns, startRowKey, numRows, prefix=False):
     client = self.connectCluster(cluster)
     if prefix == False:
-      scanner = client.scannerOpen(tableName, startRowKey, columns, None)
+      scanner = client.scannerOpen(tableName, smart_str(startRowKey), columns, None)
     else:
       scanner = client.scannerOpenWithPrefix(tableName, smart_str(startRowKey), columns, None)
     data = client.scannerGetList(scanner, numRows)
@@ -123,7 +133,7 @@ class HbaseApi(object):
 
   def getRowsFull(self, cluster, tableName, startRowKey, numRows):
     client = self.connectCluster(cluster)
-    return self.getRows(cluster, tableName, [column for column in client.getColumnDescriptors(tableName)], startRowKey, numRows)
+    return self.getRows(cluster, tableName, [smart_str(column) for column in client.getColumnDescriptors(tableName)], smart_str(startRowKey), numRows)
 
   def getRowFull(self, cluster, tableName, startRowKey, numRows):
     row = self.getRowsFull(cluster, tableName, smart_str(startRowKey), 1)

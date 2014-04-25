@@ -146,7 +146,7 @@ msgstr "グループ"
 
 #: src/useradmin/forms.py:293
 msgid "Create Home Directories"
-msgstr "ホームディレクトリの作成"
+msgstr "ホームディレクトリを作成"
 
 #: src/useradmin/forms.py:294
 msgid "Create home directory for every user, if one doesn't already exist."
@@ -308,15 +308,15 @@ msgstr "インポートする最小 UID（指定値も含む）"
 
 #: src/useradmin/management/commands/useradmin_sync_with_unix.py:32
 msgid "Maximum UID to import (Exclusive)."
-msgstr "インポートする最大 UID（指定値は除外）"
+msgstr "インポートする最大 UID（指定値は除外）。"
 
 #: src/useradmin/management/commands/useradmin_sync_with_unix.py:33
 msgid "Minimum GID to import (Inclusive)."
-msgstr "インポートする最小 GID（指定値も含む）"
+msgstr "インポートする最小 GID（指定値も含む）。"
 
 #: src/useradmin/management/commands/useradmin_sync_with_unix.py:34
 msgid "Maximum GID to import (Exclusive)."
-msgstr "インポートする最大 GID（指定値は除外）"
+msgstr "インポートする最大 GID（指定値は除外）。"
 
 #: src/useradmin/management/commands/useradmin_sync_with_unix.py:35
 msgid "Whether or not to check that the user's shell is not /bin/false."
@@ -325,54 +325,54 @@ msgstr "ユーザーのシェルが /bin/false ではないことを確認する
 #: src/useradmin/templates/add_ldap_users.mako:25
 #: src/useradmin/templates/edit_user.mako:23
 #: src/useradmin/templates/list_users.mako:25
-#: src/useradmin/templates/list_users.mako:29
+#: src/useradmin/templates/list_users.mako:30
 msgid "Hue Users"
 msgstr "Hue ユーザー"
 
-#: src/useradmin/templates/add_ldap_users.mako:30
+#: src/useradmin/templates/add_ldap_users.mako:31
 msgid "Hue Users - Add/Sync LDAP user"
 msgstr "Hue ユーザー - LDAP ユーザーを追加／同期"
 
-#: src/useradmin/templates/add_ldap_users.mako:46
-#: src/useradmin/templates/edit_user.mako:81
+#: src/useradmin/templates/add_ldap_users.mako:47
+#: src/useradmin/templates/edit_user.mako:78
 msgid "Update user"
 msgstr "ユーザーを更新"
 
-#: src/useradmin/templates/add_ldap_users.mako:48
+#: src/useradmin/templates/add_ldap_users.mako:49
 msgid "Add/Sync user"
 msgstr "ユーザーを追加／同期"
 
-#: src/useradmin/templates/add_ldap_users.mako:50
-#: src/useradmin/templates/edit_group.mako:75
-#: src/useradmin/templates/edit_permissions.mako:53
+#: src/useradmin/templates/add_ldap_users.mako:51
+#: src/useradmin/templates/edit_group.mako:77
+#: src/useradmin/templates/edit_permissions.mako:57
 #: src/useradmin/templates/sync_ldap_users_groups.mako:49
 msgid "Cancel"
 msgstr "キャンセル"
 
-#: src/useradmin/templates/add_ldap_users.mako:58
-#: src/useradmin/templates/edit_group.mako:83
-#: src/useradmin/templates/edit_group.mako:90
-#: src/useradmin/templates/edit_permissions.mako:61
-#: src/useradmin/templates/edit_user.mako:114
+#: src/useradmin/templates/add_ldap_users.mako:60
+#: src/useradmin/templates/edit_group.mako:86
+#: src/useradmin/templates/edit_group.mako:93
+#: src/useradmin/templates/edit_permissions.mako:66
+#: src/useradmin/templates/edit_user.mako:93
 msgid "Select all"
 msgstr "すべて選択"
 
-#: src/useradmin/templates/add_ldap_users.mako:59
-#: src/useradmin/templates/edit_group.mako:84
-#: src/useradmin/templates/edit_group.mako:91
-#: src/useradmin/templates/edit_permissions.mako:62
-#: src/useradmin/templates/edit_user.mako:115
+#: src/useradmin/templates/add_ldap_users.mako:61
+#: src/useradmin/templates/edit_group.mako:87
+#: src/useradmin/templates/edit_group.mako:94
+#: src/useradmin/templates/edit_permissions.mako:67
+#: src/useradmin/templates/edit_user.mako:94
 msgid "Search"
 msgstr "検索"
 
-#: src/useradmin/templates/add_ldap_users.mako:60
-#: src/useradmin/templates/edit_permissions.mako:63
-#: src/useradmin/templates/edit_user.mako:116
+#: src/useradmin/templates/add_ldap_users.mako:62
+#: src/useradmin/templates/edit_permissions.mako:68
+#: src/useradmin/templates/edit_user.mako:95
 msgid "No groups found."
 msgstr "グループが見つかりません。"
 
-#: src/useradmin/templates/add_ldap_users.mako:60
-#: src/useradmin/templates/edit_user.mako:116
+#: src/useradmin/templates/add_ldap_users.mako:62
+#: src/useradmin/templates/edit_user.mako:95
 msgid "Create a new group now"
 msgstr "新しいグループを今すぐ作成"
 
@@ -388,7 +388,7 @@ msgstr "はい"
 
 #: src/useradmin/templates/delete_group.mako:22
 msgid "Are you sure you want to delete"
-msgstr "次を削除してねよろしいですか："
+msgstr "次を削除してよろしいですか"
 
 #: src/useradmin/templates/delete_group.mako:22
 msgid "?"
@@ -401,28 +401,28 @@ msgstr "いいえ"
 
 #: src/useradmin/templates/edit_group.mako:26
 #: src/useradmin/templates/list_groups.mako:25
-#: src/useradmin/templates/list_groups.mako:29
+#: src/useradmin/templates/list_groups.mako:30
 msgid "Hue Groups"
 msgstr "Hue グループ"
 
-#: src/useradmin/templates/edit_group.mako:47
+#: src/useradmin/templates/edit_group.mako:48
 #, python-format
 msgid "Hue Groups - Edit group: %(name)s"
 msgstr "Hue グループ - グループの編集：%(name)s"
 
-#: src/useradmin/templates/edit_group.mako:50
+#: src/useradmin/templates/edit_group.mako:51
 msgid "Hue Groups - Add/Sync LDAP group"
 msgstr "Hue グループ - グループを追加／同期"
 
-#: src/useradmin/templates/edit_group.mako:52
+#: src/useradmin/templates/edit_group.mako:53
 msgid "Hue Groups - Create group"
 msgstr "Hue グループ - グループを作成"
 
-#: src/useradmin/templates/edit_group.mako:67
+#: src/useradmin/templates/edit_group.mako:69
 msgid "Update group"
 msgstr "グループを更新"
 
-#: src/useradmin/templates/edit_group.mako:70
+#: src/useradmin/templates/edit_group.mako:72
 msgid "Add/Sync group"
 msgstr "グループを追加／同期"
 
@@ -431,47 +431,47 @@ msgstr "グループを追加／同期"
 msgid "Add group"
 msgstr "グループを追加"
 
-#: src/useradmin/templates/edit_group.mako:85
+#: src/useradmin/templates/edit_group.mako:88
 msgid "No users found."
 msgstr "ユーザーが見つかりません。"
 
-#: src/useradmin/templates/edit_group.mako:85
+#: src/useradmin/templates/edit_group.mako:88
 msgid "Create a new user now"
 msgstr "新しいユーザーを今すぐ作成"
 
-#: src/useradmin/templates/edit_group.mako:92
+#: src/useradmin/templates/edit_group.mako:95
 msgid "No permissions found."
 msgstr "パーミッションが見つかりません。"
 
 #: src/useradmin/templates/edit_permissions.mako:23
 #: src/useradmin/templates/list_permissions.mako:26
-#: src/useradmin/templates/list_permissions.mako:30
+#: src/useradmin/templates/list_permissions.mako:31
 msgid "Hue Permissions"
 msgstr "Hue のパーミッション"
 
-#: src/useradmin/templates/edit_permissions.mako:43
+#: src/useradmin/templates/edit_permissions.mako:44
 #, python-format
 msgid "Hue Permissions - Edit app: %(app)s"
 msgstr "Hue のパーミッション - アプリケーションを編集：%(app)s"
 
-#: src/useradmin/templates/edit_permissions.mako:52
+#: src/useradmin/templates/edit_permissions.mako:56
 msgid "Update permission"
 msgstr "パーミッションを更新"
 
-#: src/useradmin/templates/edit_user.mako:31
+#: src/useradmin/templates/edit_user.mako:29
 #, python-format
 msgid "Hue Users - Edit user: %(username)s"
 msgstr "Hue ユーザー - ユーザーを編集：%(username)s"
 
-#: src/useradmin/templates/edit_user.mako:33
+#: src/useradmin/templates/edit_user.mako:31
 msgid "Hue Users - Create user"
 msgstr "Hue ユーザー - ユーザーを作成"
 
-#: src/useradmin/templates/edit_user.mako:40
+#: src/useradmin/templates/edit_user.mako:38
 msgid "Step 1: Credentials (required)"
 msgstr "手順 1：資格情報（必須）"
 
-#: src/useradmin/templates/edit_user.mako:41
+#: src/useradmin/templates/edit_user.mako:39
 msgid "Step 2: Names and Groups"
 msgstr "手順 2：名前とグループ"
 
@@ -483,11 +483,11 @@ msgstr "手順 2：名前"
 msgid "Step 3: Advanced"
 msgstr "手順 3：詳細"
 
-#: src/useradmin/templates/edit_user.mako:77
+#: src/useradmin/templates/edit_user.mako:74
 msgid "Back"
 msgstr "戻る"
 
-#: src/useradmin/templates/edit_user.mako:78
+#: src/useradmin/templates/edit_user.mako:75
 msgid "Next"
 msgstr "次へ"
 
@@ -496,11 +496,15 @@ msgstr "次へ"
 msgid "Add user"
 msgstr "ユーザーを追加"
 
-#: src/useradmin/templates/edit_user.mako:167
+#: src/useradmin/templates/edit_user.mako:146
 msgid "This field is required."
 msgstr "このフィールドは必須です。"
 
-#: src/useradmin/templates/layout.mako:51
+#: src/useradmin/templates/layout.mako:59
+msgid "User Admin"
+msgstr "ユーザー管理者"
+
+#: src/useradmin/templates/layout.mako:63
 msgid "Users"
 msgstr "ユーザー"
 

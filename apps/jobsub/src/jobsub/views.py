@@ -14,6 +14,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 """
 Views for JobSubmission.
 
@@ -24,10 +25,6 @@ to the cluster.  A parameterized, submitted job design
 is a "job submission".  Submissions can be "watched".
 """
 
-try:
-  import json
-except ImportError:
-  import simplejson as json
 import logging
 import time as py_time
 
@@ -39,6 +36,7 @@ from desktop.lib.django_util import render, render_json
 from desktop.lib.exceptions import StructuredException
 from desktop.lib.exceptions_renderable import PopupException
 from desktop.log.access import access_warn
+from desktop.models import Document
 
 from oozie.models import Workflow
 from oozie.forms import design_form_by_type
@@ -59,7 +57,8 @@ def _list_designs(request, owner, name, order_by='-last_modified'):
     order_by    - Order by string in django ORM format
     is_trashed  - Boolean filter for trash or available
   """
-  data = Workflow.objects.filter(managed=False)
+  data = Document.objects.get_docs(request.user, Workflow, extra='jobsub')
+
   if owner:
       data = data.filter(owner__username__icontains=owner)
   if name:
@@ -92,7 +91,6 @@ def list_designs(request):
     owner       - Substring filter by owner field
     name        - Substring filter by design name field
   '''
-  data = Workflow.objects.filter(managed=False)
   owner = request.GET.get('owner', '')
   name = request.GET.get('name', '')
 
@@ -107,12 +105,14 @@ def list_designs(request):
       'name': name
     })
 
+
 def _get_design(design_id):
   """Raise PopupException if design doesn't exist"""
   try:
     return Workflow.objects.get(pk=design_id)
   except Workflow.DoesNotExist:
     raise PopupException(_("Workflow not found"))
+
 
 def _check_permission(request, owner_name, error_msg, allow_root=False):
   """Raise PopupException if user doesn't have permission to modify the design"""
@@ -121,6 +121,7 @@ def _check_permission(request, owner_name, error_msg, allow_root=False):
       return
     access_warn(request, error_msg)
     raise PopupException(_("Permission denied. You are not the owner."))
+
 
 def delete_design(request, design_id):
   if request.method != 'POST':
@@ -174,6 +175,7 @@ def get_design(request, design_id):
   node_dict['is_shared'] = workflow.is_shared
   node_dict['editable'] = workflow.owner.id == request.user.id
   node_dict['parameters'] = workflow.parameters
+  node_dict['description'] = workflow.description
   return render_json(node_dict, js_safe=True);
 
 
@@ -196,21 +198,28 @@ def save_design(request, design_id):
 def _save_design(design_id, data):
   sanitize_node_dict(data)
   workflow = _get_design(design_id)
+
   workflow.name = data['name']
   workflow.description = data.setdefault('description', '')
   workflow.is_shared = str(data.setdefault('is_shared', 'true')).lower() == "true"
   workflow.parameters = data.setdefault('parameters', '[]')
   node = workflow.start.get_child('to').get_full_node()
   node_id = node.id
+
   for key in data:
     if key in ('is_shared', 'capture_output', 'propagate_configuration'):
       setattr(node, key, str(data[key]).lower() == 'true')
     else:
       setattr(node, key, data[key])
+
   node.id = node_id
   node.pk = node_id
   node.save()
+
   workflow.save()
+
+  if workflow.doc.exists():
+    workflow.doc.update(name=workflow.name, description=workflow.description)
 
 
 def new_design(request, node_type):
@@ -245,6 +254,10 @@ def new_design(request, node_type):
   workflow.name = request.POST.get('name')
   workflow.description = request.POST.get('description')
   workflow.save()
+
+  doc = workflow.doc.get()
+  doc.extra='jobsub'
+  doc.save()
 
   # Save design again to update all fields.
   data = format_dict_field_values(request.POST.copy())

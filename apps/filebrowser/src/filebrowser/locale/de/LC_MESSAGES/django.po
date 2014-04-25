@@ -321,7 +321,7 @@ msgstr "Datei \"%s\" konnte nicht benannt werden: Schrägstriche sind in Dateina
 
 #: src/filebrowser/views.py:1156 src/filebrowser/views.py:1235
 msgid "A POST request is required."
-msgstr "Eine POST-Anfrage ist erforderlich."
+msgstr "Eine POST-Anforderung ist erforderlich."
 
 #: src/filebrowser/views.py:1159
 #, python-format
@@ -371,7 +371,7 @@ msgstr "Inhalt der Datei konnte nicht extrahiert werden."
 msgid "Could not interpret archive type."
 msgstr "Archivtyp konnte nicht interpretiert werden."
 
-#: src/filebrowser/lib/archives.py:40
+#: src/filebrowser/lib/archives.py:41
 msgid "Must implement 'extract' method."
 msgstr "Methode 'extract' muss implementiert werden."
 
@@ -381,31 +381,106 @@ msgstr "Methode 'extract' muss implementiert werden."
 msgid "%(filename)s - File Viewer"
 msgstr "%(filename)s - Datei-Anzeigeprogramm"
 
-#: src/filebrowser/templates/display.mako:46
+#: src/filebrowser/templates/display.mako:49
+msgid "The current file is empty."
+msgstr "Die aktuelle Datei ist leer."
+
+#: src/filebrowser/templates/display.mako:63
+msgid "Viewing Bytes:"
+msgstr "Angezeigte Bytes:"
+
+#: src/filebrowser/templates/display.mako:68
+#, python-format
+msgid "(%(length)s B block size)"
+msgstr "(%(length)s B-Blockgröße)"
+
+#: src/filebrowser/templates/display.mako:78
+msgid "Warning: some binary data has been masked out with '&#xfffd'."
+msgstr "Warnung: einige binäre Daten wurden mit '&#xfffd' ausgeblendet."
+
+#: src/filebrowser/templates/edit.mako:62
+#: src/filebrowser/templates/edit.mako:92
+msgid "Save"
+msgstr "Speichern"
+
+#: src/filebrowser/templates/edit.mako:63
+#: src/filebrowser/templates/edit.mako:77
+msgid "Save as"
+msgstr "Speichern unter"
+
+#: src/filebrowser/templates/edit.mako:80
+#: src/filebrowser/templates/saveas.mako:33
+msgid "Enter the location where you would like to save the file."
+msgstr "Geben Sie den Speicherort ein, an dem die Datei gespeichert werden soll."
+
+#: src/filebrowser/templates/edit.mako:87
+#: src/filebrowser/templates/listdir_components.mako:262
+#: src/filebrowser/templates/listdir_components.mako:301
+#: src/filebrowser/templates/listdir_components.mako:390
+#: src/filebrowser/templates/listdir_components.mako:416
+msgid "Name is required."
+msgstr "Der Name ist erforderlich."
+
+#: src/filebrowser/templates/edit.mako:91
+#: src/filebrowser/templates/listdir_components.mako:244
+#: src/filebrowser/templates/listdir_components.mako:269
+#: src/filebrowser/templates/listdir_components.mako:303
+#: src/filebrowser/templates/listdir_components.mako:366
+#: src/filebrowser/templates/listdir_components.mako:392
+#: src/filebrowser/templates/listdir_components.mako:418
+#: src/filebrowser/templates/listdir_components.mako:475
+#: src/filebrowser/templates/listdir_components.mako:499
+#: src/filebrowser/templates/listdir_components.mako:1277
+#: src/filebrowser/templates/listdir_components.mako:1327
+msgid "Cancel"
+msgstr "Abbrechen"
+
+#: src/filebrowser/templates/fb_components.mako:25
+#: src/filebrowser/templates/fb_components.mako:40
+msgid "Home"
+msgstr "Startseite"
+
+#: src/filebrowser/templates/fb_components.mako:27
+msgid "Edit path"
+msgstr "Pfad bearbeiten"
+
+#: src/filebrowser/templates/fb_components.mako:35
+msgid "View trash"
+msgstr "Papierkorb anzeigen"
+
+#: src/filebrowser/templates/fb_components.mako:36
+msgid "Trash"
+msgstr "Papierkorb"
+
+#: src/filebrowser/templates/fb_components.mako:68
+msgid "File Browser"
+msgstr "Datei-Browser"
+
+#: src/filebrowser/templates/fb_components.mako:81
 msgid "Actions"
 msgstr "Aktionen"
 
-#: src/filebrowser/templates/display.mako:48
+#: src/filebrowser/templates/fb_components.mako:87
 msgid "View as text"
 msgstr "Als Text anzeigen"
 
-#: src/filebrowser/templates/display.mako:52
+#: src/filebrowser/templates/fb_components.mako:91
 msgid "View as binary"
 msgstr "Als Binärdatei anzeigen"
 
-#: src/filebrowser/templates/display.mako:56
+#: src/filebrowser/templates/fb_components.mako:95
 msgid "Preview as Gzip"
 msgstr "Vorschau als Gzip"
 
-#: src/filebrowser/templates/display.mako:60
+#: src/filebrowser/templates/fb_components.mako:99
 msgid "Preview as Avro"
 msgstr "Vorschau als Avro"
 
-#: src/filebrowser/templates/display.mako:64
+#: src/filebrowser/templates/fb_components.mako:103
 msgid "Stop preview"
 msgstr "Vorschau anhalten"
 
-#: src/filebrowser/templates/display.mako:68
+#: src/filebrowser/templates/fb_components.mako:107
 msgid "Edit file"
 msgstr "Datei bearbeiten"
 
@@ -414,11 +489,11 @@ msgstr "Datei bearbeiten"
 msgid "Download"
 msgstr "Herunterladen"
 
-#: src/filebrowser/templates/display.mako:72
+#: src/filebrowser/templates/fb_components.mako:114
 msgid "View file location"
 msgstr "Speicherort der Datei anzeigen"
 
-#: src/filebrowser/templates/display.mako:73
+#: src/filebrowser/templates/fb_components.mako:115
 msgid "Refresh"
 msgstr "Aktualisieren"
 
@@ -698,7 +773,7 @@ msgstr "Sind Sie sicher, dass Sie diese Dateien wiederherstellen möchten?"
 
 #: src/filebrowser/templates/listdir_components.mako:216
 msgid "Confirm Empty Trash"
-msgstr "Leeren Papierkorb bestätigen"
+msgstr "Leeren des Papierkorbs bestätigen"
 
 #: src/filebrowser/templates/listdir_components.mako:219
 msgid "Are you sure you want to permanently delete all your trash?"
@@ -845,7 +920,7 @@ msgstr "Eine Ebene nach oben"
 #: src/filebrowser/templates/listdir_components.mako:1232
 #: src/filebrowser/templates/listdir_components.mako:1282
 msgid "Drop files here to upload"
-msgstr "Legen sie hochzuladende Dateien hier ab"
+msgstr "Legen Sie hochzuladende Dateien hier ab."
 
 #: src/filebrowser/templates/listdir_components.mako:1233
 msgid "Select files"

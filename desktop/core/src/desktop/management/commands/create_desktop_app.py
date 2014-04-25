@@ -37,7 +37,7 @@ class Command(BaseCommand):
       raise CommandError(_("Expected arguments: app_name [app_dir]"))
     app_name = args[0]
     if len(args) == 2:
-      app_dir = args[0]
+      app_dir = args[1]
     else:
       app_dir = os.getcwd()
 

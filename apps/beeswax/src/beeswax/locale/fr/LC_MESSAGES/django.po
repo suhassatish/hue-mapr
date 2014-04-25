@@ -81,27 +81,36 @@ msgstr "Partagez les requêtes enregistrées avec tous les utilisateurs. Si déf
 msgid "The application won't work without a running Beeswax/HiveServer2 server and/or Hive Metastore."
 msgstr "Impossible de faire fonctionner l'application sans exécuter le serveur Beeswax/HiveServer2 et/ou Hive Metastore."
 
-#: src/beeswax/create_table.py:91
+#: src/beeswax/conf.py:135
+msgid "The application won't work without a running HiveServer2."
+msgstr "L'application ne fonctionnera pas sans un serveur HiveServer2 en cours d'exécution."
+
+#: src/beeswax/conf.py:142
+#, python-format
+msgid "Failed to access Hive warehouse: %s"
+msgstr "Impossible d'accéder à l'entrepôt de Hive : %s"
+
+#: src/beeswax/create_table.py:98
 msgid "ctrl-As"
 msgstr "ctrl-As"
 
-#: src/beeswax/create_table.py:92
+#: src/beeswax/create_table.py:99
 msgid "ctrl-Bs"
 msgstr "ctrl-Bs"
 
-#: src/beeswax/create_table.py:93
+#: src/beeswax/create_table.py:100
 msgid "ctrl-Cs"
 msgstr "ctrl-Cs"
 
-#: src/beeswax/create_table.py:94
+#: src/beeswax/create_table.py:101
 msgid "tabs"
 msgstr "tabulations"
 
-#: src/beeswax/create_table.py:95
+#: src/beeswax/create_table.py:102
 msgid "commas"
 msgstr "virgules"
 
-#: src/beeswax/create_table.py:96
+#: src/beeswax/create_table.py:103
 msgid "spaces"
 msgstr "espaces"
 
@@ -138,7 +147,12 @@ msgstr "Echec de l'ouverture du fichier '%(path)s' : %(error)s."
 msgid "Internal error: Missing needed parameter to load data into table."
 msgstr "Erreur interne : absence d'un paramètre requis pour charger les données dans une table."
 
-#: src/beeswax/forms.py:46
+#: src/beeswax/data_export.py:60
+#, python-format
+msgid "%s already exists."
+msgstr "%s existe déjà."
+
+#: src/beeswax/forms.py:45
 msgid "Change the name to save as a new design."
 msgstr "Modifiez le nom sous lequel enregistrer une nouvelle conception."
 
@@ -158,7 +172,7 @@ msgstr "Description"
 msgid "Save"
 msgstr "Enregistrer"
 
-#: src/beeswax/forms.py:55 src/beeswax/forms.py:56
+#: src/beeswax/forms.py:54 src/beeswax/forms.py:55
 msgid "Save As"
 msgstr "Enregistrer sous"
 
@@ -172,13 +186,13 @@ msgstr "Saisissez un nom."
 msgid "Table Name"
 msgstr "Nom de la table"
 
-#: src/beeswax/forms.py:92
+#: src/beeswax/forms.py:122
 msgid "Name of the new table"
 msgstr "Nom de la nouvelle table"
 
-#: src/beeswax/forms.py:93
-msgid "Results Location"
-msgstr "Emplacement des résultats"
+#: src/beeswax/forms.py:142
+msgid "Invalid table prefix name"
+msgstr "Nom du préfixe de la table non valide"
 
 #: src/beeswax/forms.py:95
 #, fuzzy
@@ -217,7 +231,7 @@ msgstr "Ressources à charger avec votre job Hive. Utilisez 'jar' pour les UDF. 
 
 #: src/beeswax/forms.py:162
 msgid "Path to file on HDFS."
-msgstr "Chemin vers un fichier sur HDFS."
+msgstr "Chemin d'accès vers un fichier sur HDFS."
 
 #: src/beeswax/forms.py:196
 msgid "Field terminator"
@@ -335,19 +349,19 @@ msgstr "Utiliser l'emplacement par défaut"
 msgid "Path to HDFS directory or file of database data."
 msgstr "Chemin d'accès vers le répertoire HDFS ou fichier des données de base de données."
 
-#: src/beeswax/models.py:69
+#: src/beeswax/models.py:75
 msgid "Host of the query server."
 msgstr "Hôte du serveur de requêtes."
 
-#: src/beeswax/models.py:70
+#: src/beeswax/models.py:76
 msgid "Port of the query server."
 msgstr "Port du serveur de requêtes."
 
-#: src/beeswax/models.py:71
+#: src/beeswax/models.py:77
 msgid "Name of the query server."
 msgstr "Nom du serveur de requêtes."
 
-#: src/beeswax/models.py:72
+#: src/beeswax/models.py:78
 msgid "Type of the query server."
 msgstr "Type du serveur de requêtes."
 
@@ -476,7 +490,7 @@ msgstr "Impossible d'accéder à la conception %(id)s."
 #: src/beeswax/views.py:927
 #, python-format
 msgid "QueryHistory %(id)s does not exist."
-msgstr "QueryHistory %(id)s n'existe pas."
+msgstr "L'historique de requêtes %(id)s n'existe pas."
 
 #: src/beeswax/views.py:933
 #, fuzzy, python-format
@@ -510,12 +524,22 @@ msgstr "Echec du contact avec le serveur en vue de vérifier l'état de la requ�
 msgid "Cannot find table data in \"%(file)s\"."
 msgstr "Impossible de trouver des données de table dans \"%(file)s\"."
 
-#: src/beeswax/management/commands/beeswax_install_examples.py:146
+#: src/beeswax/management/commands/beeswax_install_examples.py:94
+#, python-format
+msgid "Could not install query: %s"
+msgstr "Impossible d'installer une requête : %s"
+
+#: src/beeswax/management/commands/beeswax_install_examples.py:112
+#, python-format
+msgid "Cannot find table data in \"%(file)s\"."
+msgstr "Impossible de trouver des données de table dans \"%(file)s\"."
+
+#: src/beeswax/management/commands/beeswax_install_examples.py:130
 #, python-format
 msgid "Table \"%(table)s\" already exists."
 msgstr "La table \"%(table)s\" existe déjà."
 
-#: src/beeswax/management/commands/beeswax_install_examples.py:153
+#: src/beeswax/management/commands/beeswax_install_examples.py:137
 #, python-format
 msgid "Error creating table %(table)s: Operation timeout."
 msgstr "Erreur lors de la création de la table %(table)s : l'opération a expiré."
@@ -525,7 +549,7 @@ msgstr "Erreur lors de la création de la table %(table)s : l'opération a expir
 msgid "Error creating table %(table)s: %(error)s."
 msgstr "Erreur lors de la création de la table %(table)s : %(error)s."
 
-#: src/beeswax/management/commands/beeswax_install_examples.py:177
+#: src/beeswax/management/commands/beeswax_install_examples.py:179
 #, python-format
 msgid "Error loading table %(table)s: Operation timeout."
 msgstr "Erreur lors du chargement de la table %(table)s : l'opération a expiré."
@@ -535,10 +559,10 @@ msgstr "Erreur lors du chargement de la table %(table)s : l'opération a expiré
 msgid "Error loading table %(table)s: %(error)s."
 msgstr "Erreur lors du chargement de la table %(table)s : %(error)s."
 
-#: src/beeswax/management/commands/beeswax_install_examples.py:202
+#: src/beeswax/server/dbms.py:140
 #, python-format
-msgid "Sample design %(name)s already exists."
-msgstr "La conception exemple %(name)s existe déjà."
+msgid "%s interface does not support close_operation. %s interface does."
+msgstr "L'interface %s ne prend pas en charge l'opération close_operation. En revanche, l'interface %s la prend en charge."
 
 #: src/beeswax/server/beeswax_lib.py:165
 msgid "Query cancelation is not supported by the Beeswax interface. Please use the Hive Server 2 interface instead."
@@ -582,23 +606,23 @@ msgstr "Serveur d'authentification %s non pris en charge. Les serveurs valides s
 msgid "Beginning of List"
 msgstr "Début de la liste"
 
-#: src/beeswax/templates/beeswax_components.mako:207
+#: src/beeswax/templates/beeswax_components.mako:212
 msgid "Previous Page"
 msgstr "Page précédente"
 
-#: src/beeswax/templates/beeswax_components.mako:208
+#: src/beeswax/templates/beeswax_components.mako:213
 msgid "Next page"
 msgstr "Page suivante"
 
-#: src/beeswax/templates/beeswax_components.mako:208
+#: src/beeswax/templates/beeswax_components.mako:213
 msgid "Next Page"
 msgstr "Page suivante"
 
-#: src/beeswax/templates/beeswax_components.mako:209
+#: src/beeswax/templates/beeswax_components.mako:214
 msgid "End of List"
 msgstr "Fin de la liste"
 
-#: src/beeswax/templates/beeswax_components.mako:211
+#: src/beeswax/templates/beeswax_components.mako:216
 #, python-format
 msgid "Showing %(start)s to %(end)s of %(count)s items, page %(page)s of %(pages)s"
 msgstr "Affichage des éléments %(start)s à %(end)s sur %(count)s, page %(page)s sur %(pages)s"
@@ -748,8 +772,8 @@ msgid "Choose a file"
 msgstr "Choisir un fichier"
 
 #: src/beeswax/templates/configuration.mako:24
-#: src/beeswax/templates/configuration.mako:28
-#: src/beeswax/templates/layout.mako:38
+#: src/beeswax/templates/configuration.mako:29
+#: src/beeswax/templates/execute.mako:37
 msgid "Settings"
 msgstr "Paramètres"
 
@@ -759,14 +783,20 @@ msgid "Search for key, value, etc."
 msgstr "Rechercher une clé, une valeur, etc."
 
 #: src/beeswax/templates/configuration.mako:33
+msgid "Search for key, value, etc."
+msgstr "Rechercher une clé, une valeur, etc."
+
+#: src/beeswax/templates/configuration.mako:34
 msgid "Clear"
 msgstr "Effacer"
 
-#: src/beeswax/templates/configuration.mako:40
+#: src/beeswax/templates/configuration.mako:39
+#: src/beeswax/templates/execute.mako:74
 msgid "Key"
 msgstr "Clé"
 
-#: src/beeswax/templates/configuration.mako:41
+#: src/beeswax/templates/configuration.mako:40
+#: src/beeswax/templates/execute.mako:79
 msgid "Value"
 msgstr "Valeur"
 
@@ -1353,27 +1383,44 @@ msgstr "Certaines tables sont manquantes ? Pour mettre à jour la liste des tabl
 msgid "Did you know?"
 msgstr "Le saviez-vous ?"
 
-#: src/beeswax/templates/explain.mako:25
-msgid "Query Explanation"
-msgstr "Explication de la requête"
+#: src/beeswax/templates/execute.mako:2256
+#: src/beeswax/templates/execute.mako:2263
+msgid "Missing some tables? In order to update the list of tables/metadata seen by Impala, execute one of these queries:"
+msgstr "Il manque certaines tables ? Afin de mettre à jour la liste des tables/métadonnées suivies par Impala, exécutez l'une de ces requêtes :"
 
-#: src/beeswax/templates/explain.mako:29
-msgid "Query Explanation:"
-msgstr "Explication de la requête :"
+#: src/beeswax/templates/layout.mako:41
+msgid "Spark Igniter"
+msgstr "Spark Igniter"
 
-#: src/beeswax/templates/explain.mako:32
-msgid "Explanation"
-msgstr "Explication"
+#: src/beeswax/templates/layout.mako:44
+msgid "Editor"
+msgstr "Editeur"
 
-#: src/beeswax/templates/layout.mako:35
+#: src/beeswax/templates/layout.mako:46
+msgid "Applications"
+msgstr "Applications"
+
+#: src/beeswax/templates/layout.mako:48
+msgid "Dashboard"
+msgstr "Tableau de bord"
+
+#: src/beeswax/templates/layout.mako:49
+msgid "Contexts"
+msgstr "Contextes"
+
+#: src/beeswax/templates/layout.mako:50
+msgid "Uploads"
+msgstr "Chargements"
+
+#: src/beeswax/templates/layout.mako:77
 #: src/beeswax/templates/my_queries.mako:29
-#: src/beeswax/templates/my_queries.mako:39
+#: src/beeswax/templates/my_queries.mako:40
 msgid "My Queries"
 msgstr "Mes requêtes"
 
-#: src/beeswax/templates/layout.mako:36
-#: src/beeswax/templates/list_designs.mako:27
-#: src/beeswax/templates/list_designs.mako:32
+#: src/beeswax/templates/layout.mako:78
+#: src/beeswax/templates/list_designs.mako:29
+#: src/beeswax/templates/list_designs.mako:38
 #: src/beeswax/templates/list_trashed_designs.mako:27
 msgid "Saved Queries"
 msgstr "Requêtes enregistrées"
@@ -1496,7 +1543,7 @@ msgstr "Non enregistré"
 
 #: src/beeswax/templates/list_history.mako:45
 msgid "Copy this query."
-msgstr "Copiez cette requête."
+msgstr "Copier cette requête."
 
 #: src/beeswax/templates/list_history.mako:48
 msgid "Auto generated action"
@@ -1599,7 +1646,7 @@ msgstr "Vider la corbeille ?"
 
 #: src/beeswax/templates/my_queries.mako:48
 msgid "View the result of the selected"
-msgstr "Afficher le résultat de la requête sélectionnée"
+msgstr "Afficher le résultat de l'élément sélectionné"
 
 #: src/beeswax/templates/my_queries.mako:48
 msgid "View result"
@@ -1625,9 +1672,9 @@ msgstr "Afficher toutes mes requêtes"
 msgid "View my entire query history"
 msgstr "Afficher tout mon historique de requêtes"
 
-#: src/beeswax/templates/parameterization.mako:24
-msgid "Parameterize Query"
-msgstr "Paramétrer la requête"
+#: src/beeswax/templates/my_queries.mako:330
+msgid "Move the selected queries to the trash?"
+msgstr "Déplacer les requêtes sélectionnées vers la corbeille ?"
 
 #: src/beeswax/templates/parameterization.mako:32
 msgid "Explain query"
@@ -1666,7 +1713,7 @@ msgid "Unsaved Query"
 msgstr "Requête non enregistrée"
 
 #: src/beeswax/templates/util.mako:71
-#: src/beeswax/templates/watch_results.mako:26
+#: src/beeswax/templates/watch_results.mako:27
 msgid "Query Results"
 msgstr "Résultats de la requête"
 
@@ -1757,7 +1804,7 @@ msgstr "Le résultat de la requête a expiré."
 
 #: src/beeswax/templates/watch_results.mako:147
 msgid "You can rerun it from "
-msgstr "Vous pouvez exécuter de nouveau la requête depuis "
+msgstr "Vous pouvez la réexécuter depuis "
 
 #: src/beeswax/templates/watch_results.mako:153
 msgid "Page offset may have incremented since last view."

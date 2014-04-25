@@ -20,23 +20,32 @@ from desktop.lib.i18n import smart_unicode
 from django.utils.translation import ugettext as _
 %>
 
-${ commonheader(title, "", user) | n,unicode }
+${ commonheader(title, "", user, "40px") | n,unicode }
 
   <div class="container-fluid">
-    <div class="alert">
-      <p><strong>${message}</strong></p>
+    <div class="row-fluid">
+      <div class="span12">
+        <div class="card card-small">
+          <h1 class="card-heading simple">${ _('Error!') }</h1>
+          <div class="card-body">
+            <p>
+
+              <div class="alert">
+      <p><strong>${ smart_unicode(message) }</strong></p>
 
       % if detail:
-        <p>${ detail }</p>
+        <p>${ smart_unicode(detail) }</p>
       % endif
 
     </div>
 
-    <div class="details">
+              <div class="details">
       % if traceback:
-        <a href="javascript:toggleDisplay('#traceback');"><i class="icon-share-alt"></i> ${_('More Info')}</a>
+        <a href="javascript:toggleDisplay('#traceback');"><i class="fa fa-share"></i> ${_('More Info')}</a>
         &nbsp;
+        % if user.is_superuser:
         <a href="/logs" target="_new">${_('View Logs')}</a>
+        % endif
         <br />
         <br />
         <div id="traceback" class="hide">
@@ -60,14 +69,21 @@ ${ commonheader(title, "", user) | n,unicode }
           </table>
         </div>
       % else:
+        % if user.is_superuser:
         <a href="/logs" target="_new">${_('View Logs')}</a>
+        % endif
         <br />
         <br />
       % endif
     </div>
 
-    <div class="alert-actions">
+              <div class="alert-actions">
       <a class="btn small" href="javascript:window.history.back(-1)">${_('Go back')}</a>
+    </div>
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 

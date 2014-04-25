@@ -190,7 +190,7 @@
 <%def name="get_status(status)">
    % if status in ('SUCCEEDED', 'OK', 'NORMAL', 'DONE'):
      label-success
-   % elif status in ('RUNNING', 'PREP', 'WAITING', 'SUSPENDED', 'PREPSUSPENDED', 'PREPPAUSED', 'PAUSED'):
+   % elif status in ('RUNNING', 'PREP', 'WAITING', 'SUSPENDED', 'PREPSUSPENDED', 'PREPPAUSED', 'PAUSED', 'STARTED', 'FINISHING'):
       label-warning
    % elif status == 'READY':
       label-success
@@ -200,15 +200,19 @@
 </%def>
 
 
-<%def name="render_field(field, show_label=True, extra_attrs={})">
+<%def name="render_field(field, show_label=True, extra_attrs={}, control_extra='')">
   % if not field.is_hidden:
     <% group_class = field.errors and "error" or "" %>
     <div class="control-group ${group_class}"
-      rel="popover" data-original-title="${ field.label }" data-content="${ field.help_text }">
+      rel="popover" data-original-title="${ field.label }" data-content="${ field.help_text }" ${control_extra}>
       % if show_label:
         <label class="control-label">${ field.label }</label>
       % endif
-      <div class="controls">
+      <div class="controls"
+      % if not show_label:
+        style="margin-left: 0"
+      % endif
+              >
         <% field.field.widget.attrs.update(extra_attrs) %>
         ${ field | n,unicode }
         % if field.errors:
@@ -256,6 +260,49 @@
       </div>
     </div>
   %endif
+</%def>
+
+
+<%def name="slaForm()">
+  <div data-bind="foreach: { 'data': sla, 'afterRender': addSLATextAndPlaceholder }">
+    <div class="control-group control-row" style="margin-bottom: 2px">
+      <label class="control-label" style="text-align: left"></label>
+      <div class="controls">
+        <!-- ko if:  key() == 'enabled' -->
+        <input type="checkbox" data-bind="checked: value"/>
+        <!-- /ko -->
+        <!-- ko if:  key() != 'enabled' -->
+        <input type="text" data-bind="value: value" class="span7">
+        <!-- /ko -->
+      </div>
+    </div>
+  </div>
+</%def>
+
+
+## Would be nice include it in slaForm() somehow
+<%def name="slaGlobal()">
+  function addSLATextAndPlaceholder(elements, $data) {
+    var SLA_TEXT = {
+      'enabled': {'niceName': '${ _("Enable") }', 'placeHolder': ''},
+      'nominal-time': {'niceName': '${ _("Nominal time") } *', 'placeHolder': '${"$"}{nominal_time}'},
+      'should-start': {'niceName': '${ _("Should start") }', 'placeHolder': '${"$"}{10 * MINUTES}'},
+      'should-end': {'niceName': '${ _("Should end") } *', 'placeHolder': '${"$"}{30 * MINUTES}'},
+      'max-duration': {'niceName': '${ _("Max duration") }', 'placeHolder': '${"$"}{30 * MINUTES}'},
+      'alert-events': {'niceName': '${ _("Alert events") }', 'placeHolder': 'start_miss,end_miss,duration_miss'},
+      'alert-contact': {'niceName': '${ _("Alert contact") }', 'placeHolder': 'joe@example.com,bob@example.com'},
+      'notification-msg': {'niceName': '${ _("Notification message") }', 'placeHolder': '${ _("My Job has encountered an SLA event!") }'},
+      'upstream-apps': {'niceName': '${ _("Upstream apps") }', 'placeHolder': 'dependent-app-1, dependent-app-2'}
+    };
+    var text = SLA_TEXT[$data.key()];
+    if (text) {
+      $(elements).find('input').attr('placeholder', text.placeHolder);
+      $(elements).find('.control-label').text(text.niceName);
+    } else {
+      $(elements).find('input').attr('placeholder', '');
+      $(elements).find('.control-label').text('');
+    }
+  }
 </%def>
 
 
@@ -361,12 +408,12 @@
 </%def>
 
 
-<%def name="decorate_datetime_fields()">
+<%def name="decorate_datetime_fields(is_range=True)">
 
   <link rel="stylesheet" href="/static/ext/css/bootstrap-datepicker.min.css" type="text/css" media="screen" title="no title" charset="utf-8" />
   <link rel="stylesheet" href="/static/ext/css/bootstrap-timepicker.min.css" type="text/css" media="screen" title="no title" charset="utf-8" />
 
-  <style>
+  <style type="text/css">
     .datepicker {
       z-index: 4999;
     }
@@ -386,13 +433,22 @@
       $(".date:not('.input-append')").each(function () {
         $(this).removeClass("date").addClass("dateInput").wrap($("<div>").addClass("input-append").addClass("date").css("marginRight", "8px"));
         $(this).parent().data("date", $(this).val());
-        $("<span>").addClass("add-on").html('<i class="icon-th"></i>').appendTo($(this).parent());
+        $("<span>").addClass("add-on").html('<i class="fa fa-th"></i>').appendTo($(this).parent());
       });
 
       $("input[name='end_0']").data("original-val", $("input[name='end_0']").val());
 
       $(".dateInput").parent().datepicker({
         format:DATE_FORMAT.toLowerCase()
+      });
+
+      $(".dateInput").on("change", function () {
+        var _this = $(this);
+        var startDate = moment(_this.val() + " " + _this.parent().parent().find(".timepicker-default").val(), DATETIME_FORMAT);
+        _this.parent().datepicker('setValue', startDate.format(DATE_FORMAT));
+        %if is_range:
+          rangeHandler(_this.attr("name").indexOf("start") > -1);
+        %endif
       });
 
       $("input[name='start_0']").parent().datepicker().on("changeDate", function () {
@@ -405,7 +461,7 @@
 
       $(".time:not('.input-append')").each(function () {
         $(this).attr("class", "input-mini timepicker-default").wrap($("<div>").addClass("input-append").addClass("date").addClass("bootstrap-timepicker-component"));
-        $("<span>").addClass("add-on").html('<i class="icon-time"></i>').appendTo($(this).parent());
+        $("<span>").addClass("add-on").html('<i class="fa fa-clock-o"></i>').appendTo($(this).parent());
       });
 
       $(".timepicker-default").timepicker({

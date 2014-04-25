@@ -24,11 +24,28 @@ ${ commonheader(None, "hbase", user) | n,unicode }
 
 <link href="/hbase/static/css/hbase.css" rel="stylesheet" type="text/css" />
 
+<div class="navbar navbar-inverse navbar-fixed-top nokids">
+    <div class="navbar-inner">
+    <div class="container-fluid">
+      <div class="nav-collapse">
+        <ul class="nav">
+          <li class="currentApp">
+            <a href="/${app_name}">
+              <img src="/hbase/static/art/icon_24.png" />
+              ${ _('HBase Browser') }
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
 <%def name="datatable(datasource,rowTemplate = 'itemTemplate')">
-  <table data-datasource="${datasource}" class="table table-striped table-condensed datatables tablescroller-disable">
+  <table data-datasource="${datasource}" class="table table-striped table-condensed datatables tablescroller-disable" style="padding-left: 0;padding-right: 0">
       <thead>
         <tr>
-          <th width="1%"><div data-bind="click: ${datasource}.toggleSelectAll, css: {hueCheckbox: true,'icon-ok':${datasource}.selected().length == ${datasource}.items().length && ${datasource}.items().length>0}"></div></th>
+          <th width="1%"><div data-bind="click: ${datasource}.toggleSelectAll, css: {hueCheckbox: true, 'fa': true, 'fa-check':${datasource}.selected().length == ${datasource}.items().length && ${datasource}.items().length>0}"></div></th>
           <!-- ko foreach: ${datasource}.columns() -->
             <th data-bind="text:$data"></th> <!-- need to i18n first -->
           <!-- /ko -->
@@ -55,13 +72,13 @@ ${ commonheader(None, "hbase", user) | n,unicode }
 </%def>
 
 <%def name="smartview(datasource)">
-  <div class="smartview" data-bind="foreach: ${datasource}.items()">
+  <div class="smartview" data-bind="foreach: ${datasource}.items(), css: { 'gridView': ${datasource}.showGrid() }">
     <div class="smartview-row" data-bind="css:{selected:$data.isSelected()}, visible: $data.items().length > 0 || $data.isLoading()">
-      <h5 data-bind="click: lockClickOrigin($data.select, $element)"><code class="row_key" data-bind="text: $data.row.slice(0, 100) + ($data.row.length > 100 ? '...' : '')"></code> <i class="icon-check-sign" data-bind="visible:$data.isSelected()"></i> <img data-bind="visible: $data.isLoading()" src="/static/art/spinner.gif" />
+      <h5 data-bind="click: lockClickOrigin($data.select, $element)"><code class="row_key" data-bind="text: $data.row.slice(0, 100) + ($data.row.length > 100 ? '...' : '')"></code> <i class="fa fa-check-square" data-bind="visible:$data.isSelected()"></i> <img data-bind="visible: $data.isLoading()" src="/static/art/spinner.gif" />
         <span class="smartview-row-controls controls-hover-bottom">
-          <button class="btn" data-bind="click: $data.reload, clickBubble: false" data-toggle="tooltip" title="${_('Refresh Row')}"><i class="icon-refresh"></i></button>
+          <button class="btn" data-bind="click: $data.reload, clickBubble: false" data-toggle="tooltip" title="${_('Refresh Row')}"><i class="fa fa-refresh"></i></button>
           % if user.is_superuser:
-            <button class="btn" data-bind="click: $data.drop, clickBubble: false" data-toggle="tooltip" title="${_('Delete Row')}"><i class="icon-trash"></i></button>
+            <button class="btn" data-bind="click: $data.drop, clickBubble: false" data-toggle="tooltip" title="${_('Delete Row')}"><i class="fa fa-trash-o"></i></button>
           % endif
         </span>
         <span class="smartview-row-controls pull-right">
@@ -70,7 +87,10 @@ ${ commonheader(None, "hbase", user) | n,unicode }
           <input type="text" placeholder="${('Filter Column Names/Family')}" data-bind="value: $data.searchQuery, valueUpdate: $data.items().length < 100 ? 'afterkeydown' : 'change', clickBubble: false"/>
           ${sortBtn('$data.sortDropDown')}
           % if user.is_superuser:
-            <button class="btn" data-bind="enable: $data.selected().length > 0, click: $data.dropSelected, clickBubble: false"><i class="icon-trash"></i> Drop Columns</button>
+            <button class="btn" data-bind="enable: $data.selected().length > 0, click: $data.dropSelected, clickBubble: false"><i class="fa fa-trash-o"></i> Drop Columns</button>
+          % endif
+          % if can_write:
+          <a href="#new_column_modal" data-bind="click:function(){app.focusModel($data);launchModal('new_column_modal', $data);}" class="btn" title="${_('Add New Column/Cell')}"><i class="fa fa-plus"></i></a>
           % endif
           <a href="#new_column_modal" data-bind="click:function(){$('#new_column_row_key').val($data.row);app.focusModel($data);logGA('new_column_modal');}" class="btn" data-toggle="modal" title="${_('Add New Column/Cell')}"><i class="icon-plus"></i></a>
         </span>
@@ -80,9 +100,9 @@ ${ commonheader(None, "hbase", user) | n,unicode }
         <li data-bind="css: {'active': $data.isSelected()}, click: $data.select">
           <div>
             <h6><span class="label" data-bind="text: $data.name.split(':')[0]+':', style: {'backgroundColor': stringHashColor($data.name.split(':')[0])}"></span> <span data-bind="text: $data.name.split(':')[1]"></span></h6>
-            <span class="timestamp label"><i class='icon-time'></i> <span data-bind="text: convertTimestamp($data.timestamp)"></span></span>
+            <span class="timestamp label"><i class='fa fa-clock-o'></i> <span data-bind="text: convertTimestamp($data.timestamp)"></span></span>
             % if user.is_superuser:
-              <a class="corner-btn btn" data-bind="click: $data.drop, clickBubble: false"><i class="icon-trash"></i></a>
+              <a class="corner-btn btn" data-bind="click: $data.drop, clickBubble: false"><i class="fa fa-trash-o"></i></a>
             % endif
             <a class="corner-btn btn" data-bind="visible: $data.editing(), event: { mousedown: function(){launchModal('cell_edit_modal',{content:$data, mime: detectMimeType($data.value())})} }"><i class="icon-pencil"></i> ${_('Full Editor')}</a>
             <pre data-bind="text: ($data.value().length > 146 ? $data.value().substring(0, 144)+'...' : $data.value()).replace(/(\r\n|\n|\r)/gm,''), click: $data.value().length > 146 ? function(){launchModal('cell_edit_modal',{content:$data, mime: detectMimeType($data.value())})} : function(){$data.editing(true)}, clickBubble: false, visible: !$data.isLoading() && !$data.editing()"></pre>
@@ -117,6 +137,7 @@ ${ commonheader(None, "hbase", user) | n,unicode }
 </%def>
 
 <div class="container-fluid">
+  <div class="card card-small">
   <!-- Page Header -->
   <h1>
     <a href="/hbase/">HBase Browser</a> - <a data-bind="text: app.cluster(), attr: { href: '#' + app.cluster() }"></a>
@@ -124,8 +145,8 @@ ${ commonheader(None, "hbase", user) | n,unicode }
     <span class="pull-right">
       <span class="dropdown">
         <a class="dropdown-toggle btn" id="dLabel" data-toggle="dropdown">
-          Switch Cluster
-          <b class="caret"></b>
+          ${_('Switch Cluster')}
+          <b class="caret" style="margin-top: 0"></b>
         </a>
         <ul id="cluster-menu" class="dropdown-menu" role="menu" aria-labelledby="dLabel" data-bind="foreach: app.clusters()">
           <li><a data-bind="text: $data.name, click: function(){ routie($data.name); }"></a></li>
@@ -148,11 +169,13 @@ ${ commonheader(None, "hbase", user) | n,unicode }
               <i class="icon-check-empty"></i> ${_('Disable')}
             </button>
           </span>
-          <button class="btn" data-bind="enable: views.tables.selected().length > 0, click: views.tables.dropSelected"><i class="icon-trash"></i> ${_('Drop')}</button>
+          <button class="btn" data-bind="enable: views.tables.selected().length > 0, click: views.tables.dropSelected"><i class="fa fa-trash-o"></i> ${_('Drop')}</button>
         % endif
+        % if can_write:
         <span class="pull-right">
-          <a href="#new_table_modal" role="button" data-bind="click: function(){app.focusModel(app.views.tables);}" class="btn" data-toggle="modal"><i class='icon-plus-sign'></i> ${_('New Table')}</a>
+          <a href="#new_table_modal" role="button" data-bind="click: function(){app.focusModel(app.views.tables);}" class="btn" data-toggle="modal"><i class='fa fa-plus-circle'></i> ${_('New Table')}</a>
         </span>
+        % endif
       </div>
     </div>
 
@@ -160,7 +183,7 @@ ${ commonheader(None, "hbase", user) | n,unicode }
 
     <script id="itemTemplate" type="text/html">
       <tr>
-        <td><div data-bind="click: $data.select, css: {hueCheckbox: true,'icon-ok':$data.isSelected}" data-row-selector-exclude="true"></div></td>
+        <td><div data-bind="click: $data.select, css: {hueCheckbox: true,'fa': true, 'fa-check':$data.isSelected}" data-row-selector-exclude="true"></div></td>
         <td width="90%"><a data-bind="text:$data.name,attr: {href: '#'+app.cluster()+'/'+$data.name}" data-row-selector="true"></a></td>
         <td width="5%"><i data-bind="click: $data.toggle, css: {'icon-check-sign':$data.enabled, 'icon-check-empty':$data.enabled != true}" data-row-selector-exclude="true"></i></td>
       </tr>
@@ -217,15 +240,16 @@ ${ commonheader(None, "hbase", user) | n,unicode }
             <!-- /ko -->
            </span>
             <span class="pull-right">
+              <button class="btn" data-bind="click: function(){views.tabledata.showGrid(!views.tabledata.showGrid());}, clickBubble: false" data-toggle="tooltip" title="${_('Toggle Grid')}"><i class="fa fa-table"></i></button>
               <input type="text" placeholder="Filter Columns/Families" style="margin-left: 5px;" data-bind="value: app.views.tabledata.columnQuery, clickBubble: false"/>
-              <button class="btn" data-bind="click: views.tabledata.toggleSelectAll" style="margin-left: 5px;" data-toggle="tooltip" title="${_('Toggle Select All Rows')}"><i class="icon-check-sign"></i> ${_('All')}</button>
+              <button class="btn" data-bind="click: views.tabledata.toggleSelectAll" style="margin-left: 5px;" data-toggle="tooltip" title="${_('Toggle Select All Rows')}"><i class="fa fa-check-square"></i> ${_('All')}</button>
               ${sortBtn('views.tabledata.sortDropDown')}
             </span>
             <span class="smartview-row-controls pull-right" data-bind="if: views.tabledata.items().length > 0 && views.tabledata.selected().length > 0">
-              <button class="btn" data-bind="click: views.tabledata.batchSelectedAlias.bind(null, 'toggleSelectedCollapse'), clickBubble: false" data-toggle="tooltip" title="${_('Toggle Collapse Selected')}"><i class="icon-resize-small"></i></button>
-              <button class="btn" data-bind="click: views.tabledata.batchSelectedAlias.bind(null, 'toggleSelectAllVisible'), clickBubble: false" data-toggle="tooltip" title="${_('Select All Visible')}"><i class="icon-check"></i></button>
+              <button class="btn" data-bind="click: views.tabledata.batchSelectedAlias.bind(null, 'toggleSelectedCollapse'), clickBubble: false" data-toggle="tooltip" title="${_('Toggle Collapse Selected')}"><i class="fa fa-compress"></i></button>
+              <button class="btn" data-bind="click: views.tabledata.batchSelectedAlias.bind(null, 'toggleSelectAllVisible'), clickBubble: false" data-toggle="tooltip" title="${_('Select All Visible')}"><i class="fa fa-check-square-o"></i></button>
               % if user.is_superuser:
-                <button class="btn" data-bind="enable: views.tabledata.items()[0].selected().length > 0, click: views.tabledata.items()[0].dropSelected, clickBubble: false"><i class="icon-trash"></i> ${_('Drop Columns')}</button>
+                <button class="btn" data-bind="enable: views.tabledata.items()[0].selected().length > 0, click: views.tabledata.items()[0].dropSelected, clickBubble: false"><i class="fa fa-trash-o"></i> ${_('Drop Columns')}</button>
               % endif
             </span>
         </div>
@@ -254,7 +278,11 @@ ${ commonheader(None, "hbase", user) | n,unicode }
           </div>
           <span class="pull-right">
             % if user.is_superuser:
-              <button class="btn" data-bind="enable: views.tabledata.selected().length > 0, click: views.tabledata.dropSelected"><i class="icon-trash"></i> ${_('Drop Rows')}</button>
+              <a class="btn" data-bind="enable: views.tabledata.selected().length > 0, click: views.tabledata.dropSelected"><i class="fa fa-trash-o"></i> ${_('Drop Rows')}</a>
+            % endif
+            % if can_write:
+            <a id="bulk-upload-btn" class="btn fileChooserBtn" data-toggle="tooltip" title="${_('.CSV, .TSV, etc...')}" aria-hidden="true"><i class="fa fa-upload"></i> ${_('Bulk Upload')}</a>
+            <a href="#new_row_modal" data-bind="click:function(){app.focusModel(app.views.tabledata);launchModal('new_row_modal')}" role="button" class="btn btn-primary" data-callback=""><i class='fa fa-plus-circle'></i> ${_('New Row')}</a>
             % endif
             <button id="bulk-upload-btn" class="btn fileChooserBtn" data-toggle="tooltip" title="${_('.CSV, .TSV, etc...')}" aria-hidden="true"><i class="icon-upload"></i> ${_('Bulk Upload')}</button>
             <a href="#new_row_modal" data-bind="click:function(){app.focusModel(app.views.tabledata);logGA('new_row_modal');}" role="button" class="btn btn-primary" data-callback="" data-toggle="modal"><i class='icon-plus-sign'></i> ${_('New Row')}</a>
@@ -264,45 +292,50 @@ ${ commonheader(None, "hbase", user) | n,unicode }
 
     <!-- New Row Modal -->
     <form id="new_row_modal" action="putRow" method="POST" class="modal hide fade ajaxSubmit" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    </form>
+    <script id="new_row_modal_template" type="text/html">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-        <h3>${_('Insert New Row')} - <span data-bind="text: pageTitle"></span></h3>
+        <h3>${_('Insert New Row')}</h3>
       </div>
       <div class="modal-body controls">
         <input type="hidden" name="cluster" data-bind="value:app.cluster"/>
-        <input type="hidden" name="tableName" data-bind="value:views.tabledata.name"/>
+        <input type="hidden" name="tableName" data-bind="value:app.views.tabledata.name"/>
         <label class="control-label">${_('Row Key')}</label>
         <input type="text" name="row_key" placeholder="row_key">
         <input type="hidden" name="column_data" data-subscribe="#new_row_field_list"/>
         <ul id="new_row_field_list"></ul>
-        <a class="btn action_addColumnValue"><i class="icon-plus-sign"></i> ${_('Add Field')}</a>
+        <a class="btn action_addColumnValue"><i class="fa fa-plus-circle"></i> ${_('Add Field')}</a>
       </div>
       <div class="modal-footer">
         <button class="btn" data-dismiss="modal" aria-hidden="true">${_('Cancel')}</button>
         <input type="submit" class="btn btn-primary" value="Submit" />
       </div>
-    </form>
+    </script>
 
     <!-- New Column Modal -->
     <form id="new_column_modal" action="putColumn" method="POST" class="modal hide fade ajaxSubmit" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-      <div class="modal-header">
-        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-        <h3>${_('Create New Column')} - <span data-bind="text: pageTitle"></span></h3>
-      </div>
-      <div class="modal-body controls">
-        <input type="hidden" data-bind="value: app.cluster"/>
-        <input type="hidden" data-bind="value: app.views.tabledata.name"/>
-        <input id="new_column_row_key" type="hidden"/>
-        <label class="control-label">${_('Column Name')}</label>
-        <input type="text" placeholder = "family:column_name">
-        <label class="control-label">${_('Cell Value')}</label>
-        <input type="text" placeholder = "${_('Cell Value')}">
-      </div>
-      <div class="modal-footer">
-        <button class="btn" data-dismiss="modal" aria-hidden="true">${_('Cancel')}</button>
-        <input type="submit" class="btn btn-primary" value="Submit">
-      </div>
     </form>
+    <script id="new_column_modal_template" type="text/html">
+      <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+          <h3>${_('Create New Column')}</h3>
+        </div>
+        <div class="modal-body controls">
+          <input type="hidden" data-bind="value: app.cluster"/>
+          <input type="hidden" data-bind="value: app.views.tabledata.name"/>
+          <input type="hidden" data-bind="value: $data.row"/>
+          <label class="control-label">${_('Column Name')}</label>
+          <input id="new_column_name" type="text" placeholder = "family:column_name">
+          <label class="control-label">${_('Cell Value')}</label>
+          <textarea placeholder = "${_('Cell Value')}"></textarea>
+        </div>
+        <div class="modal-footer">
+          <button class="btn" data-dismiss="modal" aria-hidden="true">${_('Cancel')}</button>
+          <a id="column-upload-btn" class="btn fileChooserBtn" aria-hidden="true"><i class="fa fa-upload"></i> ${_('Upload')}</a>
+          <input type="submit" class="btn btn-primary" value="Submit">
+        </div>
+    </script>
 
     <!-- Cell Edit Modal -->
     <form id="cell_edit_modal" action="putColumn" method="POST" class="modal hide fade ajaxSubmit">
@@ -375,6 +408,11 @@ ${ commonheader(None, "hbase", user) | n,unicode }
       <button class="confirm-submit btn btn-danger" data-dismiss="modal">${_('Confirm')}</button>
     </div>
   </script>
+  </p>
+  </div>
+
+</div><!-- card -->
+
 </div>
 
 

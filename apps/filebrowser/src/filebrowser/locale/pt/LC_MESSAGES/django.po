@@ -371,7 +371,7 @@ msgstr "Não foi possível extrair o conteúdo do ficheiro."
 msgid "Could not interpret archive type."
 msgstr "Não foi possível interpretar o tipo de ficheiro."
 
-#: src/filebrowser/lib/archives.py:40
+#: src/filebrowser/lib/archives.py:41
 msgid "Must implement 'extract' method."
 msgstr "É necessário implementar método de \"extracção\"."
 
@@ -381,44 +381,119 @@ msgstr "É necessário implementar método de \"extracção\"."
 msgid "%(filename)s - File Viewer"
 msgstr "%(filename)s - File Viewer"
 
-#: src/filebrowser/templates/display.mako:46
+#: src/filebrowser/templates/display.mako:49
+msgid "The current file is empty."
+msgstr "O ficheiro actual está vazio."
+
+#: src/filebrowser/templates/display.mako:63
+msgid "Viewing Bytes:"
+msgstr "Apresentação em bytes:"
+
+#: src/filebrowser/templates/display.mako:68
+#, python-format
+msgid "(%(length)s B block size)"
+msgstr "(Tamanho de bloco %(length)s B)"
+
+#: src/filebrowser/templates/display.mako:78
+msgid "Warning: some binary data has been masked out with '&#xfffd'."
+msgstr "Aviso: alguns dados binários foram mascarados com \"&#xfffd\"."
+
+#: src/filebrowser/templates/edit.mako:62
+#: src/filebrowser/templates/edit.mako:92
+msgid "Save"
+msgstr "Guardar"
+
+#: src/filebrowser/templates/edit.mako:63
+#: src/filebrowser/templates/edit.mako:77
+msgid "Save as"
+msgstr "Guardar como"
+
+#: src/filebrowser/templates/edit.mako:80
+#: src/filebrowser/templates/saveas.mako:33
+msgid "Enter the location where you would like to save the file."
+msgstr "Introduza a localização onde gostaria de guardar o ficheiro."
+
+#: src/filebrowser/templates/edit.mako:87
+#: src/filebrowser/templates/listdir_components.mako:262
+#: src/filebrowser/templates/listdir_components.mako:301
+#: src/filebrowser/templates/listdir_components.mako:390
+#: src/filebrowser/templates/listdir_components.mako:416
+msgid "Name is required."
+msgstr "É necessário o nome."
+
+#: src/filebrowser/templates/edit.mako:91
+#: src/filebrowser/templates/listdir_components.mako:244
+#: src/filebrowser/templates/listdir_components.mako:269
+#: src/filebrowser/templates/listdir_components.mako:303
+#: src/filebrowser/templates/listdir_components.mako:366
+#: src/filebrowser/templates/listdir_components.mako:392
+#: src/filebrowser/templates/listdir_components.mako:418
+#: src/filebrowser/templates/listdir_components.mako:475
+#: src/filebrowser/templates/listdir_components.mako:499
+#: src/filebrowser/templates/listdir_components.mako:1277
+#: src/filebrowser/templates/listdir_components.mako:1327
+msgid "Cancel"
+msgstr "Cancelar"
+
+#: src/filebrowser/templates/fb_components.mako:25
+#: src/filebrowser/templates/fb_components.mako:40
+msgid "Home"
+msgstr "Início"
+
+#: src/filebrowser/templates/fb_components.mako:27
+msgid "Edit path"
+msgstr "Editar caminho"
+
+#: src/filebrowser/templates/fb_components.mako:35
+msgid "View trash"
+msgstr "Ver o lixo"
+
+#: src/filebrowser/templates/fb_components.mako:36
+msgid "Trash"
+msgstr "Lixo"
+
+#: src/filebrowser/templates/fb_components.mako:68
+msgid "File Browser"
+msgstr "Browser de ficheiros"
+
+#: src/filebrowser/templates/fb_components.mako:81
 msgid "Actions"
 msgstr "Acções"
 
-#: src/filebrowser/templates/display.mako:48
+#: src/filebrowser/templates/fb_components.mako:87
 msgid "View as text"
 msgstr "Visualizar como texto"
 
-#: src/filebrowser/templates/display.mako:52
+#: src/filebrowser/templates/fb_components.mako:91
 msgid "View as binary"
 msgstr "Visualizar como binário"
 
-#: src/filebrowser/templates/display.mako:56
+#: src/filebrowser/templates/fb_components.mako:95
 msgid "Preview as Gzip"
 msgstr "Pré-visualizar como Gzip"
 
-#: src/filebrowser/templates/display.mako:60
+#: src/filebrowser/templates/fb_components.mako:99
 msgid "Preview as Avro"
 msgstr "Pré-visualizar como Avro"
 
-#: src/filebrowser/templates/display.mako:64
+#: src/filebrowser/templates/fb_components.mako:103
 msgid "Stop preview"
 msgstr "Parar a pré-visualização"
 
-#: src/filebrowser/templates/display.mako:68
+#: src/filebrowser/templates/fb_components.mako:107
 msgid "Edit file"
 msgstr "Editar ficheiro"
 
 #: src/filebrowser/templates/display.mako:71
 #: src/filebrowser/templates/listdir.mako:57
 msgid "Download"
-msgstr "Download"
+msgstr "Transferir"
 
-#: src/filebrowser/templates/display.mako:72
+#: src/filebrowser/templates/fb_components.mako:114
 msgid "View file location"
-msgstr "Ver localização do ficheiro"
+msgstr "Visualizar localização do ficheiro"
 
-#: src/filebrowser/templates/display.mako:73
+#: src/filebrowser/templates/fb_components.mako:115
 msgid "Refresh"
 msgstr "Actualizar"
 
@@ -573,7 +648,7 @@ msgstr "Mover para o lixo"
 #: src/filebrowser/templates/listdir.mako:67
 #: src/filebrowser/templates/listdir.mako:73
 msgid "Delete forever"
-msgstr "Eliminar para sempre"
+msgstr "Eliminar permanentemente"
 
 #: src/filebrowser/templates/listdir.mako:79
 msgid "Empty trash"
@@ -698,7 +773,7 @@ msgstr "Tem a certeza de que pretende restaurar estes ficheiros?"
 
 #: src/filebrowser/templates/listdir_components.mako:216
 msgid "Confirm Empty Trash"
-msgstr "Confirmar esvaziar lixo"
+msgstr "Confirmar esvaziamento do lixo"
 
 #: src/filebrowser/templates/listdir_components.mako:219
 msgid "Are you sure you want to permanently delete all your trash?"
@@ -804,7 +879,7 @@ msgstr "Criar ficheiro"
 
 #: src/filebrowser/templates/listdir_components.mako:473
 msgid "File name is required."
-msgstr "O nome do ficheiro é obrigatório."
+msgstr "É necessário o nome do ficheiro."
 
 #: src/filebrowser/templates/listdir_components.mako:546
 msgid "User is required."
@@ -862,7 +937,11 @@ msgstr "Erro: "
 
 #: src/filebrowser/templates/listdir_components.mako:1283
 msgid "Upload a zip file"
-msgstr "Fazer upload de um ficheiro zip"
+msgstr "Carregar um ficheiro zip"
+
+#: src/filebrowser/templates/saveas.mako:20
+msgid "Save File As..."
+msgstr "Guardar ficheiro como..."
 
 #: src/filebrowser/templates/saveas.mako:20
 msgid "Save File As..."

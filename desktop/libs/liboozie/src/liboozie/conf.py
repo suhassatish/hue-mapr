@@ -46,7 +46,7 @@ def get_oozie_status():
 
   try:
     if not 'test' in sys.argv: # Avoid tests hanging
-      status = str(get_oozie().get_oozie_status())
+      status = str(get_oozie(user).get_oozie_status())
   except:
     pass
 
@@ -62,7 +62,7 @@ def config_validator(user):
 
   res = []
 
-  status = get_oozie_status()
+  status = get_oozie_status(user)
   if 'NORMAL' not in status:
     res.append((status, _('The Oozie server is not available')))
 

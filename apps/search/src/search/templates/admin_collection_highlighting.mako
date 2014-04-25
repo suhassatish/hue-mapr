@@ -22,11 +22,11 @@
 <%namespace name="layout" file="layout.mako" />
 <%namespace name="macros" file="macros.mako" />
 
-${ commonheader(_('Search'), "search", user, "40px") | n,unicode }
+${ commonheader(_('Search'), "search", user, "29px") | n,unicode }
 
 <%layout:skeleton>
   <%def name="title()">
-    <h4>${_('Search Admin - ')}${hue_collection.label}</h4>
+    <h4>${ _('Highlighting for') } <strong>${ hue_collection.name }</strong></h4>
   </%def>
 
   <%def name="navigation()">
@@ -35,6 +35,7 @@ ${ commonheader(_('Search'), "search", user, "40px") | n,unicode }
 
   <%def name="content()">
     <form method="POST" class="form" data-bind="submit: submit">
+      <div class="well">
       <div class="section">
         <div class="alert alert-info">
           <div class="pull-right" style="margin-top: 10px">
@@ -58,6 +59,7 @@ ${ commonheader(_('Search'), "search", user, "40px") | n,unicode }
 
       <div class="form-actions" style="margin-top: 80px">
         <button type="submit" class="btn btn-primary" id="save-btn">${_('Save')}</button>
+      </div>
       </div>
     </form>
   </%def>
@@ -110,10 +112,10 @@ ${ commonheader(_('Search'), "search", user, "40px") | n,unicode }
         contentType: 'application/json',
         type: 'POST',
         success: function () {
-          $.jHueNotify.info("${_('Updated')}");
+          $(document).trigger("info", "${_('Updated')}");
         },
         error: function (data) {
-          $.jHueNotify.error("${_('Error: ')}" + data);
+          $(document).trigger("error", "${_('Error: ')}" + data);
         },
         complete: function() {
           $("#save-btn").button('reset');

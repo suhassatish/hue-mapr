@@ -17,7 +17,25 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 0.9.6\n"
 
-#: src/desktop/appmanager.py:228
+#: src/desktop/api.py:100 src/desktop/api.py:117 src/desktop/api.py:134
+#: src/desktop/api.py:152 src/desktop/api.py:172
+msgid "POST request only"
+msgstr "POST 要求のみ"
+
+#: src/desktop/api.py:140 src/desktop/api.py:158
+#: src/desktop/templates/500.mako:23 src/desktop/templates/error.mako:22
+msgid "Error"
+msgstr "エラー"
+
+#: src/desktop/api.py:147
+msgid "Tag(s) removed!"
+msgstr "タグが削除されました。"
+
+#: src/desktop/api.py:166
+msgid "Permissions updated!"
+msgstr "パーミッションが更新されました。"
+
+#: src/desktop/appmanager.py:240
 msgid "load_apps has already been called."
 msgstr "load_apps はすでに呼び出されています。"
 
@@ -404,11 +422,11 @@ msgstr "%(app_name)s アプリケーションにアクセスするパーミッ�
 msgid "You must be a superuser."
 msgstr "スーパーユーザーであることが必要です。"
 
-#: src/desktop/views.py:70
+#: src/desktop/views.py:97
 msgid "No logs found!"
 msgstr "ログが見つかりません。"
 
-#: src/desktop/views.py:111
+#: src/desktop/views.py:138
 msgid "No logs found."
 msgstr "ログが見つかりません。"
 
@@ -421,77 +439,89 @@ msgstr "ユーザー名"
 msgid "Password"
 msgstr "パスワード"
 
-#: src/desktop/auth/views.py:111 src/desktop/auth/views.py:112
+#: src/desktop/auth/views.py:110 src/desktop/auth/views.py:111
 msgid "Could not create home directory."
 msgstr "ホームディレクトリを作成できませんでした。"
 
-#: src/desktop/auth/views.py:166 src/desktop/auth/views.py:183
+#: src/desktop/auth/views.py:173 src/desktop/auth/views.py:190
 #, python-format
 msgid "Invalid response from OAuth provider: %s"
 msgstr "OAuth プロバイダーからの無効な応答：%s"
 
-#: src/desktop/lib/django_util.py:397
+#: src/desktop/lib/django_util.py:398
 msgid "year"
 msgid_plural "years"
 msgstr[0] "年"
 
-#: src/desktop/lib/django_util.py:398
+#: src/desktop/lib/django_util.py:399
 msgid "month"
 msgid_plural "months"
 msgstr[0] "月"
 
-#: src/desktop/lib/django_util.py:399
+#: src/desktop/lib/django_util.py:400
 msgid "week"
 msgid_plural "weeks"
 msgstr[0] "週"
 
-#: src/desktop/lib/django_util.py:400
+#: src/desktop/lib/django_util.py:401
 msgid "day"
 msgid_plural "days"
 msgstr[0] "日"
 
-#: src/desktop/lib/django_util.py:401
+#: src/desktop/lib/django_util.py:402
 msgid "hour"
 msgid_plural "hours"
 msgstr[0] "時"
 
-#: src/desktop/lib/django_util.py:402
+#: src/desktop/lib/django_util.py:403
 msgid "minute"
 msgid_plural "minutes"
 msgstr[0] "分"
 
-#: src/desktop/lib/django_util.py:403
+#: src/desktop/lib/django_util.py:404
 msgid "second"
 msgid_plural "seconds"
 msgstr[0] "秒"
 
-#: src/desktop/lib/django_util.py:424
+#: src/desktop/lib/django_util.py:425
 msgid "s"
 msgstr "s"
 
-#: src/desktop/lib/django_util.py:426
+#: src/desktop/lib/django_util.py:427
 msgid "seconds"
 msgstr "秒"
 
-#: src/desktop/lib/django_util.py:432
+#: src/desktop/lib/django_util.py:433
 #, python-format
 msgid "%(number)d%(type)s"
 msgstr "%(number)d %(type)s"
 
-#: src/desktop/lib/django_util.py:434
+#: src/desktop/lib/django_util.py:435
 #, python-format
 msgid "%(number)d %(type)s"
 msgstr "%(number)d %(type)s"
 
-#: src/desktop/lib/django_util.py:441
+#: src/desktop/lib/django_util.py:442
 #, python-format
 msgid "%(separator)s %(number)d%(type)s"
 msgstr "%(separator)s %(number)d 個の%(type)s"
 
-#: src/desktop/lib/django_util.py:443
+#: src/desktop/lib/django_util.py:444
 #, python-format
 msgid "%(separator)s %(number)d %(type)s"
 msgstr "%(separator)s %(number)d 個の%(type)s"
+
+#: src/desktop/lib/python_util.py:46
+msgid "\"read\" method is not implemented"
+msgstr "\"read\" メソッドは実装されていません"
+
+#: src/desktop/lib/python_util.py:49
+msgid "\"write\" method is not implemented"
+msgstr "\"write\" メソッドは実装されていません"
+
+#: src/desktop/lib/python_util.py:52
+msgid "\"error\" method is not implemented"
+msgstr "\"error\" メソッドは実装されていません"
 
 #: src/desktop/lib/security_util.py:33
 #, python-format
@@ -532,6 +562,7 @@ msgid "Creates a Hue application directory structure."
 msgstr "Hue アプリケーションのディレクトリ構造を作成します。"
 
 #: src/desktop/management/commands/create_desktop_app.py:33
+#: src/desktop/management/commands/create_proxy_app.py:33
 msgid "application name"
 msgstr "アプリケーション名"
 
@@ -540,35 +571,46 @@ msgid "Expected arguments: app_name [app_dir]"
 msgstr "予期される引数：app_name [app_dir]"
 
 #: src/desktop/management/commands/create_desktop_app.py:45
+#: src/desktop/management/commands/create_proxy_app.py:50
 #, python-format
 msgid "App template dir missing: %(template)s."
 msgstr "App テンプレートディレクトリがありません：%(template)s。"
 
 #: src/desktop/management/commands/create_desktop_app.py:49
+#: src/desktop/management/commands/create_proxy_app.py:54
 #, python-format
 msgid "The template path, %(path)r, does not exist."
 msgstr "テンプレートパス %(path)r は存在しません。"
 
 #: src/desktop/management/commands/create_desktop_app.py:52
+#: src/desktop/management/commands/create_proxy_app.py:57
 #, python-format
 msgid "%(name)r is not a valid application name. Use only numbers, letters and underscores."
 msgstr "%(name)r は有効なアプリケーション名ではありません。数字、文字、およびアンダースコアのみを使用してください。"
+
+#: src/desktop/management/commands/create_proxy_app.py:31
+msgid "Creates a Hue proxy application directory structure."
+msgstr "Hue プロキシアプリケーションのディレクトリ構造を作成します。"
+
+#: src/desktop/management/commands/create_proxy_app.py:37
+msgid "Expected arguments: app_name app_web_url [app_dir]"
+msgstr "予期される引数：app_name app_web_url [app_dir]"
 
 #: src/desktop/management/commands/create_test_fs.py:31
 #, python-format
 msgid "Created fs in: %(dir)s"
 msgstr "%(dir)s に fs を作成しました"
 
-#: src/desktop/management/commands/runcherrypyserver.py:47
+#: src/desktop/management/commands/runcherrypyserver.py:48
 msgid "CherryPy Server for Desktop."
 msgstr "CherryPy Server for Desktop。"
 
-#: src/desktop/management/commands/runcherrypyserver.py:108
+#: src/desktop/management/commands/runcherrypyserver.py:110
 #, python-format
 msgid "starting server with options %(options)s"
 msgstr "%(options)s オプションでサーバーを起動"
 
-#: src/desktop/management/commands/runcpserver.py:34
+#: src/desktop/management/commands/runcpserver.py:33
 msgid "Web server for Hue."
 msgstr "Hue の Web サーバーです。"
 
@@ -606,19 +648,15 @@ msgstr "\n"
 msgid "Cannot find pylint at '%(path)s'. Please install pylint first."
 msgstr "'%(path)s' に pylint が見つかりません。pylint をインストールしてください。"
 
-#: src/desktop/management/commands/runspawningserver.py:70
-msgid "Spawning Server for Hue."
-msgstr "Spawning Server for Hue。"
-
 #: src/desktop/templates/404.mako:20
 msgid "Not Found"
 msgstr "見つかりません"
 
-#: src/desktop/templates/404.mako:23
-msgid "Page not found"
-msgstr "ページが見つかりません"
+#: src/desktop/templates/404.mako:26
+msgid "Page not found."
+msgstr "ページが見つかりません。"
 
-#: src/desktop/templates/404.mako:24
+#: src/desktop/templates/404.mako:27
 msgid "We're sorry, but the requested page could not be found:"
 msgstr "申し訳ありませんが、要求されたページが見つかりませんでした。"
 
@@ -665,16 +703,21 @@ msgstr "行番号"
 msgid "Function Name"
 msgstr "関数名"
 
-#: src/desktop/templates/about_layout.mako:34
+#: src/desktop/templates/about_layout.mako:39
+#: src/desktop/templates/common_header.mako:324
+msgid "About Hue"
+msgstr "Hue のバージョン情報"
+
+#: src/desktop/templates/about_layout.mako:43
 msgid "Quick start"
 msgstr "クイックスタート"
 
-#: src/desktop/templates/about_layout.mako:35
+#: src/desktop/templates/about_layout.mako:44
 #: src/desktop/templates/dump_config.mako:26
 msgid "Configuration"
 msgstr "設定"
 
-#: src/desktop/templates/about_layout.mako:36
+#: src/desktop/templates/about_layout.mako:45
 #: src/desktop/templates/logs.mako:27
 msgid "Server Logs"
 msgstr "サーバーログ"
@@ -683,20 +726,20 @@ msgstr "サーバーログ"
 msgid "Search..."
 msgstr "検索..."
 
-#: src/desktop/templates/check_config.mako:22
+#: src/desktop/templates/check_config.mako:20
 #: src/desktop/templates/dump_config.mako:48
 msgid "Configuration files located in"
 msgstr "設定ファイルの保存場所："
 
-#: src/desktop/templates/check_config.mako:25
+#: src/desktop/templates/check_config.mako:24
 msgid "Potential misconfiguration detected. Fix and restart Hue."
 msgstr "誤設定があることが考えられます。修正後、Hue を再起動してください。"
 
-#: src/desktop/templates/check_config.mako:42
+#: src/desktop/templates/check_config.mako:41
 msgid "Current value:"
 msgstr "現在の値："
 
-#: src/desktop/templates/check_config.mako:50
+#: src/desktop/templates/check_config.mako:49
 msgid "All OK. Configuration check passed."
 msgstr "設定チェックで問題は見つかりませんでした。"
 
@@ -786,15 +829,101 @@ msgstr "サインアウト"
 msgid "Home"
 msgstr "ホーム"
 
-#: src/desktop/templates/config_alert_dock.mako:20
+#: src/desktop/templates/common_header.mako:333
+msgid "Query data"
+msgstr "クエリデータ"
+
+#: src/desktop/templates/common_header.mako:333
+msgid "Query Editors"
+msgstr "Query Editor"
+
+#: src/desktop/templates/common_header.mako:336
+msgid "Hive"
+msgstr "Hive"
+
+#: src/desktop/templates/common_header.mako:339
+msgid "Impala"
+msgstr "Impala"
+
+#: src/desktop/templates/common_header.mako:342
+msgid "DB Query"
+msgstr "DB クエリ"
+
+#: src/desktop/templates/common_header.mako:345
+msgid "Pig"
+msgstr "Pig"
+
+#: src/desktop/templates/common_header.mako:348
+msgid "Job Designer"
+msgstr "Job Designer"
+
+#: src/desktop/templates/common_header.mako:351
+msgid "Spark"
+msgstr "Spark"
+
+#: src/desktop/templates/common_header.mako:363
+msgid "Manage data"
+msgstr "データを管理"
+
+#: src/desktop/templates/common_header.mako:363
+msgid "Data Browsers"
+msgstr "Data Browser"
+
+#: src/desktop/templates/common_header.mako:366
+msgid "Metastore Tables"
+msgstr "Metastore テーブル"
+
+#: src/desktop/templates/common_header.mako:369
+msgid "HBase"
+msgstr "HBase"
+
+#: src/desktop/templates/common_header.mako:372
+msgid "Sqoop Transfer"
+msgstr "Sqoop による転送"
+
+#: src/desktop/templates/common_header.mako:375
+msgid "ZooKeeper"
+msgstr "ZooKeeper"
+
+#: src/desktop/templates/common_header.mako:384
+msgid "Schedule with Oozie"
+msgstr "Oozie とのスケジュール"
+
+#: src/desktop/templates/common_header.mako:384
+msgid "Workflows"
+msgstr "Workflow"
+
+#: src/desktop/templates/common_header.mako:386
+msgid "Dashboard"
+msgstr "ダッシュボード"
+
+#: src/desktop/templates/common_header.mako:387
+msgid "Editor"
+msgstr "エディタ"
+
+#: src/desktop/templates/common_header.mako:396
+#: src/desktop/templates/common_header.mako:400
+msgid "Solr Search"
+msgstr "Solr 検索"
+
+#: src/desktop/templates/common_header.mako:396
+#: src/desktop/templates/common_header.mako:400
+msgid "Search"
+msgstr "検索"
+
+#: src/desktop/templates/common_header.mako:411
+msgid "Other apps"
+msgstr "その他のアプリケーション"
+
+#: src/desktop/templates/config_alert_dock.mako:21
 msgid "Misconfiguration detected"
 msgstr "誤設定が見つかりました"
 
-#: src/desktop/templates/dump_config.mako:56
+#: src/desktop/templates/dump_config.mako:52
 msgid "Installed Applications"
 msgstr "インストール済みアプリケーション"
 
-#: src/desktop/templates/dump_config.mako:72
+#: src/desktop/templates/dump_config.mako:65
 msgid "Configuration Sections and Variables"
 msgstr "設定のセクションと変数"
 
@@ -904,7 +1033,233 @@ msgstr "ログで検索"
 msgid "Download entire log as zip"
 msgstr "ログ全体を zip としてダウンロード"
 
-#: src/desktop/templates/popup_error.mako:70
+#: src/desktop/templates/popup_error.mako:77
 msgid "Go back"
 msgstr "戻る"
 
+#: src/desktop/templates/tours.mako:25
+msgid "The Hue Blog"
+msgstr "Hue ブログ"
+
+#: src/desktop/templates/tours.mako:30
+msgid "Get started!"
+msgstr "始めましょう。"
+
+#: src/desktop/templates/tours.mako:31
+msgid "Your new home."
+msgstr "新しいホームです。"
+
+#: src/desktop/templates/tours.mako:31
+msgid "This is where you can access all your documents and you can tag them per project. Your home is always reachable from any part of Hue, just click on the house icon on the top navigator bar."
+msgstr "ここではすべてのドキュメントにアクセスでき、プロジェクトごとにそれらのドキュメントにタグ付けできます。Hue のどのような場所からでも、上部ナビゲーションバーのハウスアイコンをクリックするたけでホームにアクセスできます。"
+
+#: src/desktop/templates/tours.mako:32
+msgid "Actions and projects"
+msgstr "アクションおよびプロジェクト"
+
+#: src/desktop/templates/tours.mako:32
+msgid "From here you can create new documents or see a specific project or any trashed document for instance."
+msgstr "ここから、たとえば新規のドキュメントを作成したり、特定のプロジェクトやゴミ箱に移動したドキュメントを表示できます。"
+
+#: src/desktop/templates/tours.mako:33
+msgid "Organize!"
+msgstr "整理。"
+
+#: src/desktop/templates/tours.mako:33
+msgid "You can organize your documents in projects and filter them out in this area. It's a smart and fast way to focus on a specific project you are currently tackling."
+msgstr "この領域では、プロジェクトのドキュメントを整理したりフィルタで除外できます。現在取り組んでいる特定のプロジェクトに注力するための賢く迅速な方法です。"
+
+#: src/desktop/templates/tours.mako:34
+msgid "Your documents"
+msgstr "ドキュメント"
+
+#: src/desktop/templates/tours.mako:34
+msgid "You can always have a glance at your hard work. This is the list of all your documents, The first column tells you the kind of document that is, then you can find its name, a description and some other fields."
+msgstr "取り組んでいる仕事をいつでも一目で確認できます。これは自分の全ドキュメントのリストです。最初の列にドキュメントの種類が表示され、名前、説明、その他のフィールドも見つけることができます。"
+
+#: src/desktop/templates/tours.mako:35
+msgid "You can assign one or more projects to a document just by clicking in this cell."
+msgstr "このセルをクリックするだけで、1 つまたは複数のプロジェクトをドキュメントに割り当てできます。"
+
+#: src/desktop/templates/tours.mako:36
+msgid "Share your documents"
+msgstr "ドキュメントを共有"
+
+#: src/desktop/templates/tours.mako:36
+msgid "You can also share a document you have worked on with a specific user or a group of users. Just click on the icon in this column on every document you want to share and choose users and groups from the popup."
+msgstr "自分が作業したドキュメントを、特定のユーザーやユーザーグループと共有することもできます。共有するドキュメントごとにこの列のアイコンをクリックして、ポップアップからユーザーやグループを選択するだけです。"
+
+#: src/desktop/templates/tours.mako:37
+msgid "Search your documents"
+msgstr "ドキュメントを検索"
+
+#: src/desktop/templates/tours.mako:37
+msgid "You can always filter out the documents by name, description or even owner. Enjoy your new home!"
+msgstr "ドキュメントを名前、説明、または所有者によって、いつでもフィルタ処理できます。新しいホームをぜひ活用してください。"
+
+#: src/desktop/templates/tours.mako:42
+msgid "Create Hive tables and load quoted"
+msgstr "Hive テーブルを作成し、引用符付き"
+
+#: src/desktop/templates/tours.mako:42
+msgid "CSV data"
+msgstr "CSV データをロード"
+
+#: src/desktop/templates/tours.mako:49
+msgid "Submit any Oozie jobs directly"
+msgstr "Oozie ジョブを"
+
+#: src/desktop/templates/tours.mako:49
+msgid "from HDFS"
+msgstr "HDFS から直接サブミット"
+
+#: src/desktop/templates/tours.mako:56
+msgid "ZooKeeper Browser"
+msgstr "ZooKeeper Browser"
+
+#: src/desktop/templates/tours.mako:63
+msgid "Query your Databases"
+msgstr "データベースをクエリ"
+
+#: src/desktop/templates/tours.mako:70
+msgid "Graphical facets"
+msgstr "グラフィカルファセット"
+
+#: src/desktop/templates/tours.mako:77
+msgid "Use Impala with Sentry"
+msgstr "Impala で Sentry を使用"
+
+#: src/desktop/templates/tours.mako:84
+msgid "Submit Oozie jobs directly from HDFS"
+msgstr "Oozie ジョブを HDFS から直接サブミット"
+
+#: src/desktop/templates/tours.mako:91
+msgid "A Job Browser for Yarn"
+msgstr "YARN 用 Job Browser"
+
+#: src/desktop/templates/tours.mako:98
+msgid "Security with Yarn"
+msgstr "YARN を使用したセキュリティ"
+
+#: src/desktop/templates/tours.mako:105
+msgid "Hive Query editor with HiveServer2"
+msgstr "HiveServer2 および Sentry を使用する"
+
+#: src/desktop/templates/tours.mako:105
+msgid "and Sentry"
+msgstr "Hive クエリエディタ"
+
+#: src/desktop/templates/tours.mako:112
+msgid "Integrate external Web applications in"
+msgstr "任意の言語の外部 Web アプリケーションを"
+
+#: src/desktop/templates/tours.mako:112
+msgid "any language"
+msgstr "統合"
+
+#: src/desktop/templates/tours.mako:119
+msgid "Season 2 of Hadoop Video Tutorials"
+msgstr "Hadoop ビデオチュートリアルのシーズン 2"
+
+#: src/desktop/templates/tours.mako:126
+msgid "Analyze Twitter data"
+msgstr "Twitter データを分析"
+
+#: src/desktop/templates/tours.mako:133
+msgid "Preparing Yelp data for analysis with"
+msgstr "次による分析用の Yelp データを準備"
+
+#: src/desktop/templates/tours.mako:133
+msgid "Pig and Python UDF"
+msgstr "Pig および Python UDF"
+
+#: src/desktop/templates/tours.mako:140
+msgid "What's new in Hue 3.5"
+msgstr "Hue 3.5 の新機能"
+
+#: src/desktop/templates/tours.mako:147
+msgid "SSO with SAML"
+msgstr "SAML による SSO"
+
+#: src/desktop/templates/tours.mako:154
+msgid "Integrating your company with LDAP: How To"
+msgstr "LDAP を用いて会社を統合：方法"
+
+#: src/desktop/templates/tours.mako:161
+msgid "A new Spark UI"
+msgstr "新しい Spark UI"
+
+#: src/desktop/templates/tours.mako:168
+msgid "Fast SQL with Impala"
+msgstr "Impala を使用した高速 SQL"
+
+#: src/desktop/templates/tours.mako:175
+msgid "The Pig Editor"
+msgstr "Pig Editor"
+
+#: src/desktop/templates/tours.mako:182
+msgid "Build and use Hive UDF in 1 minute!"
+msgstr "Hive UDF を 1 分でビルドして使用します。"
+
+#: src/desktop/templates/tours.mako:189
+msgid "How to use HCatalog in Hue with Pig"
+msgstr "Pig を使用して Hue で HCatalog を使用する方法"
+
+#: src/desktop/templates/tours.mako:196
+msgid "HBase Browser"
+msgstr "HBase Browser"
+
+#: src/desktop/templates/tours.mako:203
+msgid "Create HBase tables"
+msgstr "HBase テーブルを作成"
+
+#: src/desktop/templates/tours.mako:210
+msgid "Oozie Workflow"
+msgstr "Oozie Workflow"
+
+#: src/desktop/templates/tours.mako:217
+msgid "Oozie Coordinator"
+msgstr "Oozie Coordinator"
+
+#: src/desktop/templates/tours.mako:224
+msgid "The search app with Solr"
+msgstr "Solr を使用した検索アプリ"
+
+#: src/desktop/templates/tours.mako:231
+msgid "HDFS File Operations Made Easy"
+msgstr "容易になった HDFS ファイル操作"
+
+#: src/desktop/templates/tours.mako:238
+msgid "High availability in Hue"
+msgstr "Hue の高可用性"
+
+#: src/desktop/templates/tours.mako:245
+msgid "What's new in Hue 2.5"
+msgstr "Hue 2.5 の新機能"
+
+#: src/desktop/templates/tours.mako:252
+msgid "Manage users and group permissions"
+msgstr "ユーザーおよびグループのパーミッションを管理"
+
+#: src/desktop/templates/tours.mako:259
+msgid "Transfering data with Sqoop"
+msgstr "Sqoop を使用したデータの転送"
+
+#: src/desktop/templates/unsupported.mako:23
+msgid "Hue - Unsupported browser"
+msgstr "Hue - サポートされていないブラウザ"
+
+#: src/desktop/templates/unsupported.mako:91
+msgid "It looks like you are running an older browser. What about upgrading to the latest"
+msgstr "古いブラウザが実行されているようです。最新のブラウザにアップグレードすることをお勧めします"
+
+#~ msgid "Hue - Sign up"
+#~ msgstr "Hue - サインアップ"
+#~ msgid "Hue - Sign in"
+#~ msgstr "Hue - サインイン"
+#~ msgid "Visit gethue.com"
+#~ msgstr "gethue.com にアクセス"
+#~ msgid "Fell asleep? Visit us on gethue.com instead!"
+#~ msgstr "寝ていないでぜひ gethue.com にアクセスしてください。"
+#~ msgid "Sign up"
+#~ msgstr "サインアップ"

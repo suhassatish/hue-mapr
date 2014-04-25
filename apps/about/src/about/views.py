@@ -15,32 +15,34 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-try:
-  import json
-except ImportError:
-  import simplejson as json
+
+import json
+import logging
 
 from django.conf import settings
 from django.http import HttpResponse
 from django.utils.translation import ugettext as _
 
-from desktop.lib.django_util import render
-from desktop.models import Settings
-from desktop.views import check_config
 from desktop import appmanager
+from desktop.lib.django_util import render, login_notrequired
+from desktop.log.access import access_log_level
+from desktop.models import Settings
+from desktop.views import collect_usage
 
-from hadoop.core_site import get_trash_interval
 
-
+@login_notrequired
+@access_log_level(logging.DEBUG)
 def admin_wizard(request):
-  apps = appmanager.get_apps(request.user)
+  if request.user.is_superuser:
+    apps = appmanager.get_apps(request.user)
+  else:
+    apps = []
   app_names = [app.name for app in sorted(apps, key=lambda app: app.menu_index)]
 
   tours_and_tutorials = Settings.get_settings().tours_and_tutorials
 
   return render('admin_wizard.mako', request, {
       'version': settings.HUE_DESKTOP_VERSION,
-      'check_config': check_config(request).content,
       'apps': dict([(app.name, app) for app in apps]),
       'app_names': app_names,
       'tours_and_tutorials': tours_and_tutorials,

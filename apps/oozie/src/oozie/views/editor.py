@@ -15,12 +15,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-try:
-  import json
-except ImportError:
-  import simplejson as json
+import json
 import logging
 import shutil
+import time
 
 from django.core.urlresolvers import reverse
 from django.db.models import Q
@@ -29,129 +27,95 @@ from django.forms.models import inlineformset_factory
 from django.http import HttpResponse
 from django.shortcuts import redirect
 from django.utils.functional import curry
+from django.utils.http import http_date
 from django.utils.translation import ugettext as _, activate as activate_translation
 
 from desktop.lib.django_util import render, extract_field_data
 from desktop.lib.exceptions_renderable import PopupException
+from desktop.lib.i18n import smart_str
 from desktop.lib.rest.http_client import RestException
-from hadoop.fs.exceptions import WebHdfsException
+from desktop.models import Document
+
+from liboozie.credentials import Credentials
+from liboozie.oozie_api import get_oozie
 from liboozie.submittion import Submission
 
 from filebrowser.lib.archives import archive_factory
-from oozie.conf import SHARE_JOBS
 from oozie.decorators import check_job_access_permission, check_job_edition_permission,\
                              check_dataset_access_permission, check_dataset_edition_permission
-from oozie.import_workflow import import_workflow as _import_workflow
+from oozie.conf import ENABLE_CRON_SCHEDULING
+from oozie.importlib.workflows import import_workflow as _import_workflow
+from oozie.importlib.coordinators import import_coordinator as _import_coordinator
 from oozie.management.commands import oozie_setup
 from oozie.models import Workflow, History, Coordinator,\
                          Dataset, DataInput, DataOutput,\
                          ACTION_TYPES, Bundle, BundledCoordinator, Job
 from oozie.forms import WorkflowForm, CoordinatorForm, DatasetForm,\
                         DataInputForm, DataOutputForm, LinkForm,\
-                        DefaultLinkForm, ParameterForm, ImportWorkflowForm,\
-                        NodeForm, BundleForm, BundledCoordinatorForm, design_form_by_type
+                        DefaultLinkForm, ParameterForm, NodeForm,\
+                        BundleForm, BundledCoordinatorForm, design_form_by_type,\
+                        ImportWorkflowForm, ImportCoordinatorForm
 
 
 LOG = logging.getLogger(__name__)
 
 
 def list_workflows(request):
-  data = Workflow.objects.available().filter(managed=True)
-
-  if not SHARE_JOBS.get() and not request.user.is_superuser:
-    data = data.filter(owner=request.user)
-  else:
-    data = data.filter(Q(is_shared=True) | Q(owner=request.user))
-
-  data = data.order_by('-last_modified')
+  data = Document.objects.available(Workflow, request.user)
+  data = [job for job in data if job.managed]
 
   return render('editor/list_workflows.mako', request, {
-    'jobs': list(data),
-    'json_jobs': json.dumps(list(data.values_list('id', flat=True))),
+    'jobs': data,
+    'json_jobs': json.dumps([job.id for job in data]),
   })
 
 
 def list_trashed_workflows(request):
-  data = Workflow.objects.trashed().filter(managed=True)
-
-  if not SHARE_JOBS.get() and not request.user.is_superuser:
-    data = data.filter(owner=request.user)
-  else:
-    data = data.filter(Q(is_shared=True) | Q(owner=request.user))
-
-  data = data.order_by('-last_modified')
+  data = Document.objects.trashed(Workflow, request.user)
+  data = [job for job in data if job.managed]
 
   return render('editor/list_trashed_workflows.mako', request, {
-    'jobs': list(data),
-    'json_jobs': json.dumps(list(data.values_list('id', flat=True))),
+    'jobs': data,
+    'json_jobs': json.dumps([job.id for job in data]),
   })
 
 
 def list_coordinators(request, workflow_id=None):
-  data = Coordinator.objects.available()
+  data = Document.objects.available(Coordinator, request.user)
+
   if workflow_id is not None:
-    data = data.filter(workflow__id=workflow_id)
-
-  if not SHARE_JOBS.get() and not request.user.is_superuser:
-    data = data.filter(owner=request.user)
-  else:
-    data = data.filter(Q(is_shared=True) | Q(owner=request.user))
-
-  data = data.order_by('-last_modified')
+    data = [job for job in data if job.workflow.id == workflow_id]
 
   return render('editor/list_coordinators.mako', request, {
-    'jobs': list(data),
-    'json_jobs': json.dumps(list(data.values_list('id', flat=True))),
+    'jobs': data,
+    'json_jobs': json.dumps([job.id for job in data]),
   })
 
 
-def list_trashed_coordinators(request, workflow_id=None):
-  data = Coordinator.objects.trashed()
-  if workflow_id is not None:
-    data = data.filter(workflow__id=workflow_id)
-
-  if not SHARE_JOBS.get() and not request.user.is_superuser:
-    data = data.filter(owner=request.user)
-  else:
-    data = data.filter(Q(is_shared=True) | Q(owner=request.user))
-
-  data = data.order_by('-last_modified')
+def list_trashed_coordinators(request):
+  data = Document.objects.trashed(Coordinator, request.user)
 
   return render('editor/list_trashed_coordinators.mako', request, {
-    'jobs': list(data),
-    'json_jobs': json.dumps(list(data.values_list('id', flat=True))),
+    'jobs': data,
+    'json_jobs': json.dumps([job.id for job in data]),
   })
 
 
 def list_bundles(request):
-  data = Bundle.objects.available()
-
-  if not SHARE_JOBS.get() and not request.user.is_superuser:
-    data = data.filter(owner=request.user)
-  else:
-    data = data.filter(Q(is_shared=True) | Q(owner=request.user))
-
-  data = data.order_by('-last_modified')
+  data = Document.objects.available(Bundle, request.user)
 
   return render('editor/list_bundles.mako', request, {
-    'jobs': list(data),
-    'json_jobs': json.dumps(list(data.values_list('id', flat=True))),
+    'jobs': data,
+    'json_jobs': json.dumps([job.id for job in data]),
   })
 
 
 def list_trashed_bundles(request):
-  data = Bundle.objects.trashed()
-
-  if not SHARE_JOBS.get() and not request.user.is_superuser:
-    data = data.filter(owner=request.user)
-  else:
-    data = data.filter(Q(is_shared=True) | Q(owner=request.user))
-
-  data = data.order_by('-last_modified')
+  data = Document.objects.trashed(Bundle, request.user)
 
   return render('editor/list_trashed_bundles.mako', request, {
-    'jobs': list(data),
-    'json_jobs': json.dumps(list(data.values_list('id', flat=True))),
+    'jobs': data,
+    'json_jobs': json.dumps([job.id for job in data]),
   })
 
 
@@ -166,8 +130,6 @@ def create_workflow(request):
       wf.managed = True
       Workflow.objects.initialize(wf, request.fs)
       return redirect(reverse('oozie:edit_workflow', kwargs={'workflow': workflow.id}))
-    else:
-      request.error(_('Errors on the form: %s') % workflow_form.errors)
   else:
     workflow_form = WorkflowForm(instance=workflow)
 
@@ -195,6 +157,9 @@ def import_workflow(request):
           shutil.rmtree(temp_path)
         else:
           raise PopupException(_('Archive should be a Zip.'))
+      else:
+        workflow.save()
+        Workflow.objects.initialize(workflow, request.fs)
 
       workflow.managed = True
       workflow.save()
@@ -205,7 +170,6 @@ def import_workflow(request):
         _import_workflow(fs=request.fs, workflow=workflow, workflow_definition=workflow_definition)
         request.info(_('Workflow imported'))
         return redirect(reverse('oozie:edit_workflow', kwargs={'workflow': workflow.id}))
-
       except Exception, e:
         request.error(_('Could not import workflow: %s' % e))
         Workflow.objects.destroy(workflow, request.fs)
@@ -222,12 +186,72 @@ def import_workflow(request):
     'workflow': workflow,
   })
 
+
+def import_coordinator(request):
+  coordinator = Coordinator(owner=request.user, schema_version="uri:oozie:coordinator:0.2")
+
+  if request.method == 'POST':
+    coordinator_form = ImportCoordinatorForm(request.POST, request.FILES, instance=coordinator, user=request.user)
+
+    if coordinator_form.is_valid():
+      coordinator_definition = coordinator_form.cleaned_data['definition_file'].read()
+
+      try:
+        _import_coordinator(coordinator=coordinator, coordinator_definition=coordinator_definition)
+        coordinator.managed = True
+        coordinator.name = coordinator_form.cleaned_data.get('name')
+        coordinator.save()
+      except Exception, e:
+        request.error(_('Could not import coordinator: %s' % e))
+        raise PopupException(_('Could not import coordinator.'), detail=e)
+
+      if coordinator_form.cleaned_data.get('resource_archive'):
+        # Upload resources to workspace
+        source = coordinator_form.cleaned_data.get('resource_archive')
+        if source.name.endswith('.zip'):
+          temp_path = archive_factory(source).extract()
+          request.fs.copyFromLocal(temp_path, coordinator.deployment_dir)
+          shutil.rmtree(temp_path)
+        else:
+          Coordinator.objects.filter(id=coordinator.id).delete()
+          raise PopupException(_('Archive should be a Zip.'))
+
+      Document.objects.link(coordinator, owner=request.user, name=coordinator.name, description=coordinator.description)
+      request.info(_('Coordinator imported'))
+      return redirect(reverse('oozie:edit_coordinator', kwargs={'coordinator': coordinator.id}))
+
+    else:
+      request.error(_('Errors on the form'))
+
+  else:
+    coordinator_form = ImportCoordinatorForm(instance=coordinator, user=request.user)
+
+  return render('editor/import_coordinator.mako', request, {
+    'coordinator_form': coordinator_form,
+    'coordinator': coordinator,
+  })
+
+
+@check_job_access_permission()
+def export_workflow(request, workflow):
+  zip_file = workflow.compress(mapping=dict([(param['name'], param['value']) for param in workflow.find_all_parameters()]))
+
+  response = HttpResponse(mimetype="application/zip")
+  response["Last-Modified"] = http_date(time.time())
+  response["Content-Length"] = len(zip_file.getvalue())
+  response['Content-Disposition'] = 'attachment; filename="workflow-%s-%d.zip"' % (workflow.name, workflow.id)
+  response.write(zip_file.getvalue())
+  return response
+
 @check_job_access_permission()
 def edit_workflow(request, workflow):
   history = History.objects.filter(submitter=request.user, job=workflow).order_by('-submission_date')
   workflow_form = WorkflowForm(instance=workflow)
-  user_can_access_job = workflow.is_accessible(request.user)
+  user_can_access_job = workflow.can_read(request.user)
   user_can_edit_job = workflow.is_editable(request.user)
+  api = get_oozie(request.user)
+  credentials = Credentials()
+  credentials.fetch(api)
 
   return render('editor/edit_workflow.mako', request, {
     'workflow_form': workflow_form,
@@ -240,7 +264,8 @@ def edit_workflow(request, workflow):
     'default_link_form': DefaultLinkForm(action=workflow.start),
     'node_form': NodeForm(),
     'action_forms': [(node_type, design_form_by_type(node_type, request.user, workflow)())
-                     for node_type in ACTION_TYPES.iterkeys()]
+                     for node_type in ACTION_TYPES.iterkeys()],
+    'credentials': json.dumps(credentials.credentials.keys())
   })
 
 
@@ -253,7 +278,7 @@ def delete_workflow(request):
   job_ids = request.POST.getlist('job_selection')
 
   for job_id in job_ids:
-    job = Job.objects.is_accessible_or_exception(request, job_id)
+    job = Job.objects.can_read_or_exception(request, job_id)
     Job.objects.can_edit_or_exception(request, job)
     if skip_trash:
       Workflow.objects.destroy(job, request.fs)
@@ -275,7 +300,7 @@ def restore_workflow(request):
   job_ids = request.POST.getlist('job_selection')
 
   for job_id in job_ids:
-    job = Job.objects.is_accessible_or_exception(request, job_id)
+    job = Document.objects.can_read_or_exception(request.user, Job, job_id)
     Job.objects.can_edit_or_exception(request, job)
     job.workflow.restore()
 
@@ -333,8 +358,9 @@ def _submit_workflow(user, fs, jt, workflow, mapping):
     return job_id
   except RestException, ex:
     detail = ex._headers.get('oozie-error-message', ex)
-    if 'urlopen error' in str(detail):
+    if 'Max retries exceeded with url' in str(detail):
       detail = '%s: %s' % (_('The Oozie server is not running'), detail)
+    LOG.error(smart_str(detail))
     raise PopupException(_("Error submitting workflow %s") % (workflow,), detail=detail)
 
   return redirect(reverse('oozie:list_oozie_workflow', kwargs={'job_id': job_id}))
@@ -342,7 +368,9 @@ def _submit_workflow(user, fs, jt, workflow, mapping):
 
 @check_job_access_permission()
 def schedule_workflow(request, workflow):
-  if Coordinator.objects.available().filter(workflow=workflow).exists():
+  data = Document.objects.available(Coordinator, request.user)
+  data = [coordinator for coordinator in data if coordinator.workflow == workflow]
+  if data:
     request.info(_('You already have some coordinators for this workflow. Submit one or create a new one.'))
     return list_coordinators(request, workflow_id=workflow.id)
   else:
@@ -356,11 +384,17 @@ def create_coordinator(request, workflow=None):
   else:
     coordinator = Coordinator(owner=request.user, schema_version="uri:oozie:coordinator:0.2")
 
+  enable_cron_scheduling = ENABLE_CRON_SCHEDULING.get()
+
   if request.method == 'POST':
     coordinator_form = CoordinatorForm(request.POST, instance=coordinator, user=request.user)
 
     if coordinator_form.is_valid():
       coordinator = coordinator_form.save()
+      if enable_cron_scheduling:
+        coordinator.cron_frequency = {'frequency': request.POST.get('cron_frequency'), 'isAdvancedCron': request.POST.get('isAdvancedCron') == 'on'}
+      coordinator.save()
+      Document.objects.link(coordinator, owner=coordinator.owner, name=coordinator.name, description=coordinator.description)
       return redirect(reverse('oozie:edit_coordinator', kwargs={'coordinator': coordinator.id}) + "#step3")
     else:
       request.error(_('Errors on the form: %s') % coordinator_form.errors)
@@ -370,6 +404,8 @@ def create_coordinator(request, workflow=None):
   return render('editor/create_coordinator.mako', request, {
     'coordinator': coordinator,
     'coordinator_form': coordinator_form,
+    'coordinator_frequency': json.dumps(coordinator.cron_frequency),
+    'enable_cron_scheduling': enable_cron_scheduling,
   })
 
 
@@ -382,7 +418,7 @@ def delete_coordinator(request):
   job_ids = request.POST.getlist('job_selection')
 
   for job_id in job_ids:
-    job = Job.objects.is_accessible_or_exception(request, job_id)
+    job = Job.objects.can_read_or_exception(request, job_id)
     Job.objects.can_edit_or_exception(request, job)
     if skip_trash:
       Submission(request.user, job, request.fs, {}).remove_deployment_dir()
@@ -403,7 +439,7 @@ def restore_coordinator(request):
   job_ids = request.POST.getlist('job_selection')
 
   for job_id in job_ids:
-    job = Job.objects.is_accessible_or_exception(request, job_id)
+    job = Job.objects.can_read_or_exception(request, job_id)
     Job.objects.can_edit_or_exception(request, job)
     job.restore()
 
@@ -431,6 +467,8 @@ def edit_coordinator(request, coordinator):
   NewDataOutputFormSet = inlineformset_factory(Coordinator, DataOutput, form=DataOutputForm, extra=0, can_order=False, can_delete=False)
   NewDataOutputFormSet.form = staticmethod(curry(DataOutputForm, coordinator=coordinator))
 
+  enable_cron_scheduling = ENABLE_CRON_SCHEDULING.get()
+
   if request.method == 'POST':
     coordinator_form = CoordinatorForm(request.POST, instance=coordinator, user=request.user)
     dataset_formset = DatasetFormSet(request.POST, request.FILES, instance=coordinator)
@@ -447,6 +485,10 @@ def edit_coordinator(request, coordinator):
       data_output_formset.save()
       new_data_input_formset.save()
       new_data_output_formset.save()
+      coordinator.sla = json.loads(request.POST.get('sla'))
+      if enable_cron_scheduling:
+        coordinator.cron_frequency = {'frequency': request.POST.get('cron_frequency'), 'isAdvancedCron': request.POST.get('isAdvancedCron') == 'on'}
+      coordinator.save()
 
       request.info(_('Coordinator saved.'))
       return redirect(reverse('oozie:edit_coordinator', kwargs={'coordinator': coordinator.id}))
@@ -468,7 +510,9 @@ def edit_coordinator(request, coordinator):
     'dataset_form': dataset_form,
     'new_data_input_formset': new_data_input_formset,
     'new_data_output_formset': new_data_output_formset,
-    'history': history
+    'history': history,
+    'coordinator_frequency': json.dumps(coordinator.cron_frequency),
+    'enable_cron_scheduling': enable_cron_scheduling,
   })
 
 
@@ -518,7 +562,7 @@ def edit_coordinator_dataset(request, dataset):
       response['data'] = reverse('oozie:edit_coordinator', kwargs={'coordinator': dataset.coordinator.id}) + "#listDataset"
       request.info(_('Dataset modified'))
       if dataset.start > dataset.coordinator.start:
-        request.error(_('Beware: dataset start date was after the coordinator start date.'))
+        request.warn(_('Beware: dataset start date was after the coordinator start date.'))
     else:
       response['data'] = dataset_form.errors
   else:
@@ -630,6 +674,7 @@ def create_bundle(request):
 
     if bundle_form.is_valid():
       bundle = bundle_form.save()
+      Document.objects.link(bundle, owner=bundle.owner, name=bundle.name, description=bundle.description)
       return redirect(reverse('oozie:edit_bundle', kwargs={'bundle': bundle.id}))
     else:
       request.error(_('Errors on the form: %s') % bundle_form.errors)
@@ -652,7 +697,7 @@ def delete_bundle(request):
   job_ids = request.POST.getlist('job_selection')
 
   for job_id in job_ids:
-    job = Job.objects.is_accessible_or_exception(request, job_id)
+    job = Job.objects.can_read_or_exception(request, job_id)
     Job.objects.can_edit_or_exception(request, job)
     if skip_trash:
       Submission(request.user, job, request.fs, {}).remove_deployment_dir()
@@ -670,7 +715,7 @@ def restore_bundle(request):
   job_ids = request.POST.getlist('job_selection')
 
   for job_id in job_ids:
-    job = Job.objects.is_accessible_or_exception(request, job_id)
+    job = Job.objects.can_read_or_exception(request, job_id)
     Job.objects.can_edit_or_exception(request, job)
     job.restore()
 

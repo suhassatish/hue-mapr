@@ -371,7 +371,7 @@ msgstr "无法提取文件内容。"
 msgid "Could not interpret archive type."
 msgstr "无法解释存档类型。"
 
-#: src/filebrowser/lib/archives.py:40
+#: src/filebrowser/lib/archives.py:41
 msgid "Must implement 'extract' method."
 msgstr "必须实施 “提取”方法。"
 
@@ -381,31 +381,106 @@ msgstr "必须实施 “提取”方法。"
 msgid "%(filename)s - File Viewer"
 msgstr "%(filename)s - 文件查看器"
 
-#: src/filebrowser/templates/display.mako:46
+#: src/filebrowser/templates/display.mako:49
+msgid "The current file is empty."
+msgstr "当前文件为空。"
+
+#: src/filebrowser/templates/display.mako:63
+msgid "Viewing Bytes:"
+msgstr "查看字节："
+
+#: src/filebrowser/templates/display.mako:68
+#, python-format
+msgid "(%(length)s B block size)"
+msgstr "（%(length)s B 块大小）"
+
+#: src/filebrowser/templates/display.mako:78
+msgid "Warning: some binary data has been masked out with '&#xfffd'."
+msgstr "警告：已使用 '&#xfffd' 将有些二进制数据屏蔽。"
+
+#: src/filebrowser/templates/edit.mako:62
+#: src/filebrowser/templates/edit.mako:92
+msgid "Save"
+msgstr "保存"
+
+#: src/filebrowser/templates/edit.mako:63
+#: src/filebrowser/templates/edit.mako:77
+msgid "Save as"
+msgstr "另存为"
+
+#: src/filebrowser/templates/edit.mako:80
+#: src/filebrowser/templates/saveas.mako:33
+msgid "Enter the location where you would like to save the file."
+msgstr "输入文件保存位置。"
+
+#: src/filebrowser/templates/edit.mako:87
+#: src/filebrowser/templates/listdir_components.mako:262
+#: src/filebrowser/templates/listdir_components.mako:301
+#: src/filebrowser/templates/listdir_components.mako:390
+#: src/filebrowser/templates/listdir_components.mako:416
+msgid "Name is required."
+msgstr "需要提供名称。"
+
+#: src/filebrowser/templates/edit.mako:91
+#: src/filebrowser/templates/listdir_components.mako:244
+#: src/filebrowser/templates/listdir_components.mako:269
+#: src/filebrowser/templates/listdir_components.mako:303
+#: src/filebrowser/templates/listdir_components.mako:366
+#: src/filebrowser/templates/listdir_components.mako:392
+#: src/filebrowser/templates/listdir_components.mako:418
+#: src/filebrowser/templates/listdir_components.mako:475
+#: src/filebrowser/templates/listdir_components.mako:499
+#: src/filebrowser/templates/listdir_components.mako:1277
+#: src/filebrowser/templates/listdir_components.mako:1327
+msgid "Cancel"
+msgstr "取消"
+
+#: src/filebrowser/templates/fb_components.mako:25
+#: src/filebrowser/templates/fb_components.mako:40
+msgid "Home"
+msgstr "主页"
+
+#: src/filebrowser/templates/fb_components.mako:27
+msgid "Edit path"
+msgstr "编辑路径"
+
+#: src/filebrowser/templates/fb_components.mako:35
+msgid "View trash"
+msgstr "查看垃圾桶"
+
+#: src/filebrowser/templates/fb_components.mako:36
+msgid "Trash"
+msgstr "垃圾桶"
+
+#: src/filebrowser/templates/fb_components.mako:68
+msgid "File Browser"
+msgstr "文件浏览器"
+
+#: src/filebrowser/templates/fb_components.mako:81
 msgid "Actions"
 msgstr "操作"
 
-#: src/filebrowser/templates/display.mako:48
+#: src/filebrowser/templates/fb_components.mako:87
 msgid "View as text"
 msgstr "以文本格式查看"
 
-#: src/filebrowser/templates/display.mako:52
+#: src/filebrowser/templates/fb_components.mako:91
 msgid "View as binary"
 msgstr "以二进制格式查看"
 
-#: src/filebrowser/templates/display.mako:56
+#: src/filebrowser/templates/fb_components.mako:95
 msgid "Preview as Gzip"
 msgstr "以 Gzip 格式预览"
 
-#: src/filebrowser/templates/display.mako:60
+#: src/filebrowser/templates/fb_components.mako:99
 msgid "Preview as Avro"
 msgstr "以 Avro 格式预览"
 
-#: src/filebrowser/templates/display.mako:64
+#: src/filebrowser/templates/fb_components.mako:103
 msgid "Stop preview"
 msgstr "停止预览"
 
-#: src/filebrowser/templates/display.mako:68
+#: src/filebrowser/templates/fb_components.mako:107
 msgid "Edit file"
 msgstr "编辑文件"
 
@@ -414,11 +489,11 @@ msgstr "编辑文件"
 msgid "Download"
 msgstr "下载"
 
-#: src/filebrowser/templates/display.mako:72
+#: src/filebrowser/templates/fb_components.mako:114
 msgid "View file location"
 msgstr "查看文件位置"
 
-#: src/filebrowser/templates/display.mako:73
+#: src/filebrowser/templates/fb_components.mako:115
 msgid "Refresh"
 msgstr "刷新"
 

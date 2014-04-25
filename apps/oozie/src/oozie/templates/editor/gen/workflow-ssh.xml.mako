@@ -17,7 +17,7 @@
 
 <%namespace name="common" file="workflow-common.xml.mako" />
 
-    <action name="${ node }">
+    <action name="${ node }"${ common.credentials(node.credentials) }>
         <ssh xmlns="uri:oozie:ssh-action:0.1">
             <host>${ node.user }@${ node.host }</host>
             <command>${ node.command }</command>
@@ -32,4 +32,5 @@
         </ssh>
         <ok to="${ node.get_oozie_child('ok') }"/>
         <error to="${ node.get_oozie_child('error') }"/>
+        ${ common.sla(node) }
     </action>

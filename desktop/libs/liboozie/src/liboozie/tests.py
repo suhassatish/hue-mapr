@@ -17,8 +17,10 @@
 
 import logging
 
+from django.contrib.auth.models import User
 from nose.tools import assert_equal
-from oozie.tests import MockOozieApi
+
+from desktop.lib.test_utils import reformat_xml
 
 from desktop.lib.test_utils import reformat_xml
 

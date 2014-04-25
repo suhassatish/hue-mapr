@@ -17,7 +17,7 @@
 
 <%namespace name="common" file="workflow-common.xml.mako" />
 
-    <action name="${ node }">
+    <action name="${ node }"${ common.credentials(node.credentials) }>
         <distcp xmlns="uri:oozie:distcp-action:0.1">
             <job-tracker>${'${'}jobTracker}</job-tracker>
             <name-node>${'${'}nameNode}</name-node>
@@ -34,4 +34,5 @@
         </distcp>
         <ok to="${ node.get_oozie_child('ok') }"/>
         <error to="${ node.get_oozie_child('error') }"/>
+        ${ common.sla(node) }
     </action>

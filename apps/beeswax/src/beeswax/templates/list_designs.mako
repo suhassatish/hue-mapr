@@ -16,56 +16,70 @@
 <%!
     import time
     from django.template.defaultfilters import timesince
-    from desktop.views import commonheader, commonfooter
+    from django.utils.encoding import force_unicode
     from django.utils.translation import ugettext as _
+
+    from desktop.views import commonheader, commonfooter
 %>
 
 <%namespace name="actionbar" file="actionbar.mako" />
 <%namespace name="comps" file="beeswax_components.mako" />
 <%namespace name="layout" file="layout.mako" />
 
-${ commonheader(_('Saved Queries'), app_name, user, '100px') | n,unicode }
+${ commonheader(_('Saved Queries'), app_name, user) | n,unicode }
 
-${layout.menubar(section='saved queries')}
+${ layout.menubar(section='saved queries') }
 
 <div class="container-fluid">
-  <h1>${_('Saved Queries')}</h1>
+  <div class="card card-small">
+    % if app_name == 'spark':
+      <h1 class="card-heading simple">${_('App Configurations')}</h1>
+    % else:
+      <h1 class="card-heading simple">${_('Saved Queries')}</h1>
+    % endif
 
-  <%actionbar:render>
-    <%def name="search()">
-      <input id="filterInput" type="text" class="input-xlarge search-query" placeholder="${_('Search for query')}">
-    </%def>
+    <%
+      noun = "query"
+      pluralnoun = "queries"
+      if app_name == 'spark':
+        noun = "app"
+        pluralnoun = "apps"
+    %>
+    <%actionbar:render>
+      <%def name="search()">
+        <input id="filterInput" type="text" class="input-xlarge search-query" placeholder="${_('Search for %s') % noun }">
+      </%def>
 
-    <%def name="actions()">
-      <div class="btn-toolbar" style="display: inline; vertical-align: middle">
-        <button id="editBtn" class="btn toolbarBtn" title="${_('Edit the selected query')}" disabled="disabled"><i class="icon-edit"></i> ${_('Edit')}</button>
-        <button id="cloneBtn" class="btn toolbarBtn" title="${_('Copy the selected query')}" disabled="disabled"><i class="icon-copy"></i> ${_('Copy')}</button>
-        <button id="historyBtn" class="btn toolbarBtn" title="${_('View the usage history of the selected query')}" disabled="disabled"><i class="icon-tasks"></i> ${_('Usage history')}</button>
+      <%def name="actions()">
+        <div class="btn-toolbar" style="display: inline; vertical-align: middle">
+          <button id="editBtn" class="btn toolbarBtn" title="${_('Edit the selected %s' % noun)}" disabled="disabled"><i class="fa fa-edit"></i> ${_('Edit')}</button>
+          <button id="cloneBtn" class="btn toolbarBtn" title="${_('Copy the selected %s' % noun)}" disabled="disabled"><i class="fa fa-files-o"></i> ${_('Copy')}</button>
+          <button id="historyBtn" class="btn toolbarBtn" title="${_('View the usage history of the selected %s' % noun)}" disabled="disabled"><i class="fa fa-tasks"></i> ${_('Usage history')}</button>
 
-        <div id="delete-dropdown" class="btn-group" style="vertical-align: middle">
-          <button id="trashQueryBtn" class="btn toolbarBtn" disabled="disabled"><i class="icon-remove"></i> ${_('Move to trash')}</button>
-          <button id="trashQueryCaretBtn" class="btn toolbarBtn dropdown-toggle" data-toggle="dropdown" disabled="disabled">
-            <span class="caret"></span>
-          </button>
-          <ul class="dropdown-menu">
-            <li><a href="#" id="deleteQueryBtn" title="${_('Delete forever')}"><i class="icon-bolt"></i> ${_('Delete forever')}</a></li>
-          </ul>
+          <div id="delete-dropdown" class="btn-group" style="vertical-align: middle">
+            <button id="trashQueryBtn" class="btn toolbarBtn" disabled="disabled"><i class="fa fa-times"></i> ${_('Move to trash')}</button>
+            <button id="trashQueryCaretBtn" class="btn toolbarBtn dropdown-toggle" data-toggle="dropdown" disabled="disabled">
+              <span class="caret"></span>
+            </button>
+            <ul class="dropdown-menu">
+              <li><a href="#" id="deleteQueryBtn" title="${_('Delete forever')}"><i class="fa fa-bolt"></i> ${_('Delete forever')}</a></li>
+            </ul>
+          </div>
         </div>
-      </div>
-    </%def>
+      </%def>
 
-    <%def name="creation()">
-      <div class="btn-toolbar" style="display: inline; vertical-align: middle">
-        <a class="btn" href="${ url(app_name + ':list_trashed_designs') }" title="${_('Go to the trash')}"><i class="icon-trash"></i> ${_('View trash')}</a>
-        <a class="btn" href="${ url(app_name + ':execute_query') }" title="${_('Create new query')}"><i class="icon-plus-sign"></i> ${_('New query')}</a>
-      </div>
-    </%def>
-  </%actionbar:render>
+      <%def name="creation()">
+        <div class="btn-toolbar" style="display: inline; vertical-align: middle">
+          <a class="btn" href="${ url(app_name + ':execute_query') }" title="${_('Create new %s' % noun)}"><i class="fa fa-plus-circle"></i> ${_('New %s' % noun)}</a>
+          <a class="btn" href="${ url(app_name + ':list_trashed_designs') }" title="${_('Go to the trash')}"><i class="fa fa-trash-o"></i> ${_('View trash')}</a>
+        </div>
+      </%def>
+    </%actionbar:render>
 
-  <table class="table table-striped table-condensed datatables">
+    <table class="table table-condensed datatables">
     <thead>
       <tr>
-        <th width="1%"><div class="hueCheckbox selectAll" data-selectables="savedCheck"></div></th>
+        <th width="1%"><div class="hueCheckbox selectAll fa" data-selectables="savedCheck"></div></th>
         <th>${_('Name')}</th>
         <th>${_('Description')}</th>
         <th>${_('Owner')}</th>
@@ -79,9 +93,9 @@ ${layout.menubar(section='saved queries')}
         %>
       <tr>
         <td data-row-selector-exclude="true">
-          <div class="hueCheckbox savedCheck"
+          <div class="hueCheckbox savedCheck fa"
             % if may_edit:
-              data-edit-url="${ url(app_name + ':execute_query', design_id=design.id) }"
+              data-edit-url="${ url(app_name + ':execute_design', design_id=design.id) }"
               data-delete-name="${ design.id }"
               data-history-url="${ url(app_name + ':list_query_history') }?q-design_id=${design.id}"
             % endif
@@ -89,23 +103,28 @@ ${layout.menubar(section='saved queries')}
         </td>
         <td>
         % if may_edit:
-          <a href="${ url(app_name + ':execute_query', design_id=design.id) }" data-row-selector="true">${design.name}</a>
+          <a href="${ url(app_name + ':execute_design', design_id=design.id) }" data-row-selector="true">${ force_unicode(design.name) }</a>
         % else:
-          ${ design.name }
+          ${ force_unicode(design.name) }
         % endif
         </td>
         <td>
         % if design.desc:
-          ${ design.desc }
+          ${ force_unicode(design.desc) }
         % endif
         </td>
         <td>${ design.owner.username }</td>
-        <td data-sort-value="${time.mktime(design.mtime.timetuple())}">${ timesince(design.mtime) } ${_('ago')}</td>
+        <td data-sort-value="${time.mktime(design.mtime.timetuple())}">${ timesince(design.mtime) } ${ _('ago') }</td>
       </tr>
       % endfor
     </tbody>
   </table>
-  ${comps.pagination(page)}
+    <div class="card-body">
+      <p>
+        ${ comps.pagination(page) }
+      </p>
+    </div>
+  </div>
 </div>
 
 <div id="deleteQuery" class="modal hide fade">
@@ -164,24 +183,24 @@ ${layout.menubar(section='saved queries')}
 
     $(".selectAll").click(function () {
       if ($(this).attr("checked")) {
-        $(this).removeAttr("checked").removeClass("icon-ok");
-        $("." + $(this).data("selectables")).removeClass("icon-ok").removeAttr("checked");
+        $(this).removeAttr("checked").removeClass("fa-check");
+        $("." + $(this).data("selectables")).removeClass("fa-check").removeAttr("checked");
       }
       else {
-        $(this).attr("checked", "checked").addClass("icon-ok");
-        $("." + $(this).data("selectables")).addClass("icon-ok").attr("checked", "checked");
+        $(this).attr("checked", "checked").addClass("fa-check");
+        $("." + $(this).data("selectables")).addClass("fa-check").attr("checked", "checked");
       }
       toggleActions();
     });
 
     $(".savedCheck").click(function () {
       if ($(this).attr("checked")) {
-        $(this).removeClass("icon-ok").removeAttr("checked");
+        $(this).removeClass("fa-check").removeAttr("checked");
       }
       else {
-        $(this).addClass("icon-ok").attr("checked", "checked");
+        $(this).addClass("fa-check").attr("checked", "checked");
       }
-      $(".selectAll").removeAttr("checked").removeClass("icon-ok");
+      $(".selectAll").removeAttr("checked").removeClass("fa-check");
       toggleActions();
     });
 
@@ -223,13 +242,13 @@ ${layout.menubar(section='saved queries')}
 
     $("#trashQueryBtn").click(function () {
       $("#skipTrash").val(false);
-      $("#deleteQueryMessage").text("${ _('Move the selected queries to the trash?') }");
+      $("#deleteQueryMessage").text("${ _('Move the selected %s to the trash?' % pluralnoun) }");
       deleteQueries();
     });
 
     $("#deleteQueryBtn").click(function () {
       $("#skipTrash").val(true);
-      $("#deleteQueryMessage").text("${ _('Delete the selected queries?') }");
+      $("#deleteQueryMessage").text("${ _('Delete the selected %s?' % pluralnoun) }");
       deleteQueries();
     });
 

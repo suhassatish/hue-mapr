@@ -34,9 +34,11 @@ urlpatterns = patterns(
   url(r'^submit_workflow/(?P<workflow>\d+)$', 'submit_workflow', name='submit_workflow'),
   url(r'^schedule_workflow/(?P<workflow>\d+)$', 'schedule_workflow', name='schedule_workflow'),
   url(r'^import_workflow/$', 'import_workflow', name='import_workflow'),
+  url(r'^import_coordinator/$', 'import_coordinator', name='import_coordinator'),
+  url(r'^export_workflow/(?P<workflow>\d+)$', 'export_workflow', name='export_workflow'),
 
   url(r'^list_coordinators/(?P<workflow_id>[-\w]+)?$', 'list_coordinators', name='list_coordinators'),
-  url(r'^list_trashed_coordinators/(?P<workflow_id>[-\w]+)?$', 'list_trashed_coordinators', name='list_trashed_coordinators'),
+  url(r'^list_trashed_coordinators/$', 'list_trashed_coordinators', name='list_trashed_coordinators'),
   url(r'^create_coordinator/(?P<workflow>[-\w]+)?$', 'create_coordinator', name='create_coordinator'),
   url(r'^edit_coordinator/(?P<coordinator>[-\w]+)$', 'edit_coordinator', name='edit_coordinator'),
   url(r'^delete_coordinator$', 'delete_coordinator', name='delete_coordinator'),
@@ -95,5 +97,9 @@ urlpatterns += patterns(
   url(r'^rerun_oozie_bundle/(?P<job_id>[-\w]+)/(?P<app_path>.+?)$', 'rerun_oozie_bundle', name='rerun_oozie_bundle'),
   url(r'^manage_oozie_jobs/(?P<job_id>[-\w]+)/(?P<action>(start|suspend|resume|kill|rerun))$', 'manage_oozie_jobs', name='manage_oozie_jobs'),
 
+  url(r'^submit_external_job/(?P<application_path>.+?)$', 'submit_external_job', name='submit_external_job'),
+
   url(r'^list_oozie_info/$', 'list_oozie_info', name='list_oozie_info'),
+
+  url(r'^list_oozie_sla/$', 'list_oozie_sla', name='list_oozie_sla'),
 )

@@ -22,27 +22,27 @@
 <%namespace name="macros" file="macros.mako" />
 <%namespace name="actionbar" file="actionbar.mako" />
 
-${ commonheader(_('Search'), "search", user, "40px") | n,unicode }
+${ commonheader(_('Search'), "search", user, "29px") | n,unicode }
 
 <link rel="stylesheet" href="/search/static/css/admin.css">
 
 <div class="search-bar" style="height: 30px">
     <div class="pull-right" style="margin-top: 4px; margin-right: 20px">
-      <a href="${ url('search:index') }"><i class="icon-share-alt"></i> ${ _('Search page') }</a>
+      <a href="${ url('search:index') }"><i class="fa fa-share"></i> ${ _('Search page') }</a>
     </div>
   <h4>${_('Collection Manager')}</h4>
 </div>
 
 
 <div class="container-fluid">
-
+  <div class="card">
   <%actionbar:render>
     <%def name="search()">
-      <input type="text" placeholder="${_('Filter collections by name...')}" class="input-xlarge search-query" id="filterInput">
+      <input type="text" placeholder="${_('Filter collections by name...')}" class="input-xlarge search-query" id="filterInput" data-bind="visible: collections().length > 0 && !isLoading()">
     </%def>
 
     <%def name="creation()">
-      <button id="importBtn" type="button" class="btn"><i class="icon-plus-sign"></i> ${ _('Import') }</button>
+      <button type="button" class="btn importBtn" data-bind="visible: collections().length > 0 && !isLoading()"><i class="fa fa-plus-circle"></i> ${ _('Import') }</button>
     </%def>
   </%actionbar:render>
 
@@ -54,25 +54,28 @@ ${ commonheader(_('Search'), "search", user, "40px") | n,unicode }
   </div>
   <div class="row-fluid" data-bind="visible: isLoading()">
     <div class="span10 offset1 center">
-      <i class="icon-spinner icon-spin" style="font-size: 60px; color: #DDD"></i>
+      <i class="fa fa-spinner fa-spin" style="font-size: 60px; color: #DDD"></i>
     </div>
   </div>
   <div class="row-fluid">
     <div class="span12">
+      <p>
       <ul id="collections" data-bind="template: {name: 'collectionTemplate', foreach: filteredCollections}">
       </ul>
+      </p>
     </div>
   </div>
 
   <script id="collectionTemplate" type="text/html">
-    <li style="cursor: pointer" data-bind="click: $root.editCollection" title="${ _('Click to edit') }">
+    <li class="collectionRow" data-bind="click: $root.editCollection" title="${ _('Click to edit') }">
       <div class="pull-right" style="margin-top: 10px;margin-right: 10px; cursor: pointer">
-        <a data-bind="click: $root.copyCollection, clickBubble: false"><i class="icon-copy"></i> ${_('Copy')}</a> &nbsp;
-        <a data-bind="click: $root.markForDeletion, clickBubble: false"><i class="icon-remove"></i> ${_('Delete')}</a>
+        <a data-bind="click: $root.copyCollection, clickBubble: false"><i class="fa fa-files-o"></i> ${_('Copy')}</a> &nbsp;
+        <a data-bind="click: $root.markForDeletion, clickBubble: false"><i class="fa fa-times"></i> ${_('Delete')}</a>
       </div>
-      <h4><i class="icon-list"></i> <span data-bind="text: label"></span></h4>
+      <h4><i class="fa fa-list"></i> <span data-bind="text: label"></span></h4>
     </li>
   </script>
+  </div>
 
 </div>
 
@@ -102,7 +105,7 @@ ${ commonheader(_('Search'), "search", user, "40px") | n,unicode }
 <script id="importableTemplate" type="text/html">
   <tr>
     <td width="24">
-      <div data-bind="click: handleSelect, css: {hueCheckbox: true, 'icon-ok': selected}"></div>
+      <div data-bind="click: handleSelect, css: {hueCheckbox: true, 'fa': true, 'fa-check': selected}"></div>
     </td>
     <td data-bind="text: name"></td>
   </tr>
@@ -129,13 +132,6 @@ ${ commonheader(_('Search'), "search", user, "40px") | n,unicode }
     margin: 0;
     padding: 0;
     width: 100%;
-  }
-
-  #collections li {
-    margin-bottom: 10px;
-    padding: 10px;
-    border: 1px solid #E3E3E3;
-    height: 40px;
   }
 
   .placeholder {
@@ -195,7 +191,7 @@ ${ commonheader(_('Search'), "search", user, "40px") | n,unicode }
         showImportModal();
     % endif
 
-    $("#importBtn").on("click", function () {
+    $(".importBtn").on("click", function () {
       showImportModal();
     });
 
@@ -210,7 +206,7 @@ ${ commonheader(_('Search'), "search", user, "40px") | n,unicode }
       _btn.button("loading");
     });
 
-    $(document).on("imported", function () {
+    $(document).on("imported", function (e, data) {
       $("#importModal").modal("hide");
       $("#importModalBtn").button("reset");
       $.jHueNotify.info("${ _("Collections imported successfully.") }"); // Could fail actually
@@ -225,11 +221,11 @@ ${ commonheader(_('Search'), "search", user, "40px") | n,unicode }
     $(document).on("collectionDeleted", function () {
       $("#deleteModal").modal("hide");
       $("#deleteModalBtn").button("reset");
-      $.jHueNotify.info("${ _("Collection deleted successfully.") }");
+      $(document).trigger("info", "${ _("Collection deleted successfully.") }");
     });
 
     $(document).on("collectionCopied", function () {
-      $.jHueNotify.info("${ _("Collection copied successfully.") }");
+      $(document).trigger("info", "${ _("Collection copied successfully.") }");
     });
 
     $(document).on("confirmDelete", function () {

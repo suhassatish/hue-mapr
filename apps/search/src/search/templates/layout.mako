@@ -22,15 +22,15 @@
 
 <%def name="skeleton()">
   <link rel="stylesheet" href="/search/static/css/admin.css">
-  <link rel="stylesheet" href="/search/static/chosen/chosen.css">
-  <script src="/search/static/chosen/chosen.jquery.min.js" type="text/javascript" charset="utf-8"></script>
+  <link rel="stylesheet" href="/static/ext/chosen/chosen.min.css">
+  <script src="/static/ext/chosen/chosen.jquery.min.js" type="text/javascript" charset="utf-8"></script>
   <script src="/static/ext/js/knockout-min.js" type="text/javascript" charset="utf-8"></script>
 
   <div class="search-bar" style="height: 30px">
     % if not hasattr(caller, "no_navigation"):
       <div class="pull-right" style="margin-top: 4px; margin-right: 20px">
-        <a href="${ url('search:index') }"><i class="icon-share-alt"></i> ${ _('Search page') }</a> &nbsp; &nbsp;
-        <a href="${ url('search:admin_collections') }"><i class="icon-sitemap"></i> ${ _('Collection manager') }</a>
+        <a href="${ url('search:index') }?collection=${ hue_collection.id }"><i class="fa fa-share"></i> ${ _('Search page') }</a> &nbsp; &nbsp;
+        <a href="${ url('search:admin_collections') }"><i class="fa fa-sitemap"></i> ${ _('Collection manager') }</a>
       </div>
     % endif
 
@@ -73,15 +73,15 @@
 </%def>
 
 <%def name="sidebar(hue_collection, section='')">
-  <div class="well sidebar-nav" style="min-height: 250px">
+  <div class="sidebar-nav" style="min-height: 250px">
     <ul class="nav nav-list">
 
     <li class="nav-header">${_('Collection')}</li>
       <li class="${ utils.is_selected(section, 'properties') }">
-        <a href="${ url('search:admin_collection_properties', collection_id=hue_collection.id) }"><i class="icon-reorder"></i> ${_('Properties')}</a>
+        <a href="${ url('search:admin_collection_properties', collection_id=hue_collection.id) }"><i class="fa fa-list"></i> ${_('Properties')}</a>
       </li>
       <li>
-        <a href="${ url('search:index') }?collection=${ hue_collection.id }"><i class="icon-search"></i> ${ _('Search it') }</a>
+        <a href="${ url('search:index') }?collection=${ hue_collection.id }"><i class="fa fa-search"></i> ${ _('Search it') }</a>
       </li>
 
       <li class="nav-header">${_('Template')}</li>

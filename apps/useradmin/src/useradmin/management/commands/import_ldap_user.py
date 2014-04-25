@@ -19,6 +19,7 @@ from optparse import make_option
 from useradmin.views import import_ldap_users
 
 from django.core.management.base import BaseCommand, CommandError
+from django.utils.translation import ugettext_lazy as _t, ugettext as _
 
 from django.utils.translation import ugettext_lazy as _t, ugettext as _
 

@@ -23,60 +23,59 @@
 <%namespace name="layout" file="../navigation-bar.mako" />
 <%namespace name="utils" file="../utils.inc.mako" />
 
-${ commonheader(_("Bundle Dashboard"), "oozie", user, "100px") | n,unicode }
-${ layout.menubar(section='dashboard') }
-
+${ commonheader(_("Bundle Dashboard"), "oozie", user) | n,unicode }
+${ layout.menubar(section='bundles', dashboard=True) }
 
 <div class="container-fluid">
-  ${ layout.dashboard_sub_menubar(section='bundles') }
-
-  <h1>${ _('Bundle') } ${ oozie_bundle.appName }</h1>
+<div class="card card-small">
+  <div class="card-body">
+  <p>
 
 
 <div class="row-fluid">
   <div class="span2">
-    <div class="well sidebar-nav">
-      <ul class="nav nav-list">
+    <div class="sidebar-nav">
+      <ul class="nav nav-list" style="border:none">
         <li class="nav-header">${ _('Bundle') }</li>
-        <li>
-            % if bundle is not None:
-              <a href="${ bundle.get_absolute_url() }">${ oozie_bundle.appName }</a>
-            % else:
-              ${ oozie_bundle.appName }
-            % endif
-        </li>
+        % if bundle is not None:
+        <li><a href="${ bundle.get_absolute_url() }">${ oozie_bundle.appName }</a></li>
+        % else:
+        <li class="white">${ oozie_bundle.appName }</li>
+        % endif
 
         <li class="nav-header">${ _('Submitter') }</li>
-        <li>${ oozie_bundle.user }</li>
+        <li class="white">${ oozie_bundle.user }</li>
 
         <li class="nav-header">${ _('Status') }</li>
-        <li id="status"><span class="label ${ utils.get_status(oozie_bundle.status) }">${ oozie_bundle.status }</span></li>
+        <li class="white" id="status"><span class="label ${ utils.get_status(oozie_bundle.status) }">${ oozie_bundle.status }</span></li>
 
         <li class="nav-header">${ _('Progress') }</li>
-        <li id="progress">
+        <li class="white" id="progress">
           <div class="progress">
             <div class="bar" style="width: 0">${ oozie_bundle.get_progress() }%</div>
           </div>
         </li>
 
         <li class="nav-header">${ _('Kick off time') }</li>
-        <li>${ oozie_bundle.kickoffTime }</li>
+        <li class="white">${ oozie_bundle.kickoffTime }</li>
 
         <li class="nav-header">${ _('Id') }</li>
-        <li>${ oozie_bundle.id }</li>
+        <li class="white">${ oozie_bundle.id }</li>
 
         % if bundle:
             <li class="nav-header">${ _('Coordinators') }</li>
-          % for bundled in bundle.coordinators.all():
-            <li rel="tooltip" title="${ bundled.coordinator.name }">
-              <i class="icon-eye-open"></i> <span class="dataset">${ bundled.coordinator.name }</span>
+          % for bundled in bundle.coordinators.distinct():
+            <li rel="tooltip" title="${ bundled.coordinator.name }" class="white">
+              <a href="${ bundled.coordinator.get_absolute_url() }">
+                <i class="fa fa-eye"></i> <span class="dataset">${ bundled.coordinator.name }</span>
+              </a>
             </li>
           % endfor
         % endif
 
         % if has_job_edition_permission(oozie_bundle, user):
           <li class="nav-header">${ _('Manage') }</li>
-          <li>
+          <li class="white">
             <button title="${_('Kill %(bundle)s') % dict(bundle=oozie_bundle.id)}"
               id="kill-btn"
               class="btn btn-small confirmationModal
@@ -128,6 +127,7 @@ ${ layout.menubar(section='dashboard') }
     </div>
   </div>
   <div class="span10">
+    <h1 class="card-heading simple card-heading-nopadding card-heading-noborder card-heading-blue" style="margin-bottom: 10px">${ _('Bundle') } ${ oozie_bundle.appName }</h1>
     <ul class="nav nav-tabs">
       <li class="active"><a href="#calendar" data-toggle="tab">${ _('Coordinators') }</a></li>
       <li><a href="#actions" data-toggle="tab">${ _('Actions') }</a></li>
@@ -137,7 +137,7 @@ ${ layout.menubar(section='dashboard') }
       <li><a href="#definition" data-toggle="tab">${ _('Definition') }</a></li>
     </ul>
 
-    <div class="tab-content" style="padding-bottom:200px">
+    <div class="tab-content" style="min-height:200px">
       <div class="tab-pane active" id="calendar">
         <table class="table table-striped table-condensed">
           <thead>
@@ -277,6 +277,9 @@ ${ layout.menubar(section='dashboard') }
 </div>
 
 
+  </p>
+  </div>
+  </div>
 </div>
 
 <div id="confirmation" class="modal hide">
@@ -296,12 +299,9 @@ ${ layout.menubar(section='dashboard') }
 <link rel="stylesheet" href="/static/ext/css/codemirror.css">
 <script src="/static/ext/js/codemirror-xml.js"></script>
 
-<style>
+<style type="text/css">
   .CodeMirror.cm-s-default {
     height:500px;
-  }
-  .sidebar-nav {
-    padding: 9px 0;
   }
 </style>
 
@@ -388,7 +388,7 @@ ${ layout.menubar(section='dashboard') }
         { 'notification': $(this).attr("data-message") },
         function(response) {
           if (response['status'] != 0) {
-            $.jHueNotify.error("${ _('Problem: ') }" + response['data']);
+            $(document).trigger("error", "${ _('Problem: ') }" + response['data']);
           } else {
             window.location.reload();
           }
@@ -403,7 +403,7 @@ ${ layout.menubar(section='dashboard') }
         { 'notification': $(this).data("message") },
         function(response) {
           if (response['status'] != 0) {
-            $.jHueNotify.error("${ _('Error: ') }" + response['data']);
+            $(document).trigger("error", "${ _('Error: ') }" + response['data']);
           } else {
             window.location.reload();
           }
@@ -437,17 +437,21 @@ ${ layout.menubar(section='dashboard') }
 
         $("#status span").attr("class", "label").addClass(getStatusClass(data.status)).text(data.status);
 
-        if (data.id && data.status != "RUNNING" && data.status != "SUSPENDED" && data.status != "KILLED" && data.status != "FAILED"){
-          $("#kill-btn").hide();
-          $("#rerun-btn").show();
-        }
+        $.jHueTitleUpdater.set(data.progress + "%");
 
-        if (data.id && data.status == "KILLED") {
+        if (data.id && (data.status == "KILLED" || data.status == "SUCCEEDED" ||  data.status == "DONEWITHERROR" || data.status == "FAILED")) {
           $("#kill-btn").hide();
+          if (data.status != "KILLED" ) {
+            $("#rerun-btn").show();
+          }
+        } else {
+          $("#kill-btn").show();
+          $("#rerun-btn").hide();
         }
 
         if (data.id && (data.status == "RUNNING" || data.status == "RUNNINGWITHERROR")){
           $("#suspend-btn").show();
+          $.jHueTitleUpdater.reset();
         } else {
           $("#suspend-btn").hide();
         }
@@ -459,11 +463,11 @@ ${ layout.menubar(section='dashboard') }
           $("#resume-btn").hide();
         }
 
-        $("#progress .bar").text(data.progress+"%").css("width", data.progress+"%").attr("class", "bar "+getStatusClass(data.status, "bar-"));
+        $("#progress .bar").text(data.progress + "%").css("width", data.progress + "%").attr("class", "bar " + getStatusClass(data.status, "bar-"));
 
         var _logsEl = $("#log pre");
-        var newLines = data.log.split("\n").slice(_logsEl.text().split("\n").length);
-        _logsEl.text(_logsEl.text() + newLines.join("\n"));
+        _logsEl.text(data.log);
+
         if (logsAtEnd) {
           _logsEl.scrollTop(_logsEl[0].scrollHeight - _logsEl.height());
         }
@@ -471,7 +475,7 @@ ${ layout.menubar(section='dashboard') }
         if (data.status != "RUNNING" && data.status != "PREP"){
           return;
         }
-        window.setTimeout(refreshView, 1000);
+        window.setTimeout(refreshView, 20000);
       });
     }
 

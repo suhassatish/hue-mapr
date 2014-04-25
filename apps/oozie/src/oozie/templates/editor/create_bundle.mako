@@ -23,48 +23,46 @@
 <%namespace name="layout" file="../navigation-bar.mako" />
 <%namespace name="utils" file="../utils.inc.mako" />
 
-${ commonheader(_("Create Bundle"), "oozie", user, "100px") | n,unicode }
+${ commonheader(_("Create Bundle"), "oozie", user) | n,unicode }
 ${ layout.menubar(section='bundles') }
 
 
 <div class="container-fluid">
-  <h1>${ _('Create Bundle') }</h1>
-
-    <div class="well">
-      <br/>
-    </div>
-
-    <div style="min-height:300px">
-      <form class="form-horizontal" id="bundleForm" action="${ url('oozie:create_bundle') }" method="POST">
-
-      <div class="row-fluid">
-        <div class="span2">
+  <form class="form-horizontal" id="bundleForm" action="${ url('oozie:create_bundle') }" method="POST">
+    <div class="row-fluid">
+      <div class="span2">
+        <div class="sidebar-nav">
+          <ul class="nav nav-list">
+            <li class="nav-header">${ _('Properties') }</li>
+            <li class="active"><a href="#properties"><i class="fa fa-reorder"></i> ${ _('Edit properties') }</a></li>
+          </ul>
         </div>
-        <div class="span8">
-          <h2>${ _('Properties') }</h2>
-          <br/>
+      </div>
+      <div class="span10">
+        <div class="card card-small">
+          <h1 class="card-heading simple">${ _('Create Bundle') }</h1>
+          <div class="alert alert-info"><h3>${ _('Bundle data') }</h3></div>
           <fieldset>
             ${ utils.render_field(bundle_form['name']) }
             ${ utils.render_field(bundle_form['description']) }
             ${ utils.render_field(bundle_form['kick_off_time']) }
-            ${ utils.render_field(bundle_form['is_shared']) }
+            <div class="hide">
+              ${ utils.render_field(bundle_form['is_shared']) }
+            </hide>
 
             ${ bundle_form['schema_version'] | n,unicode }
             ${ bundle_form['parameters'] | n,unicode }
-         </fieldset>
-
-        <div class="span2"></div>
+          </fieldset>
+          <div class="form-actions">
+            <input class="btn btn-primary" type="submit" value="${ _('Save') }" />
+            <a class="btn" onclick="history.back()">${ _('Back') }</a>
+          </div>
         </div>
       </div>
-
-      <div class="form-actions center">
-        <input class="btn btn-primary" type="submit" value="${ _('Save') }" />
-        <a class="btn" onclick="history.back()">${ _('Back') }</a>
-      </div>
-      </form>
     </div>
+  </form>
 </div>
 
-${ utils.decorate_datetime_fields() }
+${ utils.decorate_datetime_fields(False) }
 
 ${ commonfooter(messages) | n,unicode }

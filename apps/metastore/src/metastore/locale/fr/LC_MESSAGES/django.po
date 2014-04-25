@@ -22,11 +22,11 @@ msgstr ""
 msgid "Path"
 msgstr "Chemin d'accès"
 
-#: src/metastore/forms.py:49
+#: src/metastore/forms.py:47
 msgid "Overwrite?"
 msgstr "Remplacer ?"
 
-#: src/metastore/forms.py:62
+#: src/metastore/forms.py:60
 #, python-format
 msgid "%(column_name)s (partition key with type %(column_type)s)"
 msgstr "%(column_name)s (clé de partition avec type %(column_type)s)"
@@ -74,9 +74,20 @@ msgstr "Impossible de charger les données : "
 msgid "Table '%(table)s' is not partitioned."
 msgstr "La table '%(table)s' n'est pas partitionnée."
 
-#: src/metastore/templates/components.mako:24
+#: src/metastore/views.py:305
+msgid "Column analysis not supportet yet"
+msgstr "L'analyse de colonne n'est pas encore prise en charge"
+
+#: src/metastore/views.py:307
+msgid "A POST request is required"
+msgstr "Requête POST requise"
+
+#: src/metastore/templates/components.mako:30
+msgid "Metastore Manager"
+msgstr "Gestionnaire Metastore"
+
+#: src/metastore/templates/components.mako:44
 #: src/metastore/templates/databases.mako:23
-#: src/metastore/templates/databases.mako:26
 msgid "Databases"
 msgstr "Bases de données"
 
@@ -162,7 +173,6 @@ msgid "View"
 msgstr "Afficher"
 
 #: src/metastore/templates/describe_table.mako:28
-#: src/metastore/templates/describe_table.mako:55
 msgid "Table"
 msgstr "Table"
 
@@ -171,15 +181,16 @@ msgstr "Table"
 msgid "%s : %s"
 msgstr "%s : %s"
 
-#: src/metastore/templates/describe_table.mako:36
+#: src/metastore/templates/describe_table.mako:37
+#: src/metastore/templates/describe_table.mako:145
 msgid "Name"
 msgstr "Nom"
 
-#: src/metastore/templates/describe_table.mako:37
+#: src/metastore/templates/describe_table.mako:38
 msgid "Type"
 msgstr "Type"
 
-#: src/metastore/templates/describe_table.mako:38
+#: src/metastore/templates/describe_table.mako:39
 msgid "Comment"
 msgstr "Commentaire"
 
@@ -265,6 +276,10 @@ msgstr "Supprimer les tables sélectionnées"
 #: src/metastore/templates/tables.mako:67
 msgid "Table Name"
 msgstr "Nom de la table"
+
+#: src/metastore/templates/tables.mako:149
+msgid "Oops, no database found!"
+msgstr "Désolé, aucune base de données n'a été trouvée."
 
 #: src/metastore/templates/util.mako:66
 msgid "Unsaved Query"

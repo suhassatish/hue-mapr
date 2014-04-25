@@ -21,39 +21,25 @@
 <%namespace name="comps" file="jobbrowser_components.mako" />
 
 ${ commonheader(_('Tracker: %(trackerId)s') % dict(trackerId=tracker.trackerId), "jobbrowser", user) | n,unicode }
+${ comps.menubar()}
 
 <div class="container-fluid">
+  <div class="row-fluid">
+    <div class="span12">
+      <div class="card card-home">
+        <div class="card-body">
+          <p>
+
     <h1>${_('Tracker at %(trackerHost)s on port %(trackerPort)s') % dict(trackerHost=tracker.host, trackerPort=tracker.httpPort)}</h1>
     <div>
         <dl>
             <dt>${_('ID')}</dt>
             <dd>${ tracker.trackerId }</dd>
-            % if not tracker.is_mr2:
             <dt>${_('Last heard from at')}</dt>
             <dd>${ tracker.lastSeenFormatted }.</dd>
-            % endif
         </dl>
     </div>
 
-    % if tracker.is_mr2:
-    <h2>${_('Memory Metrics')}</h2>
-    <div>
-        <dl>
-            <dt>${_('Node Id')}</dt>
-            <dd>${tracker.nodeId }</dd>
-            <dt>${_('State')}</dt>
-            <dd>${tracker.state }</dd>
-            <dt>${_('User')}</dt>
-            <dd>${tracker.user}</dd>
-            <dt>${_('Diagnostics')}</dt>
-            <dd>${tracker.diagnostics}</dd>
-            <dt>${_('Total Memory Needed in MB')}</dt>
-            <dd>${tracker.totalMemoryNeededMB}</dd>
-            <dt>${_('Exit Code')}</dt>
-            <dd>${tracker.exitCode}</dd>
-        </dl>
-    </div>
-    % else:
     <h2>${_('Memory Metrics')}</h2>
     <div>
         <dl>
@@ -79,7 +65,13 @@ ${ commonheader(_('Tracker: %(trackerId)s') % dict(trackerId=tracker.trackerId),
             <dd>${tracker.maxReduceTasks}</dd>
         </dl>
     </div>
-    % endif
+
+          <a class="btn" href="javascript:history.back()">${_('Back')}</a>
+
+          </p>
+        </div>
+      </div>
+    </div>
 </div>
 
 ${ commonfooter(messages) | n,unicode }

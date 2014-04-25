@@ -14,12 +14,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from filebrowser.views import location_to_url
 
-try:
-  import json
-except ImportError:
-  import simplejson as json
+import json
 import logging
 import re
 import time
@@ -28,11 +24,13 @@ from django.core.urlresolvers import reverse
 from django.utils.html import escape
 from django.utils.translation import ugettext as _
 
-from jobbrowser.views import job_single_logs
+from desktop.lib.i18n import smart_str
 from desktop.lib.view_util import format_duration_in_millis
+from filebrowser.views import location_to_url
+from jobbrowser.views import job_single_logs
+from liboozie.oozie_api import get_oozie
 from oozie.models import Workflow, Pig
 from oozie.views.editor import _submit_workflow
-from liboozie.oozie_api import get_oozie
 
 LOG = logging.getLogger(__name__)
 
@@ -57,10 +55,6 @@ class OozieApi:
     self.user = user
 
   def submit(self, pig_script, params):
-    mapping = {
-      'oozie.use.system.libpath':  'true',
-    }
-
     workflow = None
 
     try:
@@ -68,7 +62,7 @@ class OozieApi:
       oozie_wf = _submit_workflow(self.user, self.fs, self.jt, workflow, mapping)
     finally:
       if workflow:
-        workflow.delete()
+        workflow.delete(skip_trash=True)
 
     return oozie_wf
 
@@ -76,11 +70,14 @@ class OozieApi:
     workflow = Workflow.objects.new_workflow(self.user)
     workflow.name = OozieApi.WORKFLOW_NAME
     workflow.is_history = True
+    if pig_script.use_hcatalog:
+      workflow.add_parameter("oozie.action.sharelib.for.pig", "pig,hcatalog")
     workflow.save()
     Workflow.objects.initialize(workflow, self.fs)
 
     script_path = workflow.deployment_dir + '/script.pig'
-    self.fs.do_as_user(self.user.username, self.fs.create, script_path, data=pig_script.dict['script'])
+    if self.fs: # For testing, difficult to mock
+      self.fs.do_as_user(self.user.username, self.fs.create, script_path, data=smart_str(pig_script.dict['script']))
 
     files = []
     archives = []
@@ -135,14 +132,14 @@ class OozieApi:
     return pig_params
 
   def stop(self, job_id):
-    return get_oozie().job_control(job_id, 'kill')
+    return get_oozie(self.user).job_control(job_id, 'kill')
 
   def get_jobs(self):
     kwargs = {'cnt': OozieApi.MAX_DASHBOARD_JOBS,}
     kwargs['user'] = self.user.username
     kwargs['name'] = OozieApi.WORKFLOW_NAME
 
-    return get_oozie().get_workflows(**kwargs).jobs
+    return get_oozie(self.user).get_workflows(**kwargs).jobs
 
   def get_log(self, request, oozie_workflow):
     logs = {}
@@ -211,12 +208,15 @@ class OozieApi:
 
     for job in oozie_jobs:
       if job.is_running():
-        job = get_oozie().get_job(job.id)
+        job = get_oozie(self.user).get_job(job.id)
         get_copy = request.GET.copy() # Hacky, would need to refactor JobBrowser get logs
         get_copy['format'] = 'python'
         request.GET = get_copy
-        logs, workflow_action = self.get_log(request, job)
-        progress = workflow_action[0]['progress']
+        try:
+          logs, workflow_action = self.get_log(request, job)
+          progress = workflow_action[0]['progress']
+        except Exception:
+          progress = 0
       else:
         progress = 100
 

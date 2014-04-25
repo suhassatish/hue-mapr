@@ -25,7 +25,7 @@ msgstr "Ordner auf HDFS, in dem die jobsub-Beispiele und -Vorlagen gespeichert w
 msgid "Location on local filesystem where examples and template are stored."
 msgstr "Speicherort auf lokalem Dateisystem, an dem Beispiele und Vorlagen gespeichert werden"
 
-#: src/jobsub/conf.py:42
+#: src/jobsub/conf.py:34
 msgid "Location on local filesystem where sample data is stored."
 msgstr "Speicherort auf lokalem Dateisystem, an dem Beispieldaten gespeichert werden"
 
@@ -82,15 +82,15 @@ msgstr "Mapper"
 msgid "Reducer"
 msgstr "Reducer"
 
-#: src/jobsub/models.py:136
+#: src/jobsub/models.py:132
 msgid "Name of the design, which must be unique per user."
 msgstr "Name des Designs, das für jeden Benutzer eindeutig sein muss."
 
-#: src/jobsub/models.py:196 src/jobsub/models.py:245
+#: src/jobsub/models.py:192 src/jobsub/models.py:241
 msgid "List of paths to files to be added to the distributed cache."
 msgstr "Liste von Pfaden zu Dateien, die dem verteilten Cache hinzuzufügen sind."
 
-#: src/jobsub/models.py:198 src/jobsub/models.py:247
+#: src/jobsub/models.py:194 src/jobsub/models.py:243
 msgid "List of paths to archives to be added to the distributed cache."
 msgstr "Liste von Pfaden zu Archiven, die dem verteilten Cache hinzuzufügen sind."
 
@@ -614,9 +614,9 @@ msgstr "Letzter"
 
 #: src/jobsub/templates/designs.mako:733
 msgid "Next"
-msgstr "Nächste"
+msgstr "Nächster"
 
 #: src/jobsub/templates/designs.mako:734
 msgid "Previous"
-msgstr "Vorherige"
+msgstr "Vorheriger"
 

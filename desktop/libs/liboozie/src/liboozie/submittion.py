@@ -17,16 +17,20 @@
 
 import errno
 import logging
+import os
 import time
 
 from django.utils.translation import ugettext as _
 
 from desktop.lib.exceptions_renderable import PopupException
+from desktop.lib.i18n import smart_str
 from hadoop import cluster
 from hadoop.fs.hadoopfs import Hdfs
 
 from liboozie.oozie_api import get_oozie
 from liboozie.conf import REMOTE_DEPLOYMENT_DIR
+from jobsub.parameterization import find_variables
+from liboozie.credentials import Credentials
 
 LOG = logging.getLogger(__name__)
 
@@ -45,6 +49,7 @@ class Submission(object):
     self.fs = fs
     self.jt = jt
     self.oozie_id = oozie_id
+    self.api = get_oozie(self.user)
 
     if properties is not None:
       self.properties = properties
@@ -60,7 +65,7 @@ class Submission(object):
       res += " -- " + self.oozie_id
     return res
 
-  def run(self):
+  def run(self, deployment_dir=None):
     """
     Take care of all the actions of submitting a Oozie workflow.
     Returns the oozie job id if all goes well.
@@ -70,42 +75,37 @@ class Submission(object):
 
     jobtracker = cluster.get_cluster_addr_for_job_submission()
 
-    deployment_dir = self.deploy()
+    if deployment_dir is None:
+      self._update_properties(jobtracker) # Needed as we need to set some properties like Credentials before
+      deployment_dir = self.deploy()
 
-    try:
-      prev = get_oozie().setuser(self.user.username)
-      self._update_properties(jobtracker, deployment_dir)
-      self.oozie_id = get_oozie().submit_job(self.properties)
-      LOG.info("Submitted: %s" % (self,))
+    self._update_properties(jobtracker, deployment_dir)
 
-      if self.job.get_type() == 'workflow':
-        get_oozie().job_control(self.oozie_id, 'start')
-        LOG.info("Started: %s" % (self,))
-    finally:
-      get_oozie().setuser(prev)
+    self.oozie_id = self.api.submit_job(self.properties)
+    LOG.info("Submitted: %s" % (self,))
+
+    if self._is_workflow():
+      self.api.job_control(self.oozie_id, 'start')
+      LOG.info("Started: %s" % (self,))
 
     return self.oozie_id
 
   def rerun(self, deployment_dir, fail_nodes=None, skip_nodes=None):
     jobtracker = cluster.get_cluster_addr_for_job_submission()
 
-    try:
-      prev = get_oozie().setuser(self.user.username)
-      self._update_properties(jobtracker, deployment_dir)
-      self.properties.update({'oozie.wf.application.path': deployment_dir})
+    self._update_properties(jobtracker, deployment_dir)
+    self.properties.update({'oozie.wf.application.path': deployment_dir})
 
-      if fail_nodes:
-        self.properties.update({'oozie.wf.rerun.failnodes': fail_nodes})
-      elif not skip_nodes:
-        self.properties.update({'oozie.wf.rerun.failnodes': 'false'}) # Case empty 'skip_nodes' list
-      else:
-        self.properties.update({'oozie.wf.rerun.skip.nodes': skip_nodes})
+    if fail_nodes:
+      self.properties.update({'oozie.wf.rerun.failnodes': fail_nodes})
+    elif not skip_nodes:
+      self.properties.update({'oozie.wf.rerun.failnodes': 'false'}) # Case empty 'skip_nodes' list
+    else:
+      self.properties.update({'oozie.wf.rerun.skip.nodes': skip_nodes})
 
-      get_oozie().rerun(self.oozie_id, properties=self.properties)
+    self.api.rerun(self.oozie_id, properties=self.properties)
 
-      LOG.info("Rerun: %s" % (self,))
-    finally:
-      get_oozie().setuser(prev)
+    LOG.info("Rerun: %s" % (self,))
 
     return self.oozie_id
 
@@ -113,15 +113,11 @@ class Submission(object):
   def rerun_coord(self, deployment_dir, params):
     jobtracker = cluster.get_cluster_addr_for_job_submission()
 
-    try:
-      prev = get_oozie().setuser(self.user.username)
-      self._update_properties(jobtracker, deployment_dir)
-      self.properties.update({'oozie.coord.application.path': deployment_dir})
+    self._update_properties(jobtracker, deployment_dir)
+    self.properties.update({'oozie.coord.application.path': deployment_dir})
 
-      get_oozie().job_control(self.oozie_id, action='coord-rerun', properties=self.properties, parameters=params)
-      LOG.info("Rerun: %s" % (self,))
-    finally:
-      get_oozie().setuser(prev)
+    self.api.job_control(self.oozie_id, action='coord-rerun', properties=self.properties, parameters=params)
+    LOG.info("Rerun: %s" % (self,))
 
     return self.oozie_id
 
@@ -129,14 +125,10 @@ class Submission(object):
   def rerun_bundle(self, deployment_dir, params):
     jobtracker = cluster.get_cluster_addr_for_job_submission()
 
-    try:
-      prev = get_oozie().setuser(self.user.username)
-      self._update_properties(jobtracker, deployment_dir)
-      self.properties.update({'oozie.bundle.application.path': deployment_dir})
-      get_oozie().job_control(self.oozie_id, action='bundle-rerun', properties=self.properties, parameters=params)
-      LOG.info("Rerun: %s" % (self,))
-    finally:
-      get_oozie().setuser(prev)
+    self._update_properties(jobtracker, deployment_dir)
+    self.properties.update({'oozie.bundle.application.path': deployment_dir})
+    self.api.job_control(self.oozie_id, action='bundle-rerun', properties=self.properties, parameters=params)
+    LOG.info("Rerun: %s" % (self,))
 
     return self.oozie_id
 
@@ -145,7 +137,7 @@ class Submission(object):
     try:
       deployment_dir = self._create_deployment_dir()
     except Exception, ex:
-      msg = _("Failed to access deployment directory.")
+      msg = _("Failed to create deployment directory: %s" % ex)
       LOG.exception(msg)
       raise PopupException(message=msg, detail=str(ex))
 
@@ -193,9 +185,14 @@ class Submission(object):
     # Automatic setup of the required directories if needed
     create_directories(self.fs)
 
-    if self.user != self.job.owner:      
+    # Case of a shared job
+    if self.user != self.job.owner:
       path = Hdfs.join(REMOTE_DEPLOYMENT_DIR.get(), '_%s_-oozie-%s-%s' % (self.user.username, self.job.id, time.time()))
-      self.fs.copy_remote_dir(self.job.deployment_dir, path, owner=self.user, dir_mode=0711)
+      # Shared coords or bundles might not have any existing workspaces
+      if self.fs.exists(self.job.deployment_dir):
+        self.fs.copy_remote_dir(self.job.deployment_dir, path, owner=self.user, dir_mode=0711)
+      else:
+        self._create_dir(path)
     else:
       path = self.job.deployment_dir
       self._create_dir(path)
@@ -218,39 +215,37 @@ class Submission(object):
         raise IOError(ex.errno, msg)
 
     if not self.fs.exists(path):
-      self._do_as(self.user.username , self.fs.mkdir, path, perms)
+      self._do_as(self.user.username, self.fs.mkdir, path, perms)
 
-    self._do_as(self.user.username , self.fs.chmod, path, perms)
+    self._do_as(self.user.username, self.fs.chmod, path, perms)
 
     return path
 
   def _copy_files(self, deployment_dir, oozie_xml):
     """
-    Copy the files over to the deployment directory. This should run as the
-    design owner.
+    Copy XML and the jar_path files from Java or MR actions to the deployment directory.
+    This should run as the workflow user.
     """
     xml_path = self.fs.join(deployment_dir, self.job.get_application_filename())
-    self.fs.create(xml_path, overwrite=True, permission=0644, data=oozie_xml)
+    self.fs.create(xml_path, overwrite=True, permission=0644, data=smart_str(oozie_xml))
     LOG.debug("Created %s" % (xml_path,))
 
-    # Copy the files over
+    # List jar files
     files = []
+    lib_path = self.fs.join(deployment_dir, 'lib')
     if hasattr(self.job, 'node_list'):
       for node in self.job.node_list:
-        if hasattr(node, 'jar_path') and node.jar_path.startswith('/'):
+        if hasattr(node, 'jar_path') and not node.jar_path.startswith(lib_path):
           files.append(node.jar_path)
 
+    # Copy the jar files to the workspace lib
     if files:
-      lib_path = self.fs.join(deployment_dir, 'lib')
-      if self.fs.exists(lib_path):
-        LOG.debug("Cleaning up old %s" % (lib_path,))
-        self.fs.rmtree(lib_path)
-
-      self.fs.mkdir(lib_path, 0755)
-      LOG.debug("Created %s" % (lib_path,))
-
-      for file in files:
-        self.fs.copyfile(file, self.fs.join(lib_path, self.fs.basename(file)))
+      for jar_file in files:
+        LOG.debug("Updating %s" % jar_file)
+        jar_lib_path = self.fs.join(lib_path, self.fs.basename(jar_file))
+        if self.fs.exists(jar_lib_path):
+          self.fs.remove(jar_lib_path, skip_trash=True)
+        self.fs.copyfile(jar_file, jar_lib_path)
 
   def _do_as(self, username, fn, *args, **kwargs):
     prev_user = self.fs.user
@@ -270,6 +265,14 @@ class Submission(object):
       LOG.warn("Failed to clean up workflow deployment directory for "
                "%s (owner %s). Caused by: %s",
                self.job.name, self.user, ex)
+
+  def _is_workflow(self):
+    from oozie.models import Workflow
+    return Workflow.get_application_path_key() in self.properties
+
+  def _is_coordinator(self):
+    from oozie.models import Coordinator
+    return Coordinator.get_application_path_key() in self.properties
 
 
 def create_directories(fs, directory_list=[]):

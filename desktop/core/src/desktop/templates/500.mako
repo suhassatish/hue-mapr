@@ -62,6 +62,7 @@ ${ commonheader(_('Error'), "", user) | n,unicode }
     </div>
   </div>
 
+
   <script type="text/javascript">
     function toggleDisplay(selector) {
       $(selector).slideToggle(500);

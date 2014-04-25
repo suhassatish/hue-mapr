@@ -17,15 +17,11 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 0.9.6\n"
 
-#: src/jobsub/conf.py:31
-msgid "Location on HDFS where the jobsub examples and templates are stored."
-msgstr "Emplacement sur HDFS où des exemples et modèles de jobsub sont stockés."
-
-#: src/jobsub/conf.py:36
+#: src/jobsub/conf.py:28
 msgid "Location on local filesystem where examples and template are stored."
 msgstr "Emplacement sur le système de fichiers local où des exemples et modèles sont stockés."
 
-#: src/jobsub/conf.py:42
+#: src/jobsub/conf.py:34
 msgid "Location on local filesystem where sample data is stored."
 msgstr "Emplacement sur le système de fichiers local où des données échantillons sont stockées."
 
@@ -82,15 +78,15 @@ msgstr "Mapper"
 msgid "Reducer"
 msgstr "Reducer"
 
-#: src/jobsub/models.py:136
+#: src/jobsub/models.py:132
 msgid "Name of the design, which must be unique per user."
 msgstr "Nom de la conception, devant être unique pour chaque utilisateur."
 
-#: src/jobsub/models.py:196 src/jobsub/models.py:245
+#: src/jobsub/models.py:192 src/jobsub/models.py:241
 msgid "List of paths to files to be added to the distributed cache."
 msgstr "Liste de chemins aux fichiers à ajouter au cache distribué."
 
-#: src/jobsub/models.py:198 src/jobsub/models.py:247
+#: src/jobsub/models.py:194 src/jobsub/models.py:243
 msgid "List of paths to archives to be added to the distributed cache."
 msgstr "Liste de chemins aux archives à ajouter au cache distribué."
 
@@ -533,7 +529,7 @@ msgstr "Conception de job (de type fs)"
 
 #: src/jobsub/templates/designs.mako:551
 msgid "Delete path"
-msgstr "Supprimer le chemin"
+msgstr "Supprimer le chemin d'accès"
 
 #: src/jobsub/templates/designs.mako:557 src/jobsub/templates/designs.mako:573
 #: src/jobsub/templates/designs.mako:589

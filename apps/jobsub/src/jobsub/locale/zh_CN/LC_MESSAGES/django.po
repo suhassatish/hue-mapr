@@ -17,15 +17,11 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 0.9.6\n"
 
-#: src/jobsub/conf.py:31
-msgid "Location on HDFS where the jobsub examples and templates are stored."
-msgstr "HDFS 中存储 jobsub 示例和模板的位置。"
-
-#: src/jobsub/conf.py:36
+#: src/jobsub/conf.py:28
 msgid "Location on local filesystem where examples and template are stored."
 msgstr "本地文件系统上存储示例和模板的位置。"
 
-#: src/jobsub/conf.py:42
+#: src/jobsub/conf.py:34
 msgid "Location on local filesystem where sample data is stored."
 msgstr "本地文件系统上存储示例数据的位置。"
 
@@ -82,15 +78,15 @@ msgstr "Mapper"
 msgid "Reducer"
 msgstr "Reducer"
 
-#: src/jobsub/models.py:136
+#: src/jobsub/models.py:132
 msgid "Name of the design, which must be unique per user."
 msgstr "设计的名称，每个用户的此名称必须唯一。"
 
-#: src/jobsub/models.py:196 src/jobsub/models.py:245
+#: src/jobsub/models.py:192 src/jobsub/models.py:241
 msgid "List of paths to files to be added to the distributed cache."
 msgstr "要添加到分布式缓存的文件的路径列表。"
 
-#: src/jobsub/models.py:198 src/jobsub/models.py:247
+#: src/jobsub/models.py:194 src/jobsub/models.py:243
 msgid "List of paths to archives to be added to the distributed cache."
 msgstr "要添加到分布式缓存的存档的路径列表。"
 

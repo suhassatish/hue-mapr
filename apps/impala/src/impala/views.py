@@ -15,15 +15,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-try:
-  import json
-except ImportError:
-  import simplejson as json
 
-from django.http import HttpResponse
-from django.utils.translation import ugettext as _
-from beeswax.views import install_examples as beeswax_install_examples
-from impala import server
+## Views are inherited from Beeswax.
 
 ## Most of the views are inherited from Beeswax.
 

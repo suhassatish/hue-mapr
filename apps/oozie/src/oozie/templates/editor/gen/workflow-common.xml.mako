@@ -24,6 +24,9 @@
 <%def name="filelink(path)">${ '#' in path and path or path + '#' + posixpath.basename(path) }</%def>
 
 
+<%def name="credentials(credentials)">${ ' cred="%s"' % ','.join([cred['name'] for cred in credentials if cred['value']]) if credentials else '' | n,unicode }</%def>
+
+
 <%def name="prepares(prepares)">
         % if prepares:
             <prepare>
@@ -64,4 +67,17 @@
             <archive>${ filelink(a['name']) }</archive>
         % endif
     % endfor
+</%def>
+
+
+<%def name="sla(element)">
+        % if element.sla_enabled:
+          <sla:info>
+          % for sla in element.sla:
+            % if sla['value'] and sla['key'] != 'enabled':
+            <sla:${ sla['key'] }>${ sla['value'] }</sla:${ sla['key'] }>
+            % endif
+          % endfor
+          </sla:info>
+        % endif
 </%def>

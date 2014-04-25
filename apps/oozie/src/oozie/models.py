@@ -15,77 +15,77 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-try:
-  import json
-except ImportError:
-  import simplejson as json
+import json
+import copy
 import logging
 import re
+import StringIO
 import time
+import zipfile
 
 from datetime import datetime,  timedelta
 from string import Template
 from itertools import chain
 
 from django.db import models
+from django.db.models import Q
 from django.core.urlresolvers import reverse
 from django.core.validators import RegexValidator
 from django.contrib.auth.models import User
+from django.contrib.contenttypes import generic
+from django.contrib.contenttypes.models import ContentType
 from django.forms.models import inlineformset_factory
-from django.utils.encoding import force_unicode
+from django.utils.encoding import force_unicode, smart_str
 from django.utils.translation import ugettext as _, ugettext_lazy as _t
 
 from desktop.log.access import access_warn
 from desktop.lib import django_mako
 from desktop.lib.exceptions_renderable import PopupException
 from desktop.lib.json_utils import JSONEncoderForHTML
+from desktop.models import Document
 from hadoop.fs.exceptions import WebHdfsException
 
 from hadoop.fs.hadoopfs import Hdfs
 from liboozie.submittion import Submission
 from liboozie.submittion import create_directories
 
-from oozie.conf import REMOTE_SAMPLE_DIR, SHARE_JOBS
-from timezones import TIMEZONES
+from oozie.conf import REMOTE_SAMPLE_DIR
+from oozie.utils import utc_datetime_format
+from oozie.timezones import TIMEZONES
 
 
 LOG = logging.getLogger(__name__)
 
 
 PATH_MAX = 512
-name_validator = RegexValidator(regex='[a-zA-Z_][\-_a-zA-Z0-9]{1,39}',
+name_validator = RegexValidator(regex='^[a-zA-Z_][\-_a-zA-Z0-9]{1,39}$',
                                 message=_('Enter a valid value: combination of 2 - 40 letters and digits starting by a letter'))
+# To sync in worklow.models.js
+DEFAULT_SLA = [
+    {'key': 'enabled', 'value': False},
+    {'key': 'nominal-time', 'value': ''},
+    {'key': 'should-start', 'value': ''},
+    {'key': 'should-end', 'value': ''},
+    {'key': 'max-duration', 'value': ''},
+    {'key': 'alert-events', 'value': ''},
+    {'key': 'alert-contact', 'value': ''},
+    {'key': 'notification-msg', 'value': ''},
+    {'key': 'upstream-apps', 'value': ''},
+]
 
 
-class TrashManager(models.Manager):
-  def trashed(self):
-    return super(TrashManager, self).get_query_set().filter(is_trashed=True)
-
-  def available(self):
-    return super(TrashManager, self).get_query_set().filter(is_trashed=False)
-
-
-"""
-Permissions:
-
-A Workflow/Coordinator can be accessed/submitted by its owner, a superuser or by anyone if its 'is_shared'
-property and SHARE_JOBS are set to True.
-
-A Workflow/Coordinator can be modified only by its owner or a superuser.
-
-Permissions checking happens by adding the decorators.
-"""
 class JobManager(models.Manager):
-  def is_accessible(self, user, job_id):
-    job = Job.objects.select_related().get(pk=job_id).get_full_node()
-    return job.is_accessible(user)
 
-  def is_accessible_or_exception(self, request, job_id, exception_class=PopupException):
+  def can_read(self, user, job_id):
+    job = Job.objects.select_related().get(pk=job_id).get_full_node()
+    return job.can_read(user)
+
+  def can_read_or_exception(self, request, job_id, exception_class=PopupException):
     if job_id is None:
       return
     try:
       job = Job.objects.select_related().get(pk=job_id).get_full_node()
-      if job.is_accessible(request.user):
+      if job.can_read(request.user):
         return job
       else:
         message = _("Permission denied. %(username)s does not have the permissions required to access job %(id)s") % \
@@ -106,14 +106,12 @@ class JobManager(models.Manager):
 
 class Job(models.Model):
   """
-  Base class for Workflows and Coordinators.
-
-  http://incubator.apache.org/oozie/docs/3.2.0-incubating/docs/index.html
+  Base class for Oozie Workflows, Coordinators and Bundles.
   """
-  owner = models.ForeignKey(User, db_index=True, verbose_name=_t('Owner'), help_text=_t('Person who can modify the job.'))
-  name = models.CharField(max_length=40, blank=False, validators=[name_validator],
+  owner = models.ForeignKey(User, db_index=True, verbose_name=_t('Owner'), help_text=_t('Person who can modify the job.')) # Deprecated
+  name = models.CharField(max_length=40, blank=False, validators=[name_validator], # Deprecated
       help_text=_t('Name of the job, which must be unique per user.'), verbose_name=_t('Name'))
-  description = models.CharField(max_length=1024, blank=True, verbose_name=_t('Description'),
+  description = models.CharField(max_length=1024, blank=True, verbose_name=_t('Description'), # Deprecated
                                  help_text=_t('The purpose of the job.'))
   last_modified = models.DateTimeField(auto_now=True, db_index=True, verbose_name=_t('Last modified'))
   schema_version = models.CharField(max_length=128, verbose_name=_t('Schema version'),
@@ -121,27 +119,29 @@ class Job(models.Model):
   deployment_dir = models.CharField(max_length=1024, blank=True, verbose_name=_t('HDFS deployment directory'),
                                     help_text=_t('The path on the HDFS where all the workflows and '
                                                 'dependencies must be uploaded.'))
-  is_shared = models.BooleanField(default=False, db_index=True, verbose_name=_t('Is shared'),
+  is_shared = models.BooleanField(default=False, db_index=True, verbose_name=_t('Is shared'), # Deprecated
                                   help_text=_t('Enable other users to have access to this job.'))
   parameters = models.TextField(default='[{"name":"oozie.use.system.libpath","value":"true"}]', verbose_name=_t('Oozie parameters'),
                                 help_text=_t('Parameters used at the submission time (e.g. market=US, oozie.use.system.libpath=true).'))
-  is_trashed = models.BooleanField(default=False, db_index=True, verbose_name=_t('Is trashed'),
+  is_trashed = models.BooleanField(default=False, db_index=True, verbose_name=_t('Is trashed'), blank=True, # Deprecated
                                    help_text=_t('If this job is trashed.'))
+  doc = generic.GenericRelation(Document, related_name='oozie_doc')
+  data = models.TextField(blank=True, default=json.dumps({}))  # e.g. data=json.dumps({'sla': [python data], ...})
 
   objects = JobManager()
   unique_together = ('owner', 'name')
 
   def delete(self, skip_trash=False, *args, **kwargs):
     if skip_trash:
+      self.doc.all().delete()
       return super(Job, self).delete(*args, **kwargs)
     else:
-      self.is_trashed = True
-      self.save()
+      for job in self.doc.all():
+        job.send_to_trash()
       return self
 
   def restore(self):
-    self.is_trashed = False
-    self.save()
+    self.doc.get().restore_from_trash()
     return self
 
   def save(self):
@@ -157,7 +157,7 @@ class Job(models.Model):
 
   def __str__(self):
     res = '%s - %s' % (force_unicode(self.name), self.owner)
-    return res.encode('utf-8', 'xmlcharrefreplace')
+    return force_unicode(res)
 
   def get_full_node(self):
     try:
@@ -182,6 +182,11 @@ class Job(models.Model):
   def get_parameters(self):
     return json.loads(self.parameters)
 
+  def add_parameter(self, name, value):
+    oozie_parameters = self.get_parameters()
+    oozie_parameters.append({"name": name, "value": value})
+    self.parameters = json.dumps(oozie_parameters)
+
   @property
   def parameters_escapejs(self):
     return self._escapejs_parameters_list(self.parameters)
@@ -191,6 +196,7 @@ class Job(models.Model):
 
   @property
   def status(self):
+    # TODO
     if self.is_shared:
       return _('shared')
     else:
@@ -199,22 +205,66 @@ class Job(models.Model):
   def find_all_parameters(self):
     params = self.find_parameters()
 
+    if hasattr(self, 'sla') and self.sla_enabled:
+      for param in find_json_parameters(self.sla):
+        if param not in params:
+          params[param] = ''
+
     for param in self.get_parameters():
       params[param['name'].strip()] = param['value']
 
     return  [{'name': name, 'value': value} for name, value in params.iteritems()]
 
-  def is_accessible(self, user):
-    return user.is_superuser or self.owner == user or (SHARE_JOBS.get() and self.is_shared)
+  def can_read(self, user):
+    try:
+      return self.doc.get().can_read(user)
+    except Exception, e:
+      LOG.error('can_read failed because the object has more than one document: %s' % self.doc.all())
+      raise e
 
   def is_editable(self, user):
     """Only owners or admins can modify a job."""
-    return user.is_superuser or self.owner == user
+    return user.is_superuser or self.owner == user or self.doc.get().can_write(user)
+
+  @property
+  def data_dict(self):
+    if not self.data:
+      self.data = json.dumps({})
+    data_python = json.loads(self.data)
+    # Backward compatibility
+    if 'sla' not in data_python:
+      data_python['sla'] = copy.deepcopy(DEFAULT_SLA)
+    if 'credentials' not in data_python:
+      data_python['credentials'] = []
+    return data_python
+
+  @property
+  def data_js_escaped(self):
+    return json.dumps(self.data_dict, cls=JSONEncoderForHTML)
+
+  @property
+  def sla(self):
+    return self.data_dict['sla']
+
+  @sla.setter
+  def sla(self, sla):
+    data_ = self.data_dict
+    data_['sla'] = sla
+    self.data = json.dumps(data_)
+
+  @property
+  def sla_enabled(self):
+    return self.sla[0]['value'] # #1 is enabled
 
 
-class WorkflowManager(TrashManager):
+class WorkflowManager(models.Manager):
+  SCHEMA_VERSION = {
+    '0.4': 'uri:oozie:workflow:0.4',
+    '0.5': 'uri:oozie:workflow:0.5'
+  }
+
   def new_workflow(self, owner):
-    workflow = Workflow(owner=owner, schema_version='uri:oozie:workflow:0.4')
+    workflow = Workflow(owner=owner, schema_version=WorkflowManager.SCHEMA_VERSION['0.4'])
 
     kill = Kill(name='kill', workflow=workflow, node_type=Kill.node_type)
     end = End(name='end', workflow=workflow, node_type=End.node_type)
@@ -228,7 +278,7 @@ class WorkflowManager(TrashManager):
 
     return workflow
 
-  def initialize(self, workflow, fs):
+  def initialize(self, workflow, fs=None):
     Kill.objects.create(name='kill', workflow=workflow, node_type=Kill.node_type)
     end = End.objects.create(name='end', workflow=workflow, node_type=End.node_type)
     start = Start.objects.create(name='start', workflow=workflow, node_type=Start.node_type)
@@ -242,7 +292,10 @@ class WorkflowManager(TrashManager):
     workflow.end = end
     workflow.save()
 
-    self.check_workspace(workflow, fs)
+    Document.objects.link(workflow, owner=workflow.owner, name=workflow.name, description=workflow.description)
+
+    if fs:
+      self.check_workspace(workflow, fs)
 
   def check_workspace(self, workflow, fs):
     create_directories(fs, [REMOTE_SAMPLE_DIR.get()])
@@ -272,9 +325,6 @@ class WorkflowManager(TrashManager):
 
 
 class Workflow(Job):
-  """
-  http://incubator.apache.org/oozie/docs/3.2.0-incubating/docs/WorkflowFunctionalSpec.html
-  """
   is_single = models.BooleanField(default=False)
   start = models.ForeignKey('Start', related_name='start_workflow', blank=True, null=True)
   end  = models.ForeignKey('End', related_name='end_workflow',  blank=True, null=True)
@@ -290,6 +340,8 @@ class Workflow(Job):
   objects = WorkflowManager()
 
   HUE_ID = 'hue-id-w'
+  ICON = '/oozie/static/art/icon_oozie_workflow_24.png'
+  METADATA_FORMAT_VERSION = "0.0.1"
 
   def get_type(self):
     return 'workflow'
@@ -302,14 +354,24 @@ class Workflow(Job):
     nodes = self.node_set.all()
     links = Link.objects.filter(parent__workflow=self)
 
+    name = self.name + '-copy'
+    if new_owner is not None:
+      owner = new_owner
+    else:
+      owner = self.owner
+
+    copy_doc = self.doc.get().copy(name=name, owner=owner)
+
     copy = self
     copy.pk = None
     copy.id = None
-    copy.name += '-copy'
+    copy.name = name
     copy.deployment_dir = ''
-    if new_owner is not None:
-      copy.owner = new_owner
+    copy.owner = owner
     copy.save()
+
+    copy.doc.all().delete()
+    copy.doc.add(copy_doc)
 
     old_nodes_mapping = {}
 
@@ -376,6 +438,10 @@ class Workflow(Job):
   def find_parameters(self):
     params = set()
 
+    if self.sla_enabled:
+      for param in find_json_parameters(self.sla):
+        params.add(param)
+
     for node in self.node_list:
       if hasattr(node, 'find_parameters'):
         params.update(node.find_parameters())
@@ -415,7 +481,10 @@ class Workflow(Job):
     return 'workflow.xml'
 
   def get_absolute_url(self):
-    return reverse('oozie:edit_workflow', kwargs={'workflow': self.id})
+    if self.doc.get().extra == 'jobsub':
+      return '/jobsub/#edit-design/%s' % self.id
+    else:
+      return reverse('oozie:edit_workflow', kwargs={'workflow': self.id}) + '#editWorkflow'
 
   def get_hierarchy(self):
     node = Start.objects.get(workflow=self) # Uncached version of start.
@@ -461,7 +530,7 @@ class Workflow(Job):
     controls = oozie_workflow.get_control_flow_actions()
     WorkflowFormSet = inlineformset_factory(Workflow, Node, form=NodeMetaForm, max_num=0, can_order=False, can_delete=False)
     forms = WorkflowFormSet(instance=self).forms
-    template='editor/gen/workflow-graph-status.xml.mako'
+    template = 'editor/gen/workflow-graph-status.xml.mako'
 
     index = dict([(form.instance.id, form) for form in forms])
     actions_index = dict([(action.name, action) for action in actions])
@@ -471,7 +540,7 @@ class Workflow(Job):
 
   @classmethod
   def gen_status_graph_from_xml(cls, user, oozie_workflow):
-    from oozie.import_workflow import import_workflow # Circular dependency
+    from oozie.importlib.workflows import import_workflow # Circular dependency
     try:
       workflow = Workflow.objects.new_workflow(user)
       workflow.save()
@@ -482,14 +551,59 @@ class Workflow(Job):
       except Exception, e:
         LOG.warn('Workflow %s could not be converted to a graph: %s' % (oozie_workflow.id, e))
     finally:
-      workflow.delete()
+      if workflow.pk is not None:
+        workflow.delete(skip_trash=True)
     return None, []
 
   def to_xml(self, mapping=None):
     if mapping is None:
       mapping = {}
     tmpl = 'editor/gen/workflow.xml.mako'
-    return re.sub(re.compile('\s*\n+', re.MULTILINE), '\n', django_mako.render_to_string(tmpl, {'workflow': self, 'mapping': mapping})).encode('utf-8', 'xmlcharrefreplace')
+    xml = re.sub(re.compile('\s*\n+', re.MULTILINE), '\n', django_mako.render_to_string(tmpl, {'workflow': self, 'mapping': mapping}))
+    return force_unicode(xml)
+
+  def compress(self, mapping=None, fp=StringIO.StringIO()):
+    metadata = {
+      'version': Workflow.METADATA_FORMAT_VERSION,
+      'nodes': {},
+      'attributes': {
+        'description': self.description,
+        'deployment_dir': self.deployment_dir
+      }
+    }
+    for node in self.node_list:
+      if hasattr(node, 'jar_path'):
+        metadata['nodes'][node.name] = {
+          'attributes': {
+            'jar_path': node.jar_path
+          }
+        }
+
+    xml = self.to_xml(mapping=mapping)
+
+    zfile = zipfile.ZipFile(fp, 'w')
+    zfile.writestr("workflow.xml", smart_str(xml))
+    zfile.writestr("workflow-metadata.json", smart_str(json.dumps(metadata)))
+    zfile.close()
+
+    return fp
+
+  @classmethod
+  def decompress(cls, fp):
+    zfile = zipfile.ZipFile(fp, 'r')
+    metadata_json = zfile.read('workflow-metadata.json')
+    metadata = json.loads(metadata_json)
+    workflow_xml = zfile.read('workflow.xml')
+    return workflow_xml, metadata
+
+  @property
+  def sla_workflow_enabled(self):
+    return self.sla_enabled or any([node.sla_enabled for node in self.node_list if hasattr(node, 'sla_enabled')])
+
+  @property
+  def credentials(self):
+    sub_lists = [node.credentials for node in self.node_list if hasattr(node, 'credentials')]
+    return set([item['name'] for l in sub_lists for item in l if item['value']])
 
 
 class Link(models.Model):
@@ -527,6 +641,7 @@ class Node(models.Model):
                                help_text=_t('The type of action (e.g. MapReduce, Pig...)'))
   workflow = models.ForeignKey(Workflow)
   children = models.ManyToManyField('self', related_name='parents', symmetrical=False, through=Link)
+  data = models.TextField(blank=True, default=json.dumps({}))
 
   unique_together = ('workflow', 'name')
 
@@ -663,11 +778,44 @@ class Node(models.Model):
       'node_type': self.node_type
     })
 
+  @property
+  def data_dict(self):
+    if not self.data:
+      self.data = json.dumps({})
+    data_python = json.loads(self.data)
+    # Backward compatibility
+    if 'sla' not in data_python:
+      data_python['sla'] = copy.deepcopy(DEFAULT_SLA)
+    if 'credentials' not in data_python:
+      data_python['credentials'] = []
+    return data_python
+
+  @property
+  def sla(self):
+    return self.data_dict['sla']
+
+  @sla.setter
+  def sla(self, sla):
+    data_ = self.data_dict
+    data_['sla'] = sla
+    self.data = json.dumps(data_)
+
+  @property
+  def sla_enabled(self):
+    return self.sla[0]['value'] # #1 is enabled
+
+  @property
+  def credentials(self):
+    return self.data_dict['credentials']
+
+  @credentials.setter
+  def credentials(self, credentials):
+    data_ = self.data_dict
+    data_['credentials'] = credentials
+    self.data = json.dumps(data_)
+
 
 class Action(Node):
-  """
-  http://incubator.apache.org/oozie/docs/3.2.0-incubating/docs/WorkflowFunctionalSpec.html#a3.2_Workflow_Action_Nodes
-  """
   types = ()
 
   class Meta:
@@ -690,7 +838,7 @@ class Action(Node):
 #  - maybe actions_utils.mako
 
 class Mapreduce(Action):
-  PARAM_FIELDS = ('files', 'archives', 'job_properties', 'jar_path', 'prepares')
+  PARAM_FIELDS = ('files', 'archives', 'job_properties', 'jar_path', 'prepares', 'sla')
   node_type = 'mapreduce'
 
   files = models.TextField(default="[]", verbose_name=_t('Files'),
@@ -723,7 +871,7 @@ class Mapreduce(Action):
 
 
 class Streaming(Action):
-  PARAM_FIELDS = ('files', 'archives', 'job_properties', 'mapper', 'reducer')
+  PARAM_FIELDS = ('files', 'archives', 'job_properties', 'mapper', 'reducer', 'sla')
   node_type = "streaming"
 
   files = models.TextField(default="[]", verbose_name=_t('Files'),
@@ -749,7 +897,7 @@ class Streaming(Action):
 
 class Java(Action):
   PARAM_FIELDS = ('files', 'archives', 'jar_path', 'main_class', 'args',
-                  'java_opts', 'job_properties', 'prepares')
+                  'java_opts', 'job_properties', 'prepares', 'sla')
   node_type = "java"
 
   files = models.TextField(default="[]", verbose_name=_t('Files'),
@@ -796,7 +944,7 @@ class Java(Action):
 
 
 class Pig(Action):
-  PARAM_FIELDS = ('files', 'archives', 'job_properties', 'params', 'prepares')
+  PARAM_FIELDS = ('files', 'archives', 'job_properties', 'params', 'prepares', 'sla', 'credentials')
   node_type = 'pig'
 
   script_path = models.CharField(max_length=256, blank=False, verbose_name=_t('Script name'),
@@ -834,7 +982,7 @@ class Pig(Action):
 
 
 class Hive(Action):
-  PARAM_FIELDS = ('files', 'archives', 'job_properties', 'params', 'prepares')
+  PARAM_FIELDS = ('files', 'archives', 'job_properties', 'params', 'prepares', 'sla', 'credentials')
   node_type = 'hive'
 
   script_path = models.CharField(max_length=256, blank=False, verbose_name=_t('Script name'),
@@ -845,14 +993,14 @@ class Hive(Action):
       help_text=_t('List of names or paths of files to be added to the distributed cache and the task running directory.'))
   archives = models.TextField(default="[]", verbose_name=_t('Archives'),
       help_text=_t('List of names or paths of the archives to be added to the distributed cache.'))
-  job_properties = models.TextField(default='[{"name":"oozie.hive.defaults","value":"hive-site.xml"}]',
+  job_properties = models.TextField(default='[]',
                                     verbose_name=_t('Hadoop job properties'),
                                     help_text=_t('For the job configuration (e.g. mapred.job.queue.name=production)'))
   prepares = models.TextField(default="[]", verbose_name=_t('Prepares'),
                               help_text=_t('List of absolute paths to delete, then create, before starting the application. '
                                            'This should be used exclusively for directory cleanup.'))
-  job_xml = models.CharField(max_length=PATH_MAX, default='', blank=True, verbose_name=_t('Job XML'),
-                             help_text=_t('Refer to a Hive hive-site.xml file bundled in the workflow deployment directory. '))
+  job_xml = models.CharField(max_length=PATH_MAX, default='hive-config.xml', blank=True, verbose_name=_t('Job XML'),
+                             help_text=_t('Refer to a Hive hive-config.xml file bundled in the workflow deployment directory. Pick a name different than hive-site.xml.'))
 
   def get_properties(self):
     return json.loads(self.job_properties)
@@ -871,7 +1019,7 @@ class Hive(Action):
 
 
 class Sqoop(Action):
-  PARAM_FIELDS = ('files', 'archives', 'job_properties', 'params', 'prepares')
+  PARAM_FIELDS = ('files', 'archives', 'job_properties', 'params', 'prepares', 'sla', 'credentials')
   node_type = 'sqoop'
 
   script_path = models.TextField(blank=True, verbose_name=_t('Command'), default='',
@@ -912,7 +1060,7 @@ class Sqoop(Action):
 
 
 class Ssh(Action):
-  PARAM_FIELDS = ('user', 'host', 'command', 'params')
+  PARAM_FIELDS = ('user', 'host', 'command', 'params', 'sla', 'credentials')
   node_type = 'ssh'
 
   user = models.CharField(max_length=64, verbose_name=_t('User'),
@@ -934,7 +1082,7 @@ class Ssh(Action):
 
 
 class Shell(Action):
-  PARAM_FIELDS = ('files', 'archives', 'job_properties', 'params', 'prepares')
+  PARAM_FIELDS = ('files', 'archives', 'job_properties', 'params', 'prepares', 'sla', 'credentials')
   node_type = 'shell'
 
   command = models.CharField(max_length=256, blank=False, verbose_name=_t('%(type)s command') % {'type': node_type.title()},
@@ -977,7 +1125,7 @@ class Shell(Action):
 
 
 class DistCp(Action):
-  PARAM_FIELDS = ('job_properties', 'params', 'prepares')
+  PARAM_FIELDS = ('job_properties', 'params', 'prepares', 'sla', 'credentials')
   node_type = 'distcp'
 
   params = models.TextField(default="[]", verbose_name=_t('Arguments'),
@@ -1005,7 +1153,7 @@ class DistCp(Action):
 
 
 class Fs(Action):
-  PARAM_FIELDS = ('deletes', 'mkdirs', 'moves', 'chmods', 'touchzs')
+  PARAM_FIELDS = ('deletes', 'mkdirs', 'moves', 'chmods', 'touchzs', 'sla', 'credentials')
   node_type = 'fs'
 
   deletes = models.TextField(default="[]", verbose_name=_t('Delete path'), blank=True,
@@ -1040,7 +1188,7 @@ class Fs(Action):
 
 
 class Email(Action):
-  PARAM_FIELDS = ('to', 'cc', 'subject', 'body')
+  PARAM_FIELDS = ('to', 'cc', 'subject', 'body', 'sla', 'credentials')
   node_type = 'email'
 
   to = models.TextField(default='', verbose_name=_t('TO addresses'), help_text=_t('Comma-separated values.'))
@@ -1050,7 +1198,7 @@ class Email(Action):
 
 
 class SubWorkflow(Action):
-  PARAM_FIELDS = ('subworkflow', 'propagate_configuration', 'job_properties')
+  PARAM_FIELDS = ('subworkflow', 'propagate_configuration', 'job_properties', 'sla', 'credentials')
   node_type = 'subworkflow'
 
   sub_workflow = models.ForeignKey(Workflow, db_index=True, verbose_name=_t('Sub-workflow'),
@@ -1065,7 +1213,7 @@ class SubWorkflow(Action):
 
 
 class Generic(Action):
-  PARAM_FIELDS = ('xml',)
+  PARAM_FIELDS = ('xml', 'credentials', 'sla', 'credentials')
   node_type = 'generic'
 
   xml = models.TextField(default='', verbose_name=_t('XML of the custom action'),
@@ -1234,16 +1382,13 @@ DATASET_FREQUENCY = ['MINUTE', 'HOUR', 'DAY', 'MONTH', 'YEAR']
 
 
 class Coordinator(Job):
-  """
-  http://oozie.apache.org/docs/3.3.0/CoordinatorFunctionalSpec.html
-  """
   frequency_number = models.SmallIntegerField(default=1, choices=FREQUENCY_NUMBERS, verbose_name=_t('Frequency number'),
                                               help_text=_t('The number of units of the rate at which '
-                                                           'data is periodically created.'))
+                                                           'data is periodically created.')) # unused
   frequency_unit = models.CharField(max_length=20, choices=FREQUENCY_UNITS, default='days', verbose_name=_t('Frequency unit'),
-                                    help_text=_t('The unit of the rate at which data is periodically created.'))
+                                    help_text=_t('The unit of the rate at which data is periodically created.')) # unused
   timezone = models.CharField(max_length=24, choices=TIMEZONES, default='America/Los_Angeles', verbose_name=_t('Timezone'),
-                              help_text=_t('The timezone of the coordinator.'))
+                              help_text=_t('The timezone of the coordinator. Only used for managing the daylight saving time changes when combining several coordinators.'))
   start = models.DateTimeField(default=datetime.today(), verbose_name=_t('Start'),
                                help_text=_t('When to start the first workflow.'))
   end = models.DateTimeField(default=datetime.today() + timedelta(days=3), verbose_name=_t('End'),
@@ -1268,11 +1413,11 @@ class Coordinator(Job):
                                  help_text=_t('The materialization or creation throttle value for its coordinator actions. '
                                               'Number of maximum coordinator actions that are allowed to be in WAITING state concurrently.'))
   job_properties = models.TextField(default='[]', verbose_name=_t('Workflow properties'),
-                                    help_text=_t('Configuration properties to transmit to the workflow, e.g. limit=100, and EL functions, e.g. username=${coord:user()}'))
-
-  objects = TrashManager()
+                                    help_text=_t('Additional properties to transmit to the workflow, e.g. limit=100, and EL functions, e.g. username=${coord:user()}'))
 
   HUE_ID = 'hue-id-c'
+  ICON = '/oozie/static/art/icon_oozie_coordinator_24.png'
+  METADATA_FORMAT_VERSION = "0.0.1"
 
   def get_type(self):
     return 'coordinator'
@@ -1288,14 +1433,24 @@ class Coordinator(Job):
     data_inputs = DataInput.objects.filter(coordinator=self)
     data_outputs = DataOutput.objects.filter(coordinator=self)
 
+    name = self.name + '-copy'
+    if new_owner is not None:
+      owner = new_owner
+    else:
+      owner = self.owner
+
+    copy_doc = self.doc.get().copy(name=name, owner=owner)
+
     copy = self
     copy.pk = None
     copy.id = None
-    copy.name += '-copy'
+    copy.name = name
     copy.deployment_dir = ''
-    if new_owner is not None:
-      copy.owner = new_owner
+    copy.owner = owner
     copy.save()
+
+    copy.doc.all().delete()
+    copy.doc.add(copy_doc)
 
     old_dataset_mapping = {}
 
@@ -1332,7 +1487,21 @@ class Coordinator(Job):
     return 'coordinator.xml'
 
   def get_properties(self):
-    return json.loads(self.job_properties)
+    props = json.loads(self.job_properties)
+    index = [prop['name'] for prop in props]
+
+    for prop in self.workflow.get_parameters():
+      if not prop['name'] in index:
+        props.append(prop)
+        index.append(prop['name'])
+
+    # Remove DataInputs and DataOutputs
+    datainput_names = [_input.name for _input in self.datainput_set.all()]
+    dataoutput_names = [_output.name for _output in self.dataoutput_set.all()]
+    removable_names = datainput_names + dataoutput_names
+    props = filter(lambda prop: prop['name'] not in removable_names, props)
+
+    return props
 
   @property
   def job_properties_escapejs(self):
@@ -1360,6 +1529,13 @@ class Coordinator(Job):
   def find_parameters(self):
     params = self.workflow.find_parameters()
 
+    for param in find_parameters(self, ['job_properties']):
+      params[param] = ''
+
+    if self.sla_enabled:
+      for param in find_json_parameters(self.sla):
+        params.add(param)
+
     for dataset in self.dataset_set.all():
       for param in find_parameters(dataset, ['uri']):
         if param not in set(DATASET_FREQUENCY):
@@ -1376,18 +1552,70 @@ class Coordinator(Job):
 
     return params
 
+  def compress(self, mapping=None, fp=StringIO.StringIO()):
+    metadata = {
+      'version': Coordinator.METADATA_FORMAT_VERSION,
+      'workflow': self.workflow.name,
+      'attributes': {
+        'description': self.description,
+        'deployment_dir': self.deployment_dir
+      }
+    }
 
-def utc_datetime_format(utc_time):
-  return utc_time.strftime("%Y-%m-%dT%H:%MZ")
+    xml = self.to_xml(mapping=mapping)
+
+    zfile = zipfile.ZipFile(fp, 'w')
+    zfile.writestr("coordinator.xml", smart_str(xml))
+    zfile.writestr("coordinator-metadata.json", smart_str(json.dumps(metadata)))
+    zfile.close()
+
+    return fp
+
+  @classmethod
+  def decompress(cls, fp):
+    zfile = zipfile.ZipFile(fp, 'r')
+    metadata_json = zfile.read('coordinator-metadata.json')
+    metadata = json.loads(metadata_json)
+    xml = zfile.read('coordinator.xml')
+    return xml, metadata
+
+  @property
+  def sla_jsescaped(self):
+    return json.dumps(self.sla, cls=JSONEncoderForHTML)
+
+  @property
+  def cron_frequency(self):
+    if 'cron_frequency' in self.data_dict:
+      return self.data_dict['cron_frequency']
+    else:
+      # Backward compatibility
+      freq = '0 0 * * *'
+      if self.frequency_number == 1:
+        if self.frequency_unit == 'MINUTES':
+          freq = '* * * * *'
+        elif self.frequency_unit == 'HOURS':
+          freq = '0 * * * *'
+        elif self.frequency_unit == 'DAYS':
+          freq = '0 0 * * *'
+        elif self.frequency_unit == 'MONTH':
+          freq = '0 0 * * *'
+      return {'frequency': freq, 'isAdvancedCron': False}
+
+
+  @cron_frequency.setter
+  def cron_frequency(self, cron_frequency):
+    data_ = self.data_dict
+    data_['cron_frequency'] = cron_frequency
+    self.data = json.dumps(data_)
 
 
 class DatasetManager(models.Manager):
-  def is_accessible_or_exception(self, request, dataset_id):
+  def can_read_or_exception(self, request, dataset_id):
     if dataset_id is None:
       return
     try:
       dataset = Dataset.objects.get(pk=dataset_id)
-      if dataset.coordinator.is_accessible(request.user):
+      if dataset.coordinator.can_read(request.user):
         return dataset
       else:
         message = _("Permission denied. %(username)s does not have the permissions to access dataset %(id)s.") % \
@@ -1421,7 +1649,7 @@ class Dataset(models.Model):
                                       'dataset instance. The URI consist of constants (e.g. ${YEAR}/${MONTH}) and '
                                       'configuration properties (e.g. /home/${USER}/projects/${PROJECT})'))
   timezone = models.CharField(max_length=24, choices=TIMEZONES, default='America/Los_Angeles', verbose_name=_t('Timezone'),
-                              help_text=_t('The timezone of the dataset.'))
+                              help_text=_t('The timezone of the dataset. Only used for managing the daylight saving time changes when combining several datasets.'))
   done_flag = models.CharField(max_length=64, blank=True, default='', verbose_name=_t('Done flag'),
                                help_text=_t('The done file for the data set. If the Done flag is not specified, then Oozie '
                                             'configures Hadoop to create a _SUCCESS file in the output directory. If Done '
@@ -1509,7 +1737,7 @@ class BundledCoordinator(models.Model):
   coordinator = models.ForeignKey(Coordinator, verbose_name=_t('Coordinator'),
                                   help_text=_t('The coordinator to batch with other coordinators.'))
 
-  parameters = models.TextField(default='[{"name":"oozie.use.system.libpath","value":"true"}]', verbose_name=_t('Oozie parameters'),
+  parameters = models.TextField(default='[{"name":"oozie.use.system.libpath","value":"true"}]', verbose_name=_t('Parameters'),
                                 help_text=_t('Constants used at the submission time (e.g. market=US, oozie.use.system.libpath=true).'))
 
   def get_parameters(self):
@@ -1517,16 +1745,13 @@ class BundledCoordinator(models.Model):
 
 
 class Bundle(Job):
-  """
-  http://oozie.apache.org/docs/3.3.0/BundleFunctionalSpec.html
-  """
   kick_off_time = models.DateTimeField(default=datetime.today(), verbose_name=_t('Start'),
                                        help_text=_t('When to start the first coordinators.'))
   coordinators = models.ManyToManyField(Coordinator, through='BundledCoordinator')
 
-  objects = TrashManager()
-
   HUE_ID = 'hue-id-b'
+  ICON = '/oozie/static/art/icon_oozie_bundle_24.png'
+  METADATA_FORMAT_VERSION = '0.0.1'
 
   def get_type(self):
     return 'bundle'
@@ -1535,19 +1760,34 @@ class Bundle(Job):
     if mapping is None:
       mapping = {}
     tmpl = "editor/gen/bundle.xml.mako"
-    return re.sub(re.compile('\s*\n+', re.MULTILINE), '\n', django_mako.render_to_string(tmpl, {'bundle': self, 'mapping': mapping})).encode('utf-8', 'xmlcharrefreplace')
+
+    return force_unicode(
+              re.sub(re.compile('\s*\n+', re.MULTILINE), '\n', django_mako.render_to_string(tmpl, {
+                'bundle': self,
+                'mapping': mapping
+           })))
 
   def clone(self, new_owner=None):
     bundleds = BundledCoordinator.objects.filter(bundle=self)
 
+    name = self.name + '-copy'
+    if new_owner is not None:
+      owner = new_owner
+    else:
+      owner = self.owner
+
+    copy_doc = self.doc.get().copy(name=name, owner=owner)
+
     copy = self
     copy.pk = None
     copy.id = None
-    copy.name += '-copy'
+    copy.name = name
     copy.deployment_dir = ''
-    if new_owner is not None:
-      copy.owner = new_owner
+    copy.owner = owner
     copy.save()
+
+    copy.doc.all().delete()
+    copy.doc.add(copy_doc)
 
     for bundled in bundleds:
       bundled.pk = None
@@ -1571,18 +1811,44 @@ class Bundle(Job):
   def find_parameters(self):
     params = {}
 
-    for bundled in self.coordinators.all():
+    for bundled in BundledCoordinator.objects.filter(bundle=self):
       for param in bundled.coordinator.find_parameters():
         params[param] = ''
 
-      for param in find_parameters(bundled, ['parameters']):
-        params[param] = ''
+      for param in bundled.get_parameters():
+        params.pop(param['name'], None)
 
     return params
 
   @property
   def kick_off_time_utc(self):
     return utc_datetime_format(self.kick_off_time)
+
+  def compress(self, mapping=None, fp=StringIO.StringIO()):
+    metadata = {
+      'version': Bundle.METADATA_FORMAT_VERSION,
+      'attributes': {
+        'description': self.description,
+        'deployment_dir': self.deployment_dir
+      }
+    }
+
+    xml = self.to_xml(mapping=mapping)
+
+    zfile = zipfile.ZipFile(fp, 'w')
+    zfile.writestr("bundle.xml", smart_str(xml))
+    zfile.writestr("bundle-metadata.json", smart_str(json.dumps(metadata)))
+    zfile.close()
+
+    return fp
+
+  @classmethod
+  def decompress(cls, fp):
+    zfile = zipfile.ZipFile(fp, 'r')
+    metadata_json = zfile.read('bundle-metadata.json')
+    metadata = json.loads(metadata_json)
+    xml = zfile.read('bundle.xml')
+    return xml, metadata
 
 
 class HistoryManager(models.Manager):
@@ -1654,6 +1920,20 @@ class History(models.Model):
 
     return history
 
+
+def get_link(oozie_id):
+  link = ''
+
+  if 'W@' in oozie_id:
+    link = reverse('oozie:list_oozie_workflow_action', kwargs={'action': oozie_id})
+  elif oozie_id.endswith('W'):
+    link = reverse('oozie:list_oozie_workflow', kwargs={'job_id': oozie_id})
+  elif oozie_id.endswith('C'):
+    link = reverse('oozie:list_oozie_coordinator', kwargs={'job_id': oozie_id})
+
+  return link
+
+
 def find_parameters(instance, fields=None):
   """Find parameters in the given fields"""
   if fields is None:
@@ -1662,11 +1942,31 @@ def find_parameters(instance, fields=None):
   params = []
   for field in fields:
     data = getattr(instance, field)
-    if isinstance(data, basestring):
+    if field == 'sla' and not instance.sla_enabled:
+      continue
+    if isinstance(data, list):
+      params.extend(find_json_parameters(data))
+    elif isinstance(data, basestring):
       for match in Template.pattern.finditer(data):
         name = match.group('braced')
         if name is not None:
           params.append(name)
+
+  return params
+
+def find_json_parameters(fields):
+  # To make smarter
+  # Input is list of json dict
+  params = []
+
+  for field in fields:
+    for data in field.values():
+      if isinstance(data, basestring):
+        for match in Template.pattern.finditer(data):
+          name = match.group('braced')
+          if name is not None:
+            params.append(name)
+
   return params
 
 

@@ -15,10 +15,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-try:
-  import json
-except ImportError:
-  import simplejson as json
+
+import base64
+import json
 import logging
 import re
 import base64
@@ -26,38 +25,46 @@ import StringIO
 
 from avro import schema, datafile, io
 
-from django.core.urlresolvers import reverse
 from django.http import HttpResponse
 from django.utils.translation import ugettext as _
 
 from desktop.lib.django_util import render
-from desktop.lib.exceptions_renderable import PopupException
 
 from hbase import conf
+from hbase.settings import DJANGO_APPS
 from hbase.api import HbaseApi
+from hbase.management.commands import hbase_setup
 from server.hbase_lib import get_thrift_type
 
 LOG = logging.getLogger(__name__)
 
 
-def app(request):
-  return render('app.mako', request, {})
+def has_write_access(user):
+  return user.is_superuser or user.has_hue_permission(action="write", app=DJANGO_APPS[0])
 
-#action/cluster/arg1/arg2/arg3...
-def api_router(request, url): #on split, deserialize anything
+def app(request):
+  return render('app.mako', request, {
+    'can_write': has_write_access(request.user)
+  })
+
+# action/cluster/arg1/arg2/arg3...
+def api_router(request, url): # On split, deserialize anything
+
   def safe_json_load(raw):
     try:
       return json.loads(re.sub(r'(?:\")([0-9]+)(?:\")', r'\1', str(raw)))
     except:
       return raw
+
   def deserialize(data):
     if type(data) == dict:
       special_type = get_thrift_type(data.pop('hue-thrift-type', ''))
       if special_type:
         return special_type(data)
+
     if hasattr(data, "__iter__"):
       for i, item in enumerate(data):
-        data[i] = deserialize(item) #sets local binding, needs to set in data
+        data[i] = deserialize(item) # Sets local binding, needs to set in data
     return data
   url_params = [safe_json_load((arg, request.POST.get(arg[0:16], arg))[arg[0:15] == 'hbase-post-key-']) for arg in re.split(r'(?<!\\)/', url.strip('/'))] #deserialize later
   if request.POST.get('dest', False):
@@ -86,6 +93,7 @@ def api_dump(response):
           df_reader = datafile.DataFileReader(output, rec_reader)
           return json.dumps(clean([record for record in df_reader]))
         return base64.b64encode(data)
+
       if hasattr(data, "__iter__"):
         if type(data) is dict:
           for i in data:
@@ -100,7 +108,8 @@ def api_dump(response):
       else:
         for key in dir(data):
           value = getattr(data, key)
-          if value is not None and not hasattr(value, '__call__') and sum([int(bool(re.search(ignore, key))) for ignore in ignored_fields]) == 0:
+          if value is not None and not hasattr(value, '__call__') and sum([int(bool(re.search(ignore, key)))
+                                                                           for ignore in ignored_fields]) == 0:
             cleaned[key] = clean(value)
       return cleaned
   return HttpResponse(json.dumps({ 'data': clean(response), 'truncated': True, 'limit': trunc_limit }), content_type="application/json")

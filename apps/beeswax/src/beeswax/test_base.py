@@ -17,118 +17,134 @@
 # limitations under the License.
 #
 
-"""
-Common infrastructure for beeswax tests
-"""
-
 import atexit
+import json
 import logging
 import os
-import re
 import subprocess
 import time
 
-import fb303.ttypes
 from nose.tools import assert_true, assert_false
+from django.core.urlresolvers import reverse
 from django.contrib.auth.models import User
 
+
 from desktop.lib.django_test_util import make_logged_in_client
+from desktop.lib.paths import get_run_root
+from desktop.lib.python_util import find_unused_port
+from desktop.lib.security_util import get_localhost_name
 from hadoop import pseudo_hdfs4
 
 import beeswax.conf
 
-from beeswax.conf import SERVER_INTERFACE
-from beeswax.models import HIVE_SERVER2
 from beeswax.server.dbms import get_query_server_config
 from beeswax.server import dbms
 
 
+HIVE_SERVER_TEST_PORT = find_unused_port()
 _INITIALIZED = False
-_SHARED_BEESWAX_SERVER_PROCESS = None
-_SHARED_BEESWAX_SERVER = None
-_SHARED_BEESWAX_SERVER_CLOSER = None
+_SHARED_HIVE_SERVER_PROCESS = None
+_SHARED_HIVE_SERVER = None
+_SHARED_HIVE_SERVER_CLOSER = None
 
-BEESWAXD_TEST_PORT = 6969
+
 LOG = logging.getLogger(__name__)
 
 
 def _start_server(cluster):
-  """
-  Start beeswaxd and metastore
-  """
-  script = beeswax.conf.BEESWAX_SERVER_BIN.get()
-  args = [
-    script,
-    '--beeswax',
-    str(BEESWAXD_TEST_PORT),
-    '--metastore',
-    str(BEESWAXD_TEST_PORT + 1),
-    '--desktop-host',
-    str('127.0.0.1'),
-    '--desktop-port',
-    str('42'),           # Make up a port here. Tests don't start an actual server.
-  ]
+  args = [beeswax.conf.HIVE_SERVER_BIN.get()]
 
-  env = cluster.mr1_env.copy()
+  env = cluster._mr2_env.copy()
+
+  hadoop_cp_proc = subprocess.Popen(args=[get_run_root('ext/hadoop/hadoop') + '/bin/hadoop', 'classpath'], env=env, cwd=cluster._tmpdir, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+  hadoop_cp_proc.wait()
+  hadoop_cp = hadoop_cp_proc.stdout.read().strip()
 
   env.update({
-    'HIVE_CONF_DIR': beeswax.conf.BEESWAX_HIVE_CONF_DIR.get(),
-    'HIVE_HOME' : beeswax.conf.BEESWAX_HIVE_HOME_DIR.get(),
+    'HADOOP_HOME': get_run_root('ext/hadoop/hadoop'), # Used only by Hive for some reason
+    'HIVE_CONF_DIR': beeswax.conf.HIVE_CONF_DIR.get(),
+    'HIVE_SERVER2_THRIFT_PORT': str(HIVE_SERVER_TEST_PORT),
+    'HADOOP_MAPRED_HOME': get_run_root('ext/hadoop/hadoop') + '/share/hadoop/mapreduce',
+    # Links created in jenkins script.
+    # If missing classes when booting HS2, check here.
+    'AUX_CLASSPATH':
+       get_run_root('ext/hadoop/hadoop') + '/share/hadoop/hdfs/hadoop-hdfs.jar'
+       + ':' +
+       get_run_root('ext/hadoop/hadoop') + '/share/hadoop/common/lib/hadoop-auth.jar'
+       + ':' +
+       get_run_root('ext/hadoop/hadoop') + '/share/hadoop/common/hadoop-common.jar'
+       + ':' +
+       get_run_root('ext/hadoop/hadoop') + '/share/hadoop/mapreduce/hadoop-mapreduce-client-core.jar'
+       ,
+      'HADOOP_CLASSPATH': hadoop_cp,
   })
+
   if os.getenv("JAVA_HOME"):
     env["JAVA_HOME"] = os.getenv("JAVA_HOME")
 
   LOG.info("Executing %s, env %s, cwd %s" % (repr(args), repr(env), cluster._tmpdir))
-  process = subprocess.Popen(args=args, env=env, cwd=cluster._tmpdir, stdin=subprocess.PIPE)
-  return process
-
+  return subprocess.Popen(args=args, env=env, cwd=cluster._tmpdir, stdin=subprocess.PIPE)
 
 
 def get_shared_beeswax_server():
-  # Make it happens only once
-  global _SHARED_BEESWAX_SERVER
-  global _SHARED_BEESWAX_SERVER_CLOSER
-  if _SHARED_BEESWAX_SERVER is None:
-    # Copy hive-default.xml.template from BEESWAX_HIVE_CONF_DIR before it is set to
-    # /my/bogus/path
-    default_xml = file(beeswax.conf.BEESWAX_HIVE_CONF_DIR.get() + "/hive-default.xml.template").read()
-
-    finish = (
-      beeswax.conf.BEESWAX_SERVER_HOST.set_for_testing("localhost"),
-      beeswax.conf.BEESWAX_SERVER_PORT.set_for_testing(BEESWAXD_TEST_PORT),
-      beeswax.conf.BEESWAX_META_SERVER_HOST.set_for_testing("localhost"),
-      beeswax.conf.BEESWAX_META_SERVER_PORT.set_for_testing(BEESWAXD_TEST_PORT + 1),
-      # Use a bogus path to avoid loading the normal hive-site.xml
-      beeswax.conf.BEESWAX_HIVE_CONF_DIR.set_for_testing('/my/bogus/path')
-    )
+  global _SHARED_HIVE_SERVER
+  global _SHARED_HIVE_SERVER_CLOSER
+  if _SHARED_HIVE_SERVER is None:
 
     cluster = pseudo_hdfs4.shared_cluster()
 
-    # Copy hive-default.xml into the mini_cluster's conf dir, which happens to be
-    # in the cluster's tmpdir. This tmpdir is determined during the mini_cluster
-    # startup, during which BEESWAX_HIVE_CONF_DIR needs to be set to
-    # /my/bogus/path. Hence the step of writing to memory.
-    # hive-default.xml will get picked up by the beeswax_server during startup
-    file(cluster._tmpdir + "/conf/hive-default.xml", 'w').write(default_xml)
+    HIVE_CONF = cluster.hadoop_conf_dir
+    finish = (
+      beeswax.conf.HIVE_SERVER_HOST.set_for_testing(get_localhost_name()),
+      beeswax.conf.HIVE_SERVER_PORT.set_for_testing(HIVE_SERVER_TEST_PORT),
+      beeswax.conf.HIVE_SERVER_BIN.set_for_testing(get_run_root('ext/hive/hive') + '/bin/hiveserver2'),
+      beeswax.conf.HIVE_CONF_DIR.set_for_testing(HIVE_CONF)
+    )
 
-    global _SHARED_BEESWAX_SERVER_PROCESS
+    default_xml = """<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
 
-    if SERVER_INTERFACE.get() == HIVE_SERVER2:
-      _SHARED_BEESWAX_SERVER_PROCESS = 1
+<configuration>
 
-    if _SHARED_BEESWAX_SERVER_PROCESS is None:
+<property>
+  <name>javax.jdo.option.ConnectionURL</name>
+  <value>jdbc:derby:;databaseName=%(root)s/metastore_db;create=true</value>
+  <description>JDBC connect string for a JDBC metastore</description>
+</property>
+
+ <property>
+   <name>hive.server2.enable.impersonation</name>
+   <value>false</value>
+ </property>
+
+<property>
+  <name>hive.querylog.location</name>
+  <value>%(querylog)s</value>
+</property>
+
+</configuration>
+""" % {'root': cluster._tmpdir, 'querylog': cluster.log_dir + '/hive'}
+
+    file(HIVE_CONF + '/hive-site.xml', 'w').write(default_xml)
+
+    global _SHARED_HIVE_SERVER_PROCESS
+
+    if _SHARED_HIVE_SERVER_PROCESS is None:
       p = _start_server(cluster)
-      _SHARED_BEESWAX_SERVER_PROCESS = p
+      LOG.info("started")
+      cluster.fs.do_as_superuser(cluster.fs.chmod, '/tmp', 01777)
+
+      _SHARED_HIVE_SERVER_PROCESS = p
       def kill():
-        LOG.info("Killing beeswax server (pid %d)." % p.pid)
+        LOG.info("Killing server (pid %d)." % p.pid)
         os.kill(p.pid, 9)
         p.wait()
       atexit.register(kill)
 
-      # Wait for server to come up, by repeatedly trying.
       start = time.time()
       started = False
       sleep = 0.001
+
       make_logged_in_client()
       user = User.objects.get(username='test')
       query_server = get_query_server_config()
@@ -136,71 +152,73 @@ def get_shared_beeswax_server():
 
       while not started and time.time() - start < 20.0:
         try:
-          db.echo("echo")
-          if db.getStatus() == fb303.ttypes.fb_status.ALIVE:
-            started = True
-            break
+          db.open_session(user)
+          started = True
+          break
+        except Exception, e:
+          LOG.info('HiveServer2 server status not started yet after: %s' % e)
           time.sleep(sleep)
           sleep *= 2
-        except:
-          time.sleep(sleep)
-          sleep *= 2
-          pass
+
       if not started:
-        raise Exception("Beeswax server took too long to come up.")
-
-      # Make sure /tmp is 0777
-      cluster.fs.setuser(cluster.superuser)
-      if not cluster.fs.isdir('/tmp'):
-        cluster.fs.mkdir('/tmp', 0777)
-      else:
-        cluster.fs.chmod('/tmp', 0777)
-
-      cluster.fs.chmod(cluster._tmpdir, 0777)
-      cluster.fs.chmod(cluster._tmpdir + '/hadoop_tmp_dir/mapred', 0777)
+        raise Exception("Server took too long to come up.")
 
     def s():
       for f in finish:
         f()
       cluster.stop()
 
-    _SHARED_BEESWAX_SERVER, _SHARED_BEESWAX_SERVER_CLOSER = cluster, s
+    _SHARED_HIVE_SERVER, _SHARED_HIVE_SERVER_CLOSER = cluster, s
 
-  return _SHARED_BEESWAX_SERVER, _SHARED_BEESWAX_SERVER_CLOSER
-
-
-REFRESH_RE = re.compile('<\s*meta\s+http-equiv="refresh"\s+content="\d*;([^"]*)"\s*/>', re.I)
+  return _SHARED_HIVE_SERVER, _SHARED_HIVE_SERVER_CLOSER
 
 
 def wait_for_query_to_finish(client, response, max=30.0):
-  logging.info(str(response.template) + ": " + str(response.content))
+  # Take a async API execute_query() response in input
+
   start = time.time()
   sleep_time = 0.05
-  # We don't check response.template == "watch_wait.mako" here,
-  # because Django's response.template stuff is not thread-safe.
-  while "Waiting for query..." in response.content:
+
+  if is_finished(response): # aka Has error at submission
+    return response
+
+  content = json.loads(response.content)
+  watch_url = content['watch_url']
+
+  response = client.get(watch_url, follow=True)
+
+  # Loop and check status
+  while not is_finished(response):
     time.sleep(sleep_time)
     sleep_time = min(1.0, sleep_time * 2) # Capped exponential
     if (time.time() - start) > max:
-      message = "Query took too long! %d seconds" % (time.time() - start,)
+      message = "Query took too long! %d seconds" % (time.time() - start)
       LOG.warning(message)
       raise Exception(message)
 
-    # Find out url to retry
-    match = REFRESH_RE.search(response.content)
-    if match is not None:
-      url = match.group(1)
-      url = url.lstrip('url=')
-    else:
-      url = response.request['PATH_INFO']
-    response = client.get(url, follow=True)
+    response = client.get(watch_url, follow=True)
+
   return response
 
+
+def is_finished(response):
+  status = json.loads(response.content)
+  return 'error' in status or status.get('isSuccess') or status.get('isFailure')
+
+
+def fetch_query_result_data(client, status_response):
+  # Take a wait_for_query_to_finish() response in input
+  status = json.loads(status_response.content)
+
+  response = client.get("/beeswax/results/%s/0?format=json" % status.get('id'))
+  content = json.loads(response.content)
+
+  return content
 
 def make_query(client, query, submission_type="Execute",
                udfs=None, settings=None, resources=None,
                wait=False, name=None, desc=None, local=True,
-               is_parameterized=True, max=30.0, database='default', email_notify=False, **kwargs):
+               is_parameterized=True, max=30.0, database='default', email_notify=False, params=None, **kwargs):
   """
   Prepares arguments for the execute view.
 
@@ -209,13 +227,17 @@ def make_query(client, query, submission_type="Execute",
 
   if settings is None:
     settings = []
+  if params is None:
+    params = []
   if local:
     # Tests run faster if not run against the real cluster.
-    settings.append( ("mapred.job.tracker", "local") )
+    settings.append(('mapreduce.framework.name', 'local'))
 
   # Prepares arguments for the execute view.
   parameters = {
     'query-query': query,
+    'query-name': name if name else '',
+    'query-desc': desc if desc else '',
     'query-is_parameterized': is_parameterized and "on",
     'query-database': database,
     'query-email_notify': email_notify and "on",
@@ -251,12 +273,22 @@ def make_query(client, query, submission_type="Execute",
     parameters["file_resources-%d-type" % i] = str(type)
     parameters["file_resources-%d-path" % i] = str(path)
     parameters["file_resources-%d-_exists" % i] = 'True'
+  for name, value in params:
+    parameters["parameterization-%s" % name] = value
 
   kwargs.setdefault('follow', True)
-  response = client.post("/beeswax/execute/", parameters, **kwargs)
+  execute_url = reverse("beeswax:api_execute")
+
+  if submission_type == 'Explain':
+    execute_url += "?explain=true"
+  if submission_type == 'Save':
+    execute_url = reverse("beeswax:api_save_design")
+
+  response = client.post(execute_url, parameters, **kwargs)
 
   if wait:
     return wait_for_query_to_finish(client, response, max)
+
   return response
 
 
@@ -278,10 +310,6 @@ def verify_history(client, fragment, design=None, reverse=False):
     except KeyError:
       pass
 
-  # This could happen if we issue multiple requests in parallel.
-  # The capturing of Django response context is not thread safe.
-  # Also see:
-  #   http://docs.djangoproject.com/en/1.2/topics/testing/#testing-responses
   LOG.warn('Cannot find history size. Response context clobbered')
   return -1
 

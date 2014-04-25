@@ -15,11 +15,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
+import os
+import tempfile
+
+from django.conf import settings
+from nose.tools import assert_equal, assert_false, assert_true
+
+import desktop.conf
+
+from desktop.conf import AUDIT_EVENT_LOG_DIR
 from desktop.lib.django_test_util import make_logged_in_client
 from desktop.lib.test_utils import add_permission
 import desktop.conf
-
-from nose.tools import assert_equal
 
 
 def test_jframe_middleware():

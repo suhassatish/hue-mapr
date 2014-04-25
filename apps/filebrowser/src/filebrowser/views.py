@@ -14,26 +14,18 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
-# Implements simple file system browsing operations.
-#
-# Useful resources:
-#   django/views/static.py manages django's internal directory index
 
 import errno
 import logging
+import json
 import mimetypes
 import operator
+import parquet
 import posixpath
 import re
 import shutil
 import stat as stat_module
 import os
-
-try:
-  import json
-except ImportError:
-  import simplejson as json
 
 from datetime import datetime
 
@@ -50,6 +42,7 @@ from django.template.defaultfilters import urlencode
 from django.utils.functional import curry
 from django.utils.http import http_date, urlquote
 from django.utils.html import escape
+from django.utils.translation import ugettext as _
 from cStringIO import StringIO
 from gzip import GzipFile
 from avro import datafile, io
@@ -58,6 +51,10 @@ from desktop.lib import i18n, paginator
 from desktop.lib.conf import coerce_bool
 from desktop.lib.django_util import make_absolute, render, render_json, format_preserving_redirect
 from desktop.lib.exceptions_renderable import PopupException
+from hadoop.fs.hadoopfs import Hdfs
+from hadoop.fs.exceptions import WebHdfsException
+from hadoop.fs.fsutils import do_newfile_save, do_overwrite_save
+
 from filebrowser.conf import MAX_SNAPPY_DECOMPRESSION_SIZE
 from filebrowser.lib.archives import archive_factory
 from filebrowser.lib.rwx import filetype, rwx
@@ -65,11 +62,6 @@ from filebrowser.lib import xxd
 from filebrowser.forms import RenameForm, UploadFileForm, UploadArchiveForm, MkDirForm, EditorForm, TouchForm,\
                               RenameFormSet, RmTreeFormSet, ChmodFormSet, ChownFormSet, CopyFormSet, RestoreFormSet,\
                               TrashPurgeForm
-from hadoop.core_site import get_trash_interval
-from hadoop.fs.hadoopfs import Hdfs
-from hadoop.fs.exceptions import WebHdfsException
-
-from django.utils.translation import ugettext as _
 
 
 DEFAULT_CHUNK_SIZE_BYTES = 1024 * 4 # 4KB
@@ -89,6 +81,14 @@ INLINE_DISPLAY_MIMETYPE = re.compile('video/|image/|audio/|application/pdf|appli
                                      'application/vnd\.openxmlformats')
 
 logger = logging.getLogger(__name__)
+
+
+class ParquetOptions(object):
+    def __init__(self, col=None, format='json', no_headers=True, limit=-1):
+        self.col = col
+        self.format = format
+        self.no_headers = no_headers
+        self.limit = limit
 
 
 def index(request):
@@ -149,6 +149,9 @@ def view(request, path):
 
     # default_to_home is set in bootstrap.js
     if 'default_to_trash' in request.GET:
+        home_trash = request.fs.join(request.fs.trash_path, 'Current', request.user.get_home_directory()[1:])
+        if request.fs.isdir(home_trash):
+            return format_preserving_redirect(request, reverse(view, kwargs=dict(path=home_trash)))
         if request.fs.isdir(request.fs.trash_path):
             return format_preserving_redirect(request, reverse(view, kwargs=dict(path=request.fs.trash_path)))
 
@@ -217,6 +220,7 @@ def edit(request, path, form=None):
 
     data = dict(
         exists=(stats is not None),
+        stats=stats,
         form=form,
         path=path,
         filename=os.path.basename(path),
@@ -247,87 +251,17 @@ def save_file(request):
         return edit(request, path, form=form)
 
     if request.fs.exists(path):
-        _do_overwrite_save(request.fs, path,
+        do_overwrite_save(request.fs, path,
                            form.cleaned_data['contents'],
                            form.cleaned_data['encoding'])
     else:
-        _do_newfile_save(request.fs, path,
+        do_newfile_save(request.fs, path,
                          form.cleaned_data['contents'],
                          form.cleaned_data['encoding'])
 
     messages.info(request, _('Saved %(path)s.') % {'path': os.path.basename(path)})
     request.path = reverse("filebrowser.views.edit", kwargs=dict(path=path))
     return edit(request, path, form)
-
-
-def _do_overwrite_save(fs, path, data, encoding):
-    """
-    Atomically (best-effort) save the specified data to the given path
-    on the filesystem.
-
-    TODO(todd) should this be in some fsutil.py?
-    """
-    # TODO(todd) Should probably do an advisory permissions check here to
-    # see if we're likely to fail (eg make sure we own the file
-    # and can write to the dir)
-
-    # First write somewhat-kinda-atomically to a staging file
-    # so that if we fail, we don't clobber the old one
-    path_dest = path + "._hue_new"
-
-    new_file = fs.open(path_dest, "w")
-    try:
-        try:
-            new_file.write(data.encode(encoding))
-            logging.info("Wrote to " + path_dest)
-        finally:
-            new_file.close()
-    except Exception, e:
-        # An error occurred in writing, we should clean up
-        # the tmp file if it exists, before re-raising
-        try:
-            fs.remove(path_dest)
-        except:
-            pass
-        raise e
-
-    # Try to match the permissions and ownership of the old file
-    cur_stats = fs.stats(path)
-    try:
-        fs.chmod(path_dest, stat_module.S_IMODE(cur_stats['mode']))
-    except:
-        logging.warn("Could not chmod new file %s to match old file %s" % (
-            path_dest, path), exc_info=True)
-        # but not the end of the world - keep going
-
-    try:
-        fs.chown(path_dest, cur_stats['user'], cur_stats['group'])
-    except:
-        logging.warn("Could not chown new file %s to match old file %s" % (
-            path_dest, path), exc_info=True)
-        # but not the end of the world - keep going
-
-    # Now delete the old - nothing we can do here to recover
-    fs.remove(path)
-
-    # Now move the new one into place
-    # If this fails, then we have no reason to assume
-    # we can do anything to recover, since we know the
-    # destination shouldn't already exist (we just deleted it above)
-    fs.rename(path_dest, path)
-
-
-def _do_newfile_save(fs, path, data, encoding):
-    """
-    Save data to the path 'path' on the filesystem 'fs'.
-
-    There must not be a pre-existing file at that path.
-    """
-    new_file = fs.open(path, "w")
-    try:
-        new_file.write(data.encode(encoding))
-    finally:
-        new_file.close()
 
 
 def parse_breadcrumbs(path):
@@ -425,8 +359,6 @@ def listdir_paged(request, path):
     if not request.fs.isdir(path):
         raise PopupException("Not a directory: %s" % (path,))
 
-    trash_enabled = get_trash_interval()
-
     pagenum = int(request.GET.get('pagenum', 1))
     pagesize = int(request.GET.get('pagesize', 30))
 
@@ -488,7 +420,6 @@ def listdir_paged(request, path):
         'page': _massage_page(page),
         'pagesize': pagesize,
         'home_directory': request.fs.isdir(home_dir_path) and home_dir_path or None,
-        'trash_enabled': trash_enabled,
         'sortby': sortby,
         'descending': descending_param,
         # The following should probably be deprecated
@@ -574,11 +505,13 @@ def display(request, path):
     if not request.fs.isfile(path):
         raise PopupException(_("Not a file: '%(path)s'") % {'path': path})
 
-    mimetype = mimetypes.guess_type(path)[0]
+    # display inline files just if it's not an ajax request
+    if not request.is_ajax():
+      mimetype = mimetypes.guess_type(path)[0]
 
-    if mimetype is not None and INLINE_DISPLAY_MIMETYPE.search(mimetype):
-      path_enc = urlencode(path)
-      return redirect(reverse('filebrowser.views.download', args=[path_enc]) + '?disposition=inline')
+      if mimetype is not None and INLINE_DISPLAY_MIMETYPE.search(mimetype):
+        path_enc = urlencode(path)
+        return redirect(reverse('filebrowser.views.download', args=[path_enc]) + '?disposition=inline')
 
     stats = request.fs.stats(path)
     encoding = request.GET.get('encoding') or i18n.get_site_encoding()
@@ -688,10 +621,10 @@ def read_contents(codec_type, path, fs, offset, length):
         fhandle = fs.open(path)
         stats = fs.stats(path)
 
-        # Auto codec detection for [gzip, avro, none]
-        # Only done when codec_type is unset
-        contents = fhandle.read(3)
+        # Auto codec detection for [gzip, avro, snappy, none]
         if not codec_type:
+            contents = fhandle.read(3)
+            fhandle.seek(0)
             codec_type = 'none'
             if path.endswith('.gz') and detect_gzip(contents):
                 codec_type = 'gzip'
@@ -703,20 +636,16 @@ def read_contents(codec_type, path, fs, offset, length):
                     if stats.size > MAX_SNAPPY_DECOMPRESSION_SIZE.get():
                         raise PopupException(_('Failed to validate snappy compressed file. File size is greater than allowed max snappy decompression size of %d.') % MAX_SNAPPY_DECOMPRESSION_SIZE.get())
 
-                    if detect_snappy(contents + fhandle.read()):
-                        codec_type = 'snappy_avro'
         fhandle.seek(0)
-
-        if codec_type == 'avro' and snappy_installed() and detect_snappy(fhandle.read()):
-            fhandle.seek(0)
-            codec_type = 'snappy_avro'
 
         if codec_type == 'gzip':
             contents = _read_gzip(fhandle, path, offset, length, stats)
         elif codec_type == 'avro':
             contents = _read_avro(fhandle, path, offset, length, stats)
-        elif codec_type == 'snappy_avro':
-            contents = _read_snappy_avro(fhandle, path, offset, length, stats)
+        elif codec_type == 'parquet':
+            contents = _read_parquet(fhandle, path, offset, length, stats)
+        elif codec_type == 'snappy':
+            contents = _read_snappy(fhandle, path, offset, length, stats)
         else:
             # for 'none' type.
             contents = _read_simple(fhandle, path, offset, length, stats)
@@ -735,14 +664,14 @@ def _decompress_snappy(compressed_content):
         raise PopupException(_('Failed to decompress snappy compressed file.'), detail=e)
 
 
-def _read_snappy_avro(fhandle, path, offset, length, stats):
+def _read_snappy(fhandle, path, offset, length, stats):
     if not snappy_installed():
         raise PopupException(_('Failed to decompress snappy compressed file. Snappy is not installed.'))
 
     if stats.size > MAX_SNAPPY_DECOMPRESSION_SIZE.get():
         raise PopupException(_('Failed to decompress snappy compressed file. File size is greater than allowed max snappy decompression size of %d.') % MAX_SNAPPY_DECOMPRESSION_SIZE.get())
 
-    return _read_avro(StringIO(_decompress_snappy(fhandle.read())), path, offset, length, stats)
+    return _read_simple(StringIO(_decompress_snappy(fhandle.read())), path, offset, length, stats)
 
 
 def _read_avro(fhandle, path, offset, length, stats):
@@ -766,6 +695,17 @@ def _read_avro(fhandle, path, offset, length, stats):
         logging.warn("Could not read avro file at %s" % path, exc_info=True)
         raise PopupException(_("Failed to read Avro file."))
     return contents
+
+
+def _read_parquet(fhandle, path, offset, length, stats):
+    try:
+        dumped_data = StringIO()
+        parquet._dump(fhandle, ParquetOptions(), out=dumped_data)
+        dumped_data.seek(offset)
+        return dumped_data.read()
+    except:
+        logging.warn("Could not read parquet file at %s" % path, exc_info=True)
+        raise PopupException(_("Failed to read Parquet file."))
 
 
 def _read_gzip(fhandle, path, offset, length, stats):
@@ -813,6 +753,13 @@ def detect_snappy(contents):
         return snappy.isValidCompressed(contents)
     except:
         return False
+
+
+def detect_parquet(fhandle):
+    """
+    Detect parquet from magic header bytes.
+    """
+    return parquet._check_header_magic_bytes(fhandle)
 
 
 def snappy_installed():
@@ -1261,18 +1208,26 @@ def _upload_archive(request):
         dest = request.fs.join(form.cleaned_data['dest'], uploaded_file.name)
         try:
             # Extract if necessary
-            # Make sure dest path is without '.zip' extension
+            # Make sure dest path is without the extension
             if dest.endswith('.zip'):
-                temp_path = archive_factory(uploaded_file).extract()
+                temp_path = archive_factory(uploaded_file, 'zip').extract()
                 if not temp_path:
                     raise PopupException(_('Could not extract contents of file.'))
                 # Move the file to where it belongs
                 dest = dest[:-4]
-                request.fs.copyFromLocal(temp_path, dest)
-                shutil.rmtree(temp_path)
-                response['status'] = 0
+            elif dest.endswith('.tar.gz'):
+                print uploaded_file
+                temp_path = archive_factory(uploaded_file, 'tgz').extract()
+                if not temp_path:
+                    raise PopupException(_('Could not extract contents of file.'))
+                # Move the file to where it belongs
+                dest = dest[:-7]
             else:
                 raise PopupException(_('Could not interpret archive type.'))
+
+            request.fs.copyFromLocal(temp_path, dest)
+            shutil.rmtree(temp_path)
+            response['status'] = 0
 
         except IOError, ex:
             already_exists = False

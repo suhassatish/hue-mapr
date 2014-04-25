@@ -38,7 +38,15 @@ msgstr "Nome principal do Kerberos para o Impala. Normalmente \"impala/hostname.
 msgid "No available Impalad to send queries to."
 msgstr "Sem Impala disponível para enviar consultas."
 
-#: src/impala/views.py:35
-msgid "A POST request is required."
-msgstr "É necessário um pedido POST."
+#: src/impala/conf.py:46
+msgid "Turn on/off impersonation mechanism when talking to Impala."
+msgstr "Ligar/desligar mecanismo de representação ao comunicar com o Impala."
+
+#: src/impala/conf.py:52
+msgid "Number of initial rows of a resultset to ask Impala to cache in order to support re-fetching them for downloading them. Set to 0 for disabling the option and backward compatibility."
+msgstr "Número de linhas iniciais de um conjunto de resultados para pedir ao Impala para colocar em cache, para apoiar re-obtenções para os transferir. Ajuste para 0 para desactivar a opção e a retrocompatibilidade."
+
+#: src/impala/conf.py:72
+msgid "No available Impalad to send queries to."
+msgstr "Sem Impalad disponível para enviar consultas."
 

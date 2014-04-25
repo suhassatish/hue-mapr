@@ -25,7 +25,7 @@ msgstr "Ubicación, en HDFS, en la que se almacenan los ejemplos y las plantilla
 msgid "Location on local filesystem where examples and template are stored."
 msgstr "Ubicación, en el sistema de archivos local, en la que se almacenan los ejemplos y las plantillas."
 
-#: src/jobsub/conf.py:42
+#: src/jobsub/conf.py:34
 msgid "Location on local filesystem where sample data is stored."
 msgstr "Ubicación, en el sistema de archivos local, en la que se almacenan los datos de ejemplo."
 
@@ -82,15 +82,15 @@ msgstr "Mapper"
 msgid "Reducer"
 msgstr "Reducer"
 
-#: src/jobsub/models.py:136
+#: src/jobsub/models.py:132
 msgid "Name of the design, which must be unique per user."
 msgstr "Nombre del diseño, que debe ser único para cada usuario."
 
-#: src/jobsub/models.py:196 src/jobsub/models.py:245
+#: src/jobsub/models.py:192 src/jobsub/models.py:241
 msgid "List of paths to files to be added to the distributed cache."
 msgstr "Lista de rutas a archivos que se van a agregar a la caché distribuida."
 
-#: src/jobsub/models.py:198 src/jobsub/models.py:247
+#: src/jobsub/models.py:194 src/jobsub/models.py:243
 msgid "List of paths to archives to be added to the distributed cache."
 msgstr "Lista de rutas a almacenamientos que se van a agregar a la caché distribuida."
 

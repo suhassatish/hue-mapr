@@ -45,34 +45,59 @@ def static_pattern(urlprefix, root):
 admin.autodiscover()
 
 # Some django-wide URLs
-dynamic_patterns = patterns('',
-  (r'^accounts/login/$', 'desktop.auth.views.dt_login'),
-  (r'^accounts/logout/$', 'desktop.auth.views.dt_logout', {'next_page': '/'}),
-  (r'^logs$','desktop.views.log_view'),
-  (r'^home$','desktop.views.home'),
-  (r'^dump_config$','desktop.views.dump_config'),
-  (r'^download_logs$','desktop.views.download_log_view'),
-  (r'^bootstrap.js$', 'desktop.views.bootstrap'),
-  (r'^profile$', 'desktop.auth.views.profile'),
-  (r'^prefs/(?P<key>\w+)?$', 'desktop.views.prefs'),
-  (r'^status_bar/?$', 'desktop.views.status_bar'),
-  (r'^admin/', include(admin.site.urls)),
-  (r'^debug/threads$', 'desktop.views.threads'),
-  (r'^debug/who_am_i$', 'desktop.views.who_am_i'),
-  (r'^debug/check_config$', 'desktop.views.check_config'),
-  (r'^debug/check_config_ajax$', 'desktop.views.check_config_ajax'),
-  (r'^log_frontend_event$', 'desktop.views.log_frontend_event'),
+dynamic_patterns = patterns('desktop.auth.views',
+  (r'^accounts/login/$', 'dt_login'),
+  (r'^accounts/logout/$', 'dt_logout', {'next_page': '/'}),
+  (r'^profile$', 'profile'),
+  (r'^login/oauth/?$', 'oauth_login'),
+  (r'^login/oauth_authenticated/?$', 'oauth_authenticated'),
+)
 
-  # Oauth
-  (r'^login/oauth/?$', 'desktop.auth.views.oauth_login'),
-  (r'^login/oauth_authenticated/?$', 'desktop.auth.views.oauth_authenticated'),
+dynamic_patterns += patterns('desktop.views',
+  (r'^logs$','log_view'),
+  (r'^home$','home'),
+  (r'^desktop/dump_config$','dump_config'),
+  (r'^desktop/download_logs$','download_log_view'),
+  (r'^bootstrap.js$', 'bootstrap'), # unused
+
+  (r'^desktop/prefs/(?P<key>\w+)?$', 'prefs'),
+  (r'^desktop/status_bar/?$', 'status_bar'),
+  (r'^desktop/debug/threads$', 'threads'),
+  (r'^desktop/debug/memory$', 'memory'),
+  (r'^desktop/debug/who_am_i$', 'who_am_i'),
+  (r'^desktop/debug/check_config$', 'check_config'),
+  (r'^desktop/debug/check_config_ajax$', 'check_config_ajax'),
+  (r'^desktop/log_frontend_event$', 'log_frontend_event'),
 
   # Jasmine
-  (r'^jasmine', 'desktop.views.jasmine'),
+  (r'^jasmine', 'jasmine'),
+
+  # Unsupported browsers
+  (r'^boohoo$','unsupported'),
 
   # Top level web page!
-  (r'^$', 'desktop.views.index'),
+  (r'^$', 'index'),
 )
+
+dynamic_patterns += patterns('desktop.api',
+  # Tags
+  (r'^desktop/api/tag/add_tag$', 'add_tag'),
+  (r'^desktop/api/tag/remove_tag$', 'remove_tag'),
+  (r'^desktop/api/doc/tag$', 'tag'),
+  (r'^desktop/api/doc/update_tags$', 'update_tags'),
+
+  # Permissions
+  (r'^desktop/api/doc/update_permissions', 'update_permissions'),
+)
+
+dynamic_patterns += patterns('useradmin.views',
+  (r'^desktop/api/users/autocomplete', 'list_for_autocomplete'),
+)
+
+dynamic_patterns += patterns('',
+  (r'^admin/', include(admin.site.urls)),
+)
+
 
 static_patterns = []
 

@@ -371,7 +371,7 @@ msgstr "Impossible d'extraire le contenu du fichier."
 msgid "Could not interpret archive type."
 msgstr "Impossible d'interpréter le type d'archive."
 
-#: src/filebrowser/lib/archives.py:40
+#: src/filebrowser/lib/archives.py:41
 msgid "Must implement 'extract' method."
 msgstr "Doit implémenter la méthode 'extract'."
 
@@ -381,31 +381,106 @@ msgstr "Doit implémenter la méthode 'extract'."
 msgid "%(filename)s - File Viewer"
 msgstr "%(filename)s - Afficheur de fichiers"
 
-#: src/filebrowser/templates/display.mako:46
+#: src/filebrowser/templates/display.mako:49
+msgid "The current file is empty."
+msgstr "Le fichier actuel est vide."
+
+#: src/filebrowser/templates/display.mako:63
+msgid "Viewing Bytes:"
+msgstr "Octets de visualisation :"
+
+#: src/filebrowser/templates/display.mako:68
+#, python-format
+msgid "(%(length)s B block size)"
+msgstr "(taille de bloc B %(length)s)"
+
+#: src/filebrowser/templates/display.mako:78
+msgid "Warning: some binary data has been masked out with '&#xfffd'."
+msgstr "Avertissement : certaines données binaires ont été masquées via '&#xfffd'."
+
+#: src/filebrowser/templates/edit.mako:62
+#: src/filebrowser/templates/edit.mako:92
+msgid "Save"
+msgstr "Enregistrer"
+
+#: src/filebrowser/templates/edit.mako:63
+#: src/filebrowser/templates/edit.mako:77
+msgid "Save as"
+msgstr "Enregistrer sous"
+
+#: src/filebrowser/templates/edit.mako:80
+#: src/filebrowser/templates/saveas.mako:33
+msgid "Enter the location where you would like to save the file."
+msgstr "Indiquez l'emplacement dans lequel vous souhaitez enregistrer le fichier."
+
+#: src/filebrowser/templates/edit.mako:87
+#: src/filebrowser/templates/listdir_components.mako:262
+#: src/filebrowser/templates/listdir_components.mako:301
+#: src/filebrowser/templates/listdir_components.mako:390
+#: src/filebrowser/templates/listdir_components.mako:416
+msgid "Name is required."
+msgstr "Le nom est requis."
+
+#: src/filebrowser/templates/edit.mako:91
+#: src/filebrowser/templates/listdir_components.mako:244
+#: src/filebrowser/templates/listdir_components.mako:269
+#: src/filebrowser/templates/listdir_components.mako:303
+#: src/filebrowser/templates/listdir_components.mako:366
+#: src/filebrowser/templates/listdir_components.mako:392
+#: src/filebrowser/templates/listdir_components.mako:418
+#: src/filebrowser/templates/listdir_components.mako:475
+#: src/filebrowser/templates/listdir_components.mako:499
+#: src/filebrowser/templates/listdir_components.mako:1277
+#: src/filebrowser/templates/listdir_components.mako:1327
+msgid "Cancel"
+msgstr "Annuler"
+
+#: src/filebrowser/templates/fb_components.mako:25
+#: src/filebrowser/templates/fb_components.mako:40
+msgid "Home"
+msgstr "Accueil"
+
+#: src/filebrowser/templates/fb_components.mako:27
+msgid "Edit path"
+msgstr "Modifier un chemin d'accès"
+
+#: src/filebrowser/templates/fb_components.mako:35
+msgid "View trash"
+msgstr "Afficher la corbeille"
+
+#: src/filebrowser/templates/fb_components.mako:36
+msgid "Trash"
+msgstr "Corbeille"
+
+#: src/filebrowser/templates/fb_components.mako:68
+msgid "File Browser"
+msgstr "Navigateur de fichiers"
+
+#: src/filebrowser/templates/fb_components.mako:81
 msgid "Actions"
 msgstr "Actions"
 
-#: src/filebrowser/templates/display.mako:48
+#: src/filebrowser/templates/fb_components.mako:87
 msgid "View as text"
 msgstr "Afficher comme texte"
 
-#: src/filebrowser/templates/display.mako:52
+#: src/filebrowser/templates/fb_components.mako:91
 msgid "View as binary"
 msgstr "Afficher comme binaire"
 
-#: src/filebrowser/templates/display.mako:56
+#: src/filebrowser/templates/fb_components.mako:95
 msgid "Preview as Gzip"
 msgstr "Aperçu comme Gzip"
 
-#: src/filebrowser/templates/display.mako:60
+#: src/filebrowser/templates/fb_components.mako:99
 msgid "Preview as Avro"
 msgstr "Aperçu comme Avro"
 
-#: src/filebrowser/templates/display.mako:64
+#: src/filebrowser/templates/fb_components.mako:103
 msgid "Stop preview"
 msgstr "Arrêter l'aperçu"
 
-#: src/filebrowser/templates/display.mako:68
+#: src/filebrowser/templates/fb_components.mako:107
 msgid "Edit file"
 msgstr "Modifier le fichier"
 
@@ -414,11 +489,11 @@ msgstr "Modifier le fichier"
 msgid "Download"
 msgstr "Télécharger"
 
-#: src/filebrowser/templates/display.mako:72
+#: src/filebrowser/templates/fb_components.mako:114
 msgid "View file location"
 msgstr "Afficher l'emplacement du fichier"
 
-#: src/filebrowser/templates/display.mako:73
+#: src/filebrowser/templates/fb_components.mako:115
 msgid "Refresh"
 msgstr "Actualiser"
 

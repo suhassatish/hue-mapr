@@ -17,9 +17,28 @@
 */
 
 .hueBreadcrumb {
-  padding: 7px 14px;
+  padding: 12px 14px;
+}
+
+.hueBreadcrumbBar {
+  padding: 0;
+  margin: 12px;
+}
+
+.hueBreadcrumbBar a {
+  color: #338BB8 !important;
+  display: inline !important;
+}
+
+.divider {
+  color: #CCC;
 }
 
 .sidebar-nav {
-  padding: 9px 0;
+  padding: 0;
+}
+
+.card-heading {
+  padding-left: 6px !important;
+  border-bottom: none !important;
 }

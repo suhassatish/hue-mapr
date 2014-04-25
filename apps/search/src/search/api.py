@@ -16,12 +16,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-try:
-  import json
-except ImportError:
-  import simplejson as json
-
+import json
 import logging
+import urllib
 
 from desktop.lib.exceptions_renderable import PopupException
 from desktop.lib.rest.http_client import HttpClient, RestException
@@ -66,16 +63,13 @@ class SolrApi(object):
       fqs = solr_query['fq'].split('|')
       for fq in fqs:
         if fq:
-          params += (('fq', fq),)
+          params += (('fq', urllib.unquote(utf_quoter(fq))),)
 
       response = self._root.get('%(collection)s/select' % solr_query, params)
 
-      if type(response) != dict:
-        # Got 'plain/text' mimetype instead of 'application/json'
-        response = json.loads(response)
-      return response
+      return self._get_json(response)
     except RestException, e:
-      raise PopupException('Error while accessing Solr: %s' % e)
+      raise PopupException(e, title=_('Error while accessing Solr'))
 
   def suggest(self, solr_query, hue_core):
     try:
@@ -83,12 +77,12 @@ class SolrApi(object):
           ('q', solr_query['q']),
           ('wt', 'json'),
       )
-      response = self._root.get('%(core)s/suggest' % solr_query, params)
+      response = self._root.get('%(collection)s/suggest' % solr_query, params)
       if type(response) != dict:
         response = json.loads(response)
       return response
     except RestException, e:
-      raise PopupException('Error while accessing Solr: %s' % e)
+      raise PopupException(e, title=_('Error while accessing Solr'))
 
   def collections(self):
     try:
@@ -99,7 +93,7 @@ class SolrApi(object):
       response = self._root.get('zookeeper', params=params)
       return json.loads(response['znode']['data'])
     except RestException, e:
-      raise PopupException('Error while accessing Solr: %s' % e)
+      raise PopupException(e, title=_('Error while accessing Solr'))
 
   def collection_or_core(self, hue_collection):
     if hue_collection.is_core_only:
@@ -112,7 +106,7 @@ class SolrApi(object):
       collections = self.collections()
       return collections[name]
     except Exception, e:
-      raise PopupException('Error while accessing Solr: %s' % e)
+      raise PopupException(e, title=_('Error while accessing Solr'))
 
   def cores(self):
     try:
@@ -121,7 +115,7 @@ class SolrApi(object):
       )      
       return self._root.get('admin/cores', params=params)['status']
     except RestException, e:
-      raise PopupException('Error while accessing Solr: %s' % e)
+      raise PopupException(e, title=_('Error while accessing Solr'))
 
   def core(self, core):
     try:
@@ -131,7 +125,7 @@ class SolrApi(object):
       )         
       return self._root.get('admin/cores', params=params)
     except RestException, e:
-      raise PopupException('Error while accessing Solr: %s' % e)
+      raise PopupException(e, title=_('Error while accessing Solr'))
 
   def schema(self, core):
     try:
@@ -141,4 +135,17 @@ class SolrApi(object):
       )       
       return self._root.get('%(core)s/admin/file' % {'core': core}, params=params)
     except RestException, e:
-      raise PopupException('Error while accessing Solr: %s' % e)
+      raise PopupException(e, title=_('Error while accessing Solr'))
+
+  def fields(self, core, dynamic=False):
+    try:
+      params = self._get_params() + (
+          ('wt', 'json'),
+          ('fl', '*'),
+      )
+      if not dynamic:
+        params += (('show', 'schema'),)
+      response = self._root.get('%(core)s/admin/luke' % {'core': core}, params=params)
+      return self._get_json(response)
+    except RestException, e:
+      raise PopupException(e, title=_('Error while accessing Solr'))

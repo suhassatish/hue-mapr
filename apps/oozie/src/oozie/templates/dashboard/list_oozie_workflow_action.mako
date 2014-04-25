@@ -23,35 +23,25 @@
 <%namespace name="layout" file="../navigation-bar.mako" />
 <%namespace name="utils" file="../utils.inc.mako" />
 
-${ commonheader(_("Workflow Action"), "oozie", user, "100px") | n,unicode }
-${ layout.menubar(section='running') }
+${ commonheader(_("Workflow Action"), "oozie", user) | n,unicode }
+${ layout.menubar(section='workflows', dashboard=True) }
 
 
 <div class="container-fluid">
-  ${ layout.dashboard_sub_menubar(section='workflows') }
-
-  <h1>
-    % if oozie_bundle:
-      ${ _('Bundle') } <a href="${ oozie_bundle.get_absolute_url() }">${ oozie_bundle.appName }</a> :
-    % endif
-    % if oozie_coordinator:
-      ${ _('Coordinator') } <a href="${ oozie_coordinator.get_absolute_url() }">${ oozie_coordinator.appName }</a> :
-    % endif
-    ${ _('Workflow') } <a href="${ workflow.get_absolute_url() }">${ workflow.appName }</a> :
-    ${ _('Action') } ${ action.name }
-  </h1>
-
+  <div class="card card-small">
+  <div class="card-body">
+  <p>
  <div class="row-fluid">
     <div class="span2">
-      <div class="well sidebar-nav">
-        <ul class="nav nav-list">
+      <div class="sidebar-nav">
+        <ul class="nav nav-list" style="border:none">
           <li class="nav-header">${ _('Workflow') }</li>
           <li>
             <a title="${ _('Edit workflow') }" href="${ workflow.get_absolute_url() }">${ workflow.appName }</a>
           </li>
 
           <li class="nav-header">${ _('Name') }</li>
-          <li>${ action.name }</li>
+          <li class="white">${ action.name }</li>
 
           % if action.externalId:
             <li class="nav-header">${ _('External Id') }</li>
@@ -59,20 +49,30 @@ ${ layout.menubar(section='running') }
 
             <li class="nav-header">${ _('Logs') }</li>
             <li>
-              <a href="${ url('jobbrowser.views.job_single_logs', job=action.externalId) }" title="${ _('View the logs') }" rel="tooltip"><i class="icon-tasks"></i></a>
+              <a href="${ url('jobbrowser.views.job_single_logs', job=action.externalId) }" title="${ _('View the logs') }" rel="tooltip"><i class="fa fa-tasks"></i></a>
             </li>
           % endif
 
           <li class="nav-header">${ _('Type') }</li>
-          <li>${ action.type }</li>
+          <li class="white">${ action.type }</li>
 
           <li class="nav-header">${ _('Status') }</li>
-          <li id="status"><span class="label ${ utils.get_status(action.status) }">${ action.status }</span></li>
+          <li class="white" id="status"><span class="label ${ utils.get_status(action.status) }">${ action.status }</span></li>
         </ul>
       </div>
     </div>
 
-    <div class="span9">
+    <div class="span10">
+       <h1 class="card-heading simple card-heading-nopadding card-heading-noborder card-heading-blue" style="margin-bottom: 10px">
+        % if oozie_bundle:
+          ${ _('Bundle') } <a href="${ oozie_bundle.get_absolute_url() }">${ oozie_bundle.appName }</a> :
+        % endif
+        % if oozie_coordinator:
+          ${ _('Coordinator') } <a href="${ oozie_coordinator.get_absolute_url() }">${ oozie_coordinator.appName }</a> :
+        % endif
+        ${ _('Workflow') } <a href="${ workflow.get_absolute_url() }">${ workflow.appName }</a> :
+        ${ _('Action') } ${ action.name }
+      </h1>
       <ul class="nav nav-tabs">
         <li class="active"><a href="#details" data-toggle="tab">${ _('Details') }</a></li>
         <li><a href="#configuration" data-toggle="tab">${ _('Configuration') }</a></li>
@@ -158,7 +158,7 @@ ${ layout.menubar(section='running') }
               <tr>
                 <td>
                   <a href="${ url('jobbrowser.views.job_single_logs', job=child_id) }" title="${ _('View the logs') }" rel="tooltip">
-                    <i class="icon-tasks"></i>
+                    <i class="fa fa-tasks"></i>
                   </a>
                 </td>
                 <td>
@@ -179,8 +179,11 @@ ${ layout.menubar(section='running') }
       </div>
     </div>
   </div>
-
+</p>
+    </div>
+    </div>
 </div>
+
 
 <script src="/static/ext/js/codemirror-3.11.js"></script>
 <link rel="stylesheet" href="/static/ext/css/codemirror.css">

@@ -44,7 +44,7 @@ msgstr "Assistente de início rápido"
 
 #: src/about/templates/admin_wizard.mako:60
 msgid "Step 1:"
-msgstr "Passo 1:"
+msgstr "Etapa 1:"
 
 #: src/about/templates/admin_wizard.mako:60
 msgid "Check Configuration"
@@ -52,7 +52,7 @@ msgstr "Verificar configuração"
 
 #: src/about/templates/admin_wizard.mako:61
 msgid "Step 2:"
-msgstr "Passo 2:"
+msgstr "Etapa 2:"
 
 #: src/about/templates/admin_wizard.mako:61
 msgid "Examples"
@@ -60,7 +60,7 @@ msgstr "Exemplos"
 
 #: src/about/templates/admin_wizard.mako:62
 msgid "Step 3:"
-msgstr "Passo 3:"
+msgstr "Etapa 3:"
 
 #: src/about/templates/admin_wizard.mako:62
 msgid "Users"
@@ -68,7 +68,11 @@ msgstr "Usuários"
 
 #: src/about/templates/admin_wizard.mako:63
 msgid "Step 4:"
-msgstr "Passo 4:"
+msgstr "Etapa 4:"
+
+#: src/about/templates/admin_wizard.mako:50
+msgid "Go!"
+msgstr "Vá!"
 
 #: src/about/templates/admin_wizard.mako:63
 msgid "Go!"

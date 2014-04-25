@@ -23,10 +23,14 @@
 import logging
 import os
 import sys
+import pkg_resources
+from guppy import hpy
+
 import desktop.conf
 import desktop.log
 from desktop.lib.paths import get_desktop_root
-import pkg_resources
+from desktop.lib.python_util import force_dict_to_strings
+
 
 try:
   import json
@@ -38,6 +42,7 @@ NICE_NAME = "Hue"
 
 ENV_HUE_PROCESS_NAME = "HUE_PROCESS_NAME"
 ENV_DESKTOP_DEBUG = "DESKTOP_DEBUG"
+
 
 ############################################################
 # Part 1: Logging and imports.
@@ -71,28 +76,35 @@ desktop.log.fancy_logging()
 # Language code for this installation. All choices can be found here:
 # http://www.i18nguy.com/unicode/language-identifiers.html
 LANGUAGE_CODE = 'en-us'
-#LANGUAGE_CODE = 'it'
 
 SITE_ID = 1
 
 # If you set this to False, Django will make some optimizations so as not
 # to load the internationalization machinery.
 USE_I18N = True
+
+# If you set this to False, Django will not format dates, numbers and
+# calendars according to the current locale.
 USE_L10N = True
 
+# If you set this to False, Django will not use timezone-aware datetimes.
+USE_TZ = False
+
 # URL that handles the media served from MEDIA_ROOT. Make sure to use a
-# trailing slash if there is a path component (optional in other cases).
-# Examples: "http://media.lawrence.com", "http://example.com/media/"
+# trailing slash.
+# Examples: "http://media.lawrence.com/media/", "http://example.com/media/"
 MEDIA_URL = ''
 
-# URL prefix for admin media -- CSS, JavaScript and images. Make sure to use a
-# trailing slash.
-# Examples: "http://foo.com/media/", "/media/".
-ADMIN_MEDIA_PREFIX = '/media/'
 
 ############################################################
 # Part 3: Django configuration
 ############################################################
+
+# Additional locations of static files
+STATICFILES_DIRS = ()
+
+# For Django admin interface
+STATIC_URL = '/static/'
 
 # List of callables that know how to import templates from various sources.
 TEMPLATE_LOADERS = (
@@ -104,11 +116,12 @@ MIDDLEWARE_CLASSES = [
     # The order matters
     'desktop.middleware.EnsureSafeMethodMiddleware',
     'desktop.middleware.DatabaseLoggingMiddleware',
+    'desktop.middleware.AuditLoggingMiddleware',
     'django.middleware.common.CommonMiddleware',
     'desktop.middleware.SessionOverPostMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'desktop.middleware.SpnegoMiddleware',
+    'desktop.middleware.SpnegoMiddleware',    
     'desktop.middleware.HueRemoteUserMiddleware',
     'django.middleware.locale.LocaleMiddleware',
     'babeldjango.middleware.LocaleMiddleware',
@@ -131,12 +144,16 @@ if os.environ.get(ENV_DESKTOP_DEBUG):
 
 ROOT_URLCONF = 'desktop.urls'
 
+# Hue runs its own wsgi applications
+WSGI_APPLICATION = None
+
 TEMPLATE_DIRS = (
     get_desktop_root("core/templates")
 )
 
 INSTALLED_APPS = [
     'django.contrib.auth',
+    'django_openid_auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.sites',
@@ -154,12 +171,17 @@ INSTALLED_APPS = [
     'desktop'
 ]
 
+LOCALE_PATHS = [
+  get_desktop_root('core/src/desktop/locale')
+]
+
 # Keep default values up to date
 TEMPLATE_CONTEXT_PROCESSORS = (
   'django.contrib.auth.context_processors.auth',
   'django.core.context_processors.debug',
   'django.core.context_processors.i18n',
   'django.core.context_processors.media',
+  'django.core.context_processors.request',
   'django.contrib.messages.context_processors.messages',
    # Not default
   'desktop.context_processors.app_name',
@@ -185,6 +207,7 @@ FILE_UPLOAD_HANDLERS = (
   'django.core.files.uploadhandler.TemporaryFileUploadHandler',
 )
 
+
 ############################################################
 # Part 4: Installation of apps
 ############################################################
@@ -194,16 +217,24 @@ _config_dir = os.getenv("HUE_CONF_DIR", get_desktop_root("conf"))
 # Libraries are loaded and configured before the apps
 appmanager.load_libs()
 _lib_conf_modules = [dict(module=app.conf, config_key=None) for app in appmanager.DESKTOP_LIBS if app.conf is not None]
+LOCALE_PATHS.extend([app.locale_path for app in appmanager.DESKTOP_LIBS])
 
-appmanager.load_apps()
+# Load desktop config
+_desktop_conf_modules = [dict(module=desktop.conf, config_key=None)]
+conf.initialize(_desktop_conf_modules, _config_dir)
+
+# Activate l10n
+# Install apps
+appmanager.load_apps(desktop.conf.APP_BLACKLIST.get())
 for app in appmanager.DESKTOP_APPS:
   INSTALLED_APPS.extend(app.django_apps)
+  LOCALE_PATHS.append(app.locale_path)
+
 
 logging.debug("Installed Django modules: %s" % ",".join(map(str, appmanager.DESKTOP_MODULES)))
 
 # Load app configuration
 _app_conf_modules = [dict(module=app.conf, config_key=app.config_key) for app in appmanager.DESKTOP_APPS if app.conf is not None]
-_app_conf_modules.append(dict(module=desktop.conf, config_key=None))
 
 conf.initialize(_lib_conf_modules, _config_dir)
 conf.initialize(_app_conf_modules, _config_dir)
@@ -252,10 +283,6 @@ else:
     "TEST_NAME" : get_desktop_root('desktop-test.db')
   }
 
-if os.getenv('HUE_SPAWNING', 'no') == 'yes':
-  if default_db['ENGINE'].lower() == 'mysql':
-    default_db['ENGINE'] = 'moxy'
-
 DATABASES = {
   'default': default_db
 }
@@ -267,6 +294,8 @@ SESSION_COOKIE_SECURE = desktop.conf.SESSION.SECURE.get()
 TIME_ZONE = desktop.conf.TIME_ZONE.get()
 # Desktop supports only one authentication backend.
 AUTHENTICATION_BACKENDS = (desktop.conf.AUTH.BACKEND.get(),)
+if desktop.conf.DEMO_ENABLED.get():
+  AUTHENTICATION_BACKENDS = ('desktop.auth.backend.DemoBackend',)
 
 EMAIL_HOST = desktop.conf.SMTP.HOST.get()
 EMAIL_PORT = desktop.conf.SMTP.PORT.get()
@@ -297,16 +326,11 @@ if desktop.conf.REDIRECT_WHITELIST.get():
 # Necessary for South to not fuzz with tests.  Fixed in South 0.7.1
 SKIP_SOUTH_TESTS = True
 
-# South database adapters mapping for eventlet backends
-if default_db['ENGINE'] == 'moxy':
-  SOUTH_DATABASE_ADAPTERS = {
-    'default': 'south.db.mysql'
-  }
-
 # Set up environment variable so Kerberos libraries look at our private
 # ticket cache
 os.environ['KRB5CCNAME'] = desktop.conf.KERBEROS.CCACHE_PATH.get()
 
-#######
-if desktop.conf.AUTH.USER_GROUP_MEMBERSHIP_SYNCHRONIZATION_BACKEND.get():
-  MIDDLEWARE_CLASSES.append('desktop.middleware.UserGroupSynchronizationMiddleware')
+# Memory
+if desktop.conf.MEMORY_PROFILER.get():
+  MEMORY_PROFILER = hpy()
+  MEMORY_PROFILER.setrelheap()

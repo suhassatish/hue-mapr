@@ -17,15 +17,11 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 0.9.6\n"
 
-#: src/jobsub/conf.py:31
-msgid "Location on HDFS where the jobsub examples and templates are stored."
-msgstr "HDFS 上で jobsub の例とテンプレートが保存されている場所です。"
-
-#: src/jobsub/conf.py:36
+#: src/jobsub/conf.py:28
 msgid "Location on local filesystem where examples and template are stored."
 msgstr "ローカルファイルシステム上で例とテンプレートが保存されている場所です。"
 
-#: src/jobsub/conf.py:42
+#: src/jobsub/conf.py:34
 msgid "Location on local filesystem where sample data is stored."
 msgstr "ローカルファイルシステム上でサンプルデータが保存されている場所です。"
 
@@ -82,15 +78,15 @@ msgstr "Mapper"
 msgid "Reducer"
 msgstr "Reducer"
 
-#: src/jobsub/models.py:136
+#: src/jobsub/models.py:132
 msgid "Name of the design, which must be unique per user."
 msgstr "設計の名前。ユーザーごとに一意とする必要があります。"
 
-#: src/jobsub/models.py:196 src/jobsub/models.py:245
+#: src/jobsub/models.py:192 src/jobsub/models.py:241
 msgid "List of paths to files to be added to the distributed cache."
 msgstr "分散キャッシュに追加するファイルのパスのリストです。"
 
-#: src/jobsub/models.py:198 src/jobsub/models.py:247
+#: src/jobsub/models.py:194 src/jobsub/models.py:243
 msgid "List of paths to archives to be added to the distributed cache."
 msgstr "分散キャッシュに追加するアーカイブのパスのリストです。"
 

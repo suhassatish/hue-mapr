@@ -21,6 +21,9 @@ var AppViewModel = function() {
   self.pageTitle = ko.observable("");
   self.focusModel = ko.observable();
   self.cluster = ko.observable("");
+  self.cluster.subscribe(function() {
+    app.views.tabledata.name('');
+  });
   self.clusters = ko.observableArray();
   API.query('getClusters').done(function(data) {
     app.clusters(data);
@@ -41,7 +44,7 @@ var AppViewModel = function() {
           callback();
       });
     }}),
-    tabledata: new SmartViewModel({el: 'views.tabledata', reload: function(callback) //move inside SmartViewModel class?
+    tabledata: new SmartViewModel({'canWrite': canWrite, el: 'views.tabledata', reload: function(callback) //move inside SmartViewModel class?
     {
       var t_self = this;
       function getColumnFamilies() {
@@ -83,7 +86,13 @@ var AppViewModel = function() {
       });
     }})
   };
-}
+
+  self.initialize = function() {
+    return API.query('getClusters').done(function(data) {
+      app.clusters(data);
+    });
+  };
+};
 
 var app = new AppViewModel();
 
@@ -143,6 +152,7 @@ routie({
       routed = false;
     }
 });
+
 
 $.fn.renderElement = function(data){utils.renderElement($(this,data))};
 

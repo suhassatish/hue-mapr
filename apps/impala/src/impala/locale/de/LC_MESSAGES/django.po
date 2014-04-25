@@ -32,7 +32,7 @@ msgstr "Beeswax- oder Hive Server 2-Thrift-API verwendet. Zur Auswahl stehen: \"
 
 #: src/impala/conf.py:45
 msgid "Kerberos principal name for Impala. Typically 'impala/hostname.foo.com'."
-msgstr "Kerberos-Hauptname für Impala. Typischerweise 'impala/hostname.foo.com'."
+msgstr "Kerberos-Hauptname für Impala. Typischerweise \"impala/hostname.foo.com\"."
 
 #: src/impala/conf.py:63
 msgid "No available Impalad to send queries to."

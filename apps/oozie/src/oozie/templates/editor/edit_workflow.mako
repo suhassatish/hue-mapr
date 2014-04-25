@@ -25,7 +25,7 @@
 <%namespace name="controls" file="control_utils.mako" />
 <%namespace name="workflows" file="workflow_utils.mako" />
 
-${ commonheader(_("Edit Workflow"), "oozie", user, "100px") | n,unicode }
+${ commonheader(_("Edit Workflow"), "oozie", user) | n,unicode }
 ${ layout.menubar(section='workflows') }
 
 
@@ -35,11 +35,9 @@ ${ layout.menubar(section='workflows') }
     <div class="ribbon">${ _('Unsaved') }</div>
   </div>
 
-  <h1 data-bind="text: '${ _('Workflow Editor : ') } ' + name()"></h1>
-
   <div class="row-fluid">
   <div class="span2">
-    <div id="workflowControls" class="well sidebar-nav">
+    <div id="workflowControls" class="sidebar-nav">
       <ul class="nav nav-list">
         <li class="nav-header">${ _('Editor') }</li>
         <li><a href="#editWorkflow"><i class="icon-code-fork"></i> ${ _('Workflow') }</a></li>
@@ -65,13 +63,16 @@ ${ layout.menubar(section='workflows') }
         <li class="nav-header">${ _('Actions') }</li>
         % if user_can_access_job:
           <li>
-            <a id="submit-btn" href="javascript:void(0)" data-submit-url="${ url('oozie:submit_workflow', workflow=workflow.id) }" title="${ _('Submit this workflow') }" rel="tooltip" data-placement="right"><i class="icon-play"></i> ${ _('Submit') }</a>
+            <a id="submit-btn" href="javascript:void(0)" data-submit-url="${ url('oozie:submit_workflow', workflow=workflow.id) }" title="${ _('Submit this workflow') }" rel="tooltip" data-placement="right"><i class="fa fa-play"></i> ${ _('Submit') }</a>
           </li>
           <li>
-            <a href="${ url('oozie:schedule_workflow', workflow=workflow.id) }" title="${ _('Schedule this workflow') }" rel="tooltip" data-placement="right"><i class="icon-calendar"></i> ${ _('Schedule') }</a>
+            <a href="${ url('oozie:schedule_workflow', workflow=workflow.id) }" title="${ _('Schedule this workflow') }" rel="tooltip" data-placement="right"><i class="fa fa-calendar"></i> ${ _('Schedule') }</a>
           </li>
           <li>
-            <a id="clone-btn" href="#" data-clone-url="${ url('oozie:clone_workflow', workflow=workflow.id) }" title="${ _('Copy this workflow') }" rel="tooltip" data-placement="right"><i class="icon-copy"></i> ${ _('Copy') }</a>
+            <a id="clone-btn" href="#" data-clone-url="${ url('oozie:clone_workflow', workflow=workflow.id) }" title="${ _('Copy this workflow') }" rel="tooltip" data-placement="right"><i class="fa fa-files-o"></i> ${ _('Copy') }</a>
+          </li>
+          <li>
+            <a id="export-btn" href="${ url('oozie:export_workflow', workflow=workflow.id) }" title="${ _('Export this workflow') }" rel="tooltip" data-placement="right"><i class="fa fa-upload"></i> ${ _('Export') }</a>
           </li>
         % endif
       </ul>
@@ -79,14 +80,20 @@ ${ layout.menubar(section='workflows') }
   </div>
   <div class="span10">
     <div id="properties" class="section hide">
-      <div class="alert alert-info"><h3>${ _('Properties') }</h3></div>
-      <fieldset>
-        ${ utils.render_field(workflow_form['name'], extra_attrs={'data-bind': 'value: %s' % workflow_form['name'].name}) }
-        ${ utils.render_field(workflow_form['description'], extra_attrs={'data-bind': 'value: %s' % workflow_form['description'].name}) }
-        ${ utils.render_field(workflow_form['is_shared'], extra_attrs={'data-bind': 'checked: %s' % workflow_form['is_shared'].name}) }
+    <div class="card card-small">
+
+      <div class="alert alert-info"><h3 data-bind="text: name()"></h3></div>
+      <div class="card-body">
+        <p>
+          <fieldset>
+            ${ utils.render_field_with_error_js(workflow_form['name'], workflow_form['name'].name, extra_attrs={'data-bind': 'value: %s' % workflow_form['name'].name}) }
+            ${ utils.render_field_with_error_js(workflow_form['description'], workflow_form['description'].name, extra_attrs={'data-bind': 'value: %s' % workflow_form['description'].name}) }
+            <div class="hide">
+              ${ utils.render_field_with_error_js(workflow_form['is_shared'], workflow_form['is_shared'].name, extra_attrs={'data-bind': 'checked: %s' % workflow_form['is_shared'].name}) }
+            </div>
 
       <%
-      workflows.key_value_field(workflow_form['parameters'], {
+      workflows.key_value_field(workflow_form['parameters'].label, workflow_form['parameters'].help_text, {
       'name': 'parameters',
       'remove': '$root.removeParameter',
       'add': '$root.addParameter',
@@ -94,30 +101,64 @@ ${ layout.menubar(section='workflows') }
       %>
 
       <%
-      workflows.key_value_field(workflow_form['job_properties'], {
+      workflows.key_value_field(workflow_form['job_properties'].label, workflow_form['job_properties'].help_text, {
       'name': 'job_properties',
       'remove': '$root.removeJobProperty',
       'add': '$root.addJobProperty',
       })
       %>
 
-        <div class="control-group ">
+        <div class="control-group">
           <label class="control-label">
             <a href="#" id="advanced-btn" onclick="$('#advanced-container').toggle('hide')">
-              <i class="icon-share-alt"></i> ${ _('advanced') }</a>
+              <i class="fa fa-share"></i> ${ _('Advanced') }</a>
           </label>
           <div class="controls"></div>
         </div>
 
       <div id="advanced-container" class="hide">
+        <div id="slaEditord">
+          <div class="control-group">
+            <label class="control-label">${ _('SLA Configuration') }</label>
+            <div class="controls">
+                ${ utils.slaForm() }
+            </div>
+          </div>
+        </div>
+
         % if user_can_edit_job:
-          ${ utils.render_field(workflow_form['deployment_dir'], extra_attrs={'data-bind': 'value: %s' % workflow_form['deployment_dir'].name}) }
+          ${ utils.render_field_with_error_js(workflow_form['deployment_dir'], workflow_form['deployment_dir'].name, extra_attrs={'data-bind': 'value: %s' % workflow_form['deployment_dir'].name}) }
         % endif
 
-        ${ utils.render_field(workflow_form['job_xml'], extra_attrs={'data-bind': 'value: %s' % workflow_form['job_xml'].name}) }
+        ${ utils.render_field_with_error_js(workflow_form['job_xml'], workflow_form['job_xml'].name, extra_attrs={'data-bind': 'value: %s' % workflow_form['job_xml'].name}) }
       </div>
 
       </fieldset>
+        </p>
+      </div>
+        </div>
+    </div>
+
+    <div id="editKill" class="section hide">
+      <div class="card" style="padding-top:0; margin-top:0">
+      <div class="alert alert-info">
+        <h3>${ _('Kill node') }</h3>
+        <p>${_('If the "to" field has content, then the workflow editor assumes that the defined email action is to be placed before the kill action.')}</p>
+      </div>
+      <div class="card-body">
+        <p>
+          <fieldset data-bind="with: context().node">
+            <p>&nbsp;${_('Action enabled: ')} <i class="fa fa-check-square-o" data-bind="visible: to().length > 0"></i><i class="fa fa-square-o" data-bind="visible: to().length == 0"></i></p>
+
+            % for form_info in action_forms:
+              % if form_info[0] == 'email':
+                ${ actions.action_form_fields(action_form=form_info[1], node_type=form_info[0], show_primary=False) }
+              % endif
+            % endfor
+          </fieldset>
+        </p>
+      </div>
+      </div>
     </div>
 
     <div id="editKill" class="section hide">
@@ -137,11 +178,11 @@ ${ layout.menubar(section='workflows') }
     </div>
 
     <div id="importAction" class="section hide">
-      <ul class="nav nav-tabs">
+      <ul class="nav nav-tabs" style="margin-bottom: 0">
         <li class="active"><a href="#importJobsub" data-toggle="tab">${ _('Job Designer') }</a></li>
         <li><a href="#importOozie" data-toggle="tab">${ _('Oozie') }</a></li>
       </ul>
-
+      <div class="card" style="margin-top: 0">
       <div class="tab-content">
         <div class="tab-pane active" id="importJobsub" data-bind="with: jobsub">
           <div class="alert alert-info">
@@ -196,6 +237,7 @@ ${ layout.menubar(section='workflows') }
           </table>
         </div>
       </div>
+      </div>
     </div>
 
     <div id="importOozieAction" class="section hide" data-bind="if: selected_workflow()">
@@ -227,86 +269,87 @@ ${ layout.menubar(section='workflows') }
     </div>
 
     <div id="editWorkflow" class="section hide">
-
-      <div class="alert alert-info"><h3>${ _('Editor') }</h3></div>
-
-      <div id="actionToolbar" class="well">
+      <div class="card" style="padding-top:0; margin-top:0">
+      <div class="alert alert-info"><h3 data-bind="text: name()"></h3></div>
+      <div class="card-body">
+        <p>
+      <div id="actionToolbar">
         <div class="draggable-button">
           <a data-node-type="mapreduce"
              title="${ _('Drag and drop this action on the workflow') }" class="btn new-node-link">
-            <i class="icon-move"></i> MapReduce
+            <i class="fa fa-arrows"></i> MapReduce
           </a>
         </div>
         <div class="draggable-button">
           <a data-node-type="streaming"
              title="${ _('Drag and drop this action on the workflow') }" class="btn new-node-link">
-            <i class="icon-move"></i> Streaming
+            <i class="fa fa-arrows"></i> Streaming
           </a>
         </div>
         <div class="draggable-button">
           <a data-node-type="java"
              title="${ _('Drag and drop this action on the workflow') }" class="btn new-node-link">
-            <i class="icon-move"></i> Java
+            <i class="fa fa-arrows"></i> Java
           </a>
          </div>
         <div class="draggable-button">
           <a data-node-type="pig"
              title="${ _('Drag and drop this action on the workflow') }" class="btn new-node-link">
-            <i class="icon-move"></i> Pig
+            <i class="fa fa-arrows"></i> Pig
           </a>
         </div>
         <div class="draggable-button">
           <a data-node-type="hive"
              title="${ _('Drag and drop this action on the workflow') }" class="btn new-node-link">
-            <i class="icon-move"></i> Hive
+            <i class="fa fa-arrows"></i> Hive
           </a>
         </div>
         <div class="draggable-button">
           <a data-node-type="sqoop"
              title="${ _('Drag and drop this action on the workflow') }" class="btn new-node-link">
-            <i class="icon-move"></i> Sqoop
+            <i class="fa fa-arrows"></i> Sqoop
           </a>
         </div>
         <div class="draggable-button">
           <a data-node-type="shell"
              title="${ _('Drag and drop this action on the workflow') }" class="btn new-node-link">
-            <i class="icon-move"></i> Shell
+            <i class="fa fa-arrows"></i> Shell
           </a>
         </div>
         <div class="draggable-button">
           <a data-node-type="ssh"
              title="${ _('Drag and drop this action on the workflow') }" class="btn new-node-link">
-            <i class="icon-move"></i> Ssh
+            <i class="fa fa-arrows"></i> Ssh
           </a>
         </div>
         <div class="draggable-button">
           <a data-node-type="distcp"
              title="${ _('Drag and drop this action on the workflow') }" class="btn new-node-link">
-            <i class="icon-move"></i> DistCp
+            <i class="fa fa-arrows"></i> DistCp
           </a>
         </div>
         <div class="draggable-button">
           <a data-node-type="fs"
              title="${ _('Drag and drop this action on the workflow') }" class="btn new-node-link">
-            <i class="icon-move"></i> Fs
+            <i class="fa fa-arrows"></i> Fs
           </a>
         </div>
         <div class="draggable-button">
           <a data-node-type="email"
              title="${ _('Drag and drop this action on the workflow') }" class="btn new-node-link">
-            <i class="icon-move"></i> Email
+            <i class="fa fa-arrows"></i> Email
           </a>
         </div>
         <div class="draggable-button">
           <a data-node-type="subworkflow"
              title="${ _('Drag and drop this action on the workflow') }" class="btn new-node-link">
-            <i class="icon-move"></i> Sub-workflow
+            <i class="fa fa-arrows"></i> Sub-workflow
           </a>
         </div>
         <div class="draggable-button">
           <a data-node-type="generic"
              title="${ _('Drag and drop this action on the workflow') }" class="btn new-node-link">
-            <i class="icon-move"></i> Generic
+            <i class="fa fa-arrows"></i> Generic
           </a>
         </div>
       </div>
@@ -318,33 +361,45 @@ ${ layout.menubar(section='workflows') }
       <div id="graph" class="row-fluid" data-bind="template: { name: function(item) { return item.view_template() }, foreach: nodes }"></div>
       <div id="new-node" class="row-fluid" data-bind="template: { name: 'nodeTemplate', 'if': new_node, data: new_node }"></div>
 
+      </p>
+    </div>
+    </div>
     </div>
 
     <div id="listHistory" class="section hide">
-      <div class="alert alert-info"><h3>${ _('History') }</h3></div>
-      % if not history:
-        ${ _('N/A') }
-      % else:
-        <table class="table">
-          <thead>
-          <tr>
-            <th>${ _('Date') }</th>
-            <th>${ _('Id') }</th>
-          </tr>
-          </thead>
-          <tbody>
-          % for record in history:
-          <tr>
-            <td>
-              <a href="${ url('oozie:list_history_record', record_id=record.id) }" data-row-selector="true"></a>
-              ${ utils.format_date(record.submission_date) }
-            </td>
-            <td>${ record.oozie_job_id }</td>
-          </tr>
-          % endfor
-          </tbody>
-        </table>
-      % endif
+      <div class="card" style="padding-top:0; margin-top:0">
+        <div class="alert alert-info"><h3>${ _('History') }</h3></div>
+        <div class="card-body">
+          <p>
+            % if not history:
+              ${ _('N/A') }
+            % else:
+              <table class="table">
+                <thead>
+                <tr>
+                  <th>${ _('Date') }</th>
+                  <th>${ _('Id') }</th>
+                </tr>
+                </thead>
+                <tbody>
+                % for record in history:
+                <tr>
+                  <td>
+                    ${ utils.format_date(record.submission_date) }
+                  </td>
+                  <td>
+                    <a href="${ record.get_absolute_oozie_url() }" data-row-selector="true">
+                      ${ record.oozie_job_id }
+                    </a>
+                  </td>
+                </tr>
+                % endfor
+                </tbody>
+              </table>
+            % endif
+          </p>
+        </div>
+      </div>
     </div>
 
 
@@ -372,6 +427,22 @@ ${ layout.menubar(section='workflows') }
   <div class="modal-footer">
     <a href="#" class="btn" data-dismiss="modal">${_('No')}</a>
     <a class="btn btn-primary" href="javascript:void(0);">${_('Yes')}</a>
+  </div>
+</div>
+
+<div id="runUnsaved" class="modal hide fade">
+  <div class="modal-header">
+    <a href="#" class="close" data-dismiss="modal">&times;</a>
+    <h3>${_('The workflow has some unsaved changes')}</h3>
+  </div>
+  <div class="modal-body">
+    <p>
+      ${_('Please save or undo your changes before submitting it.')}
+    </p>
+  </div>
+  <div class="modal-footer">
+    <a href="#" class="btn" data-dismiss="modal">${_('Cancel')}</a>
+    <a id="saveAndSubmitBtn" class="btn btn-primary" href="javascript:void(0);">${_('Save and submit')}</a>
   </div>
 </div>
 
@@ -416,47 +487,51 @@ ${ controls.decision_form(node_form, link_form, default_link_form, 'decision', T
 <script type="text/html" id="emptyTemplate"></script>
 
 <script type="text/html" id="disabledNodeTemplate">
-  <div class="node node-control row-fluid">
-    <div class="action span12">
+  <div class="node node-control row-fluid editor-action">
+    <!-- ko if: node_type() == 'start' -->
+      <ul class="nav nav-tabs" style="margin-bottom:0">
+        <li class="active"><a data-toggle="tab" style="line-height:10px;background-color: #F9F9F9;"><i style="color:#DDD" class="fa fa-thumbs-up"></i> &nbsp;
+          <strong style="color:#999" data-bind="text: node_type"></strong></a>
+        </li>
+      </ul>
       <div class="row-fluid">
-        <div class="span12">
-          <h4 data-bind="text: (name()) ? name() : node_type() + '-' + id()"></h4>
-          <span data-bind="text: node_type" class="muted"></span>
-          <div class="node-description" data-bind="text: description"></div>
-        </div>
+        <div class="span12 action gradient" style="border:0"></div>
       </div>
-
-      <div class="row-fluid node-action-bar">
-        <div class="span12" style="text-align:right">
-          &nbsp;
-        </div>
+    <!-- /ko -->
+    <!-- ko if: node_type() == 'end' -->
+      <div class="row-fluid">
+        <div class="span12 action inverse_gradient" style="border:0"></div>
       </div>
-    </div>
+      <div class="tabbable tabs-below">
+        <ul class="nav nav-tabs" style="margin-bottom:0">
+          <li class="active"><a data-toggle="tab" style="line-height:10px;background-color: #F9F9F9;"><i style="color:#DDD" class="fa fa-dot-circle-o"></i> &nbsp;
+            <strong style="color:#999" data-bind="text: node_type"></strong></a>
+          </li>
+        </ul>
+      </div>
+    <!-- /ko -->
+    <!-- ko if: links -->
+      <div class="row-fluid" data-bind="template: { name: 'linkTemplate', foreach: links }"></div>
+    <!-- /ko -->
   </div>
-
-  <!-- ko if: links -->
-    <div class="row-fluid" data-bind="template: { name: 'linkTemplate', foreach: links }"></div>
-  <!-- /ko -->
 </script>
 
 <script type="text/html" id="nodeTemplate">
-  <div class="node node-action row-fluid">
-    <div class="action span12">
-      <div class="row-fluid">
-        <div class="span12">
-          <h4 data-bind="text: (name()) ? name() : node_type() + '-' + id()"></h4>
-          <span data-bind="text: node_type" class="muted"></span>
-          <div class="node-description" data-bind="text: description"></div>
-        </div>
-      </div>
-
-      <div class="row-fluid node-action-bar">
-        <div class="span12" style="text-align:right">
-          <a class="btn btn-mini edit-node-link" title="${ _('Edit') }" rel="tooltip" data-bind="attr: { 'data-node-type': node_type() }"><i class="icon-pencil"></i></a>
-          <a class="btn btn-mini clone-node-btn" title="${ _('Copy') }" rel="tooltip"><i class="icon-copy"></i></a>
-          <a class="btn btn-mini delete-node-btn" title="${ _('Delete') }" rel="tooltip"><i class="icon-trash"></i></a>
-          &nbsp;
-        </div>
+  <div class="node node-action row-fluid editor-action">
+    <ul class="nav nav-tabs" style="margin-bottom:0">
+      <li class="active"><a data-toggle="tab" style="line-height:10px;background-color: #F9F9F9;"><i style="color:#DDD" class="fa fa-cogs"></i> &nbsp;
+        <strong style="color:#999" data-bind="text: node_type"></strong>
+        &nbsp;&nbsp;
+        <button type="button" class="btn btn-mini clone-node-btn" title="${ _('Copy') }" relz="tooltip"><i class="fa fa-files-o"></i></button>
+        <button type="button" class="btn btn-mini delete-node-btn" title="${ _('Delete') }" relz="tooltip"><i class="fa fa-trash-o"></i></button>
+      </a>
+      </li>
+    </ul>
+    <div class="row-fluid">
+      <div class="span12 action editor-action-body">
+        <div class="pull-right" style="font-size: 30px; margin-top:14px; cursor:pointer"><a class="edit-node-link" title="${ _('Edit') }" relz="tooltip" data-bind="attr: { 'data-node-type': node_type() }"><i class="fa fa-pencil"></i></a></div>
+        <h4 data-bind="text: (name()) ? name() : node_type() + '-' + id()"></h4>
+        <div class="node-description muted" data-bind="text: description()"></div>
       </div>
     </div>
   </div>
@@ -467,19 +542,20 @@ ${ controls.decision_form(node_form, link_form, default_link_form, 'decision', T
 <script type="text/html" id="forkTemplate">
   <div class="node node-fork row-fluid">
     <div class="action span12">
+      <ul class="nav nav-tabs" style="margin-bottom:0">
+        <li class="active">
+          <a class="action-link" data-toggle="tab" style="line-height:10px;background-color: #F9F9F9;">
+            <i style="color:#DDD" class="fa fa-sitemap"></i> &nbsp; <strong style="color:#999" data-bind="text: node_type"></strong>
+            &nbsp;&nbsp;
+            <button type="button" class="btn btn-mini edit-node-link" title="${ _('Edit') }" relz="tooltip" data-bind="attr: { 'data-node-type': node_type() }"><i class="fa fa-pencil"></i></button>
+            <button type="button" class="btn btn-mini convert-node-link" title="${ _('Convert to Decision') }" data-bind="attr: { 'data-node-type': node_type() }" relz="tooltip"><i class="fa fa-magic"></i></button>
+          </a>
+        </li>
+      </ul>
       <div class="row-fluid">
-        <div class="span12 action-link" title="Edit">
+        <div class="span12 action-link" style="text-align:left; padding:10px;border:1px solid #DDD; border-top:0">
           <h4 data-bind="text: (name()) ? name() : node_type() + '-' + id()"></h4>
-          <span data-bind="text: node_type" class="muted"></span>
-          <div class="node-description" data-bind="text: description()"></div>
-        </div>
-      </div>
-
-      <div class="row-fluid node-action-bar">
-        <div class="span12" style="text-align:right">
-          <a class="btn btn-mini edit-node-link" title="${ _('Edit') }" rel="tooltip" data-bind="attr: { 'data-node-type': node_type() }"><i class="icon-pencil"></i></a>
-          <a class="btn btn-mini convert-node-link" title="${ _('Convert to Decision') }" data-bind="attr: { 'data-node-type': node_type() }" rel="tooltip"><i class="icon-wrench"></i></a>
-          &nbsp;
+          <div class="node-description muted" data-bind="text: description()"></div>
         </div>
       </div>
     </div>
@@ -502,18 +578,19 @@ ${ controls.decision_form(node_form, link_form, default_link_form, 'decision', T
 <script type="text/html" id="decisionTemplate">
   <div class="node node-decision row-fluid">
     <div class="action span12">
+      <ul class="nav nav-tabs" style="margin-bottom:0">
+        <li class="active">
+          <a class="action-link" data-toggle="tab" style="line-height:10px;background-color: #F9F9F9;">
+            <i style="color:#DDD" class="fa fa-magic"></i> &nbsp; <strong style="color:#999" data-bind="text: node_type"></strong>
+            &nbsp;&nbsp;
+            <button type="button" class="btn btn-mini edit-node-link" title="${ _('Edit') }" data-bind="attr: { 'data-node-type': node_type() }" relz="tooltip"><i class="fa fa-pencil"></i></button>
+          </a>
+        </li>
+      </ul>
       <div class="row-fluid">
-        <div class="span12 action-link">
+        <div class="span12 action-link" style="text-align:left; padding:10px;border:1px solid #DDD; border-top:0">
           <h4 data-bind="text: (name()) ? name() : node_type() + '-' + id()"></h4>
-          <span data-bind="text: node_type" class="muted"></span>
-          <div class="node-description" data-bind="text: description()"></div>
-        </div>
-      </div>
-
-      <div class="row-fluid node-action-bar">
-        <div class="span12" style="text-align:right">
-          <a class="btn btn-mini edit-node-link" title="${ _('Edit') }" data-bind="attr: { 'data-node-type': node_type() }" rel="tooltip"><i class="icon-pencil"></i></a>
-          &nbsp;
+          <div class="node-description muted" data-bind="text: description()"></div>
         </div>
       </div>
     </div>
@@ -543,11 +620,21 @@ ${ controls.decision_form(node_form, link_form, default_link_form, 'decision', T
  * Initialize the workflow, registry, modal, and import objects.
  */
  // Custom handlers for saving, loading, error checking, etc.
+function interpret_server_error(data, premessage) {
+  var message = premessage;
+  if (data) {
+    if (data.message) {
+      message += ": " + data.message;
+    }
+  }
+  return message;
+}
+
 function import_jobsub_load_success(data) {
   if (data.status == 0) {
     import_jobsub_action.initialize(data.data);
   } else {
-    $.jHueNotify.error("${ _('Received invalid response from server: ') } " + JSON.stringify(data));
+    $(document).trigger("error", interpret_server_error(data, "${ _('Received invalid response from server') } "));
   }
 }
 
@@ -555,7 +642,7 @@ function import_workflow_load_success(data) {
   if (data.status == 0) {
     import_workflow_action.initialize(data.data);
   } else {
-    $.jHueNotify.error("${ _('Received invalid response from server: ') } " + JSON.stringify(data));
+    $(document).trigger("error", interpret_server_error(data, "${ _('Received invalid response from server') } "));
   }
 }
 
@@ -588,9 +675,10 @@ function workflow_load_success(data) {
     ko.applyBindings(kill_view_model, $('#editKill')[0]);
 
   } else {
-    $.jHueNotify.error("${ _('Received invalid response from server: ') }" + JSON.stringify(data));
+    ko.mapping.fromJS(jqXHR.responseJSON.details.errors, workflow.errors);
+    workflow.loading(false);
+    $("#btn-save-wf").button('reset');
   }
-  workflow.loading(false);
 }
 
 function save_workflow() {
@@ -604,7 +692,46 @@ function save_workflow() {
   }
 }
 
-// Fetch all nodes from server.
+var kill_view_model = null;
+function workflow_load_success(data) {
+  if (data.status == 0) {
+    var workflow_model = new WorkflowModel(data.data);
+    workflow.reload(workflow_model);
+
+    //// Kill node
+    kill_view_model = ManageKillModule($, workflow, nodeModelChooser, Node, NodeModel);
+    ko.applyBindings(kill_view_model, $('#editKill')[0]);
+
+  } else {
+    $(document).trigger("error", interpret_server_error(data, "${ _('Error loading workflow') }"));
+  }
+  workflow.loading(false);
+}
+
+function workflow_load_error(jqXHR) {
+  var data = jqXHR.responseJSON;
+  $(document).trigger("error", interpret_server_error(jqXHR.responseJSON, "${ _('Error loading workflow') }"));
+  workflow.loading(false);
+}
+
+function save_workflow(callback) {
+  var _callbackFn = workflow_save_success;
+  if (typeof callback != "undefined"){
+    _callbackFn = callback;
+  }
+  workflow.loading(true);
+  if (kill_view_model.enabled()) {
+    if (kill_view_model.isValid()) {
+      workflow.save({ success: _callbackFn, error: workflow_save_error });
+    }
+  } else {
+    workflow.save({ success: _callbackFn, error: workflow_save_error });
+  }
+}
+
+var OOZIE_CREDENTIALS = ${ credentials | n,unicode };
+
+// Fetch workflow properties from server.
 var workflow_model = new WorkflowModel({
   id: ${ workflow.id },
   name: "${ workflow.name }",
@@ -615,7 +742,8 @@ var workflow_model = new WorkflowModel({
   deployment_dir: "${ workflow.deployment_dir }",
   is_shared: "${ workflow.is_shared }" == "True",
   parameters: ${ workflow.parameters_escapejs | n,unicode },
-  job_properties: ${ workflow.job_properties_escapejs | n,unicode }
+  job_properties: ${ workflow.job_properties_escapejs | n,unicode },
+  data: ${ workflow.data_js_escaped | n,unicode }
 });
 var registry = new Registry();
 var workflow = new Workflow({
@@ -629,7 +757,7 @@ var import_jobsub_action = new ImportJobsubAction({workflow: workflow});
 var import_workflow_action = new ImportWorkflowAction({workflow: workflow});
 var modal = new Modal($('#node-modal'));
 
-// Load data.
+// Fetch nodes
 import_jobsub_action.fetchWorkflows({ success: import_jobsub_load_success });
 import_workflow_action.fetchWorkflows({ success: import_workflow_load_success });
 {
@@ -642,7 +770,7 @@ import_workflow_action.fetchWorkflows({ success: import_workflow_load_success })
     }
   });
   workflow.loading(true);
-  workflow.load({ success: workflow_load_success });
+  workflow.load({ success: workflow_load_success, error: workflow_load_error });
 }
 
 /**
@@ -672,7 +800,7 @@ workflow.el.on('mousedown', '.new-node-link', function(e) {
 
   // Trigger fake mousedown event to start dragging node.
   var is_dirty = workflow.is_dirty();
-  el.offset({ top: e.pageY - el.height()/10, left: e.pageX - el.width()/10 });
+  el.offset({ top: e.pageY - el.height()/2, left: e.pageX - el.width()/10 });
   el.trigger($.Event("mousedown", {pageX: e.pageX, pageY: e.pageY, target: el[0], which: 1}));
 
   var cancel_edit = function(e) {
@@ -722,7 +850,7 @@ workflow.el.on('click', '.convert-node-link', function(e) {
 // Modal for cloning a node
 workflow.el.on('click', '.clone-node-btn', function(e) {
   var node = ko.contextFor(this).$data;
-  var model = node.model.copy();
+  var model = node.toJS();
   model.id = IdGeneratorTable[model.node_type].nextId();
   model.name += '-copy';
   model.child_links = [];
@@ -808,7 +936,7 @@ $('#importJobsub').on('click', '.action-row', function(e) {
           routie('editWorkflow');
           $.jHueNotify.info("${ _('Action imported at the top of the workflow.') } ");
         } else {
-          $.jHueNotify.error("${ _('Received invalid response from server: ') } " + JSON.stringify(data));
+          $(document).trigger("error", interpret_server_error(data, "${ _('Received invalid response from server') }"));
         }
       }
     });
@@ -830,7 +958,7 @@ $('#importOozie').on('click', '.action-row', function(e) {
           import_view_model.oozie().initialize({nodes: data.data.actions});
           routie('importAction/oozie');
         } else {
-          $.jHueNotify.error("${ _('Received invalid response from server: ') } " + JSON.stringify(data));
+          $(document).trigger("error", interpret_server_error(data, "${ _('Received invalid response from server') }"));
         }
       }
     });
@@ -866,6 +994,7 @@ ko.applyBindings(workflow, $('#workflowControls')[0]);
 ko.applyBindings(import_view_model, $('#importAction')[0]);
 ko.applyBindings(import_view_model.oozie(), $('#importOozieAction')[0]);
 
+
 window.onbeforeunload = function (e) {
   if (workflow.is_dirty()) {
     var message = "${ _('You have unsaved changes in this workflow.') }";
@@ -884,7 +1013,7 @@ window.onbeforeunload = function (e) {
 
 window.onresize = function () {
   if (modal) {
-    modal.recenter(280, 250);
+    modal.recenter(280, 0);
   }
 };
 
@@ -893,6 +1022,8 @@ var AUTOCOMPLETE_PROPERTIES;
 $(document).ready(function () {
 
   routie('editWorkflow');
+
+  $("a[data-row-selector='true']").jHueRowSelector();
 
   var actionToolbarProperties = {
     docked: false,
@@ -928,16 +1059,38 @@ $(document).ready(function () {
     var _url = $(this).data('clone-url');
     $.post(_url, function (data) {
       window.location = data.url;
+    }).error(function(){
+      $(document).trigger("error", "${ _('There was a problem copying this workflow.') }");
     });
   });
+
   $('#submit-btn').on('click', function () {
-    var _url = $(this).data('submit-url');
-    $.get(_url, function (response) {
+    if (workflow.is_dirty()) {
+      $("#runUnsaved").modal();
+      $("#runUnsaved").data("submit-url", $(this).data('submit-url'));
+    }
+    else {
+      submitWorkflow($(this).data('submit-url'));
+    }
+  });
+
+  $("#saveAndSubmitBtn").on("click", function () {
+    $("#runUnsaved").modal("hide");
+    save_workflow(function (data) {
+      workflow_save_success(data);
+      submitWorkflow($("#runUnsaved").data('submit-url'));
+    });
+  });
+
+  function submitWorkflow(url) {
+    $.get(url, function (response) {
         $('#submit-wf-modal').html(response);
         $('#submit-wf-modal').modal('show');
       }
-    );
-  });
+    ).error(function(){
+      $(document).trigger("error", "${ _('There was a problem submitting this workflow.') }");
+    });
+  }
 
   routie({
     'properties':function () {
@@ -1000,9 +1153,12 @@ function checkModelDirtiness() {
   }
 }
 
+${ utils.slaGlobal() }
+
 </script>
 
 ${ utils.path_chooser_libs(True) }
+
 
 <script>
   $(document).ready(function(){

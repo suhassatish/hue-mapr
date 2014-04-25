@@ -21,8 +21,10 @@
 
 <%namespace name="layout" file="../navigation-bar.mako" />
 <%namespace name="utils" file="../utils.inc.mako" />
+<%namespace name="coordinator_utils" file="coordinator_utils.mako" />
 
-${ commonheader(_("Create Coordinator"), "oozie", user, "100px") | n,unicode }
+
+${ commonheader(_("Create Coordinator"), "oozie", user) | n,unicode }
 ${ layout.menubar(section='coordinators') }
 
 <style type="text/css">
@@ -36,21 +38,15 @@ ${ layout.menubar(section='coordinators') }
   .help-block {
     color: #999999;
   }
-  .sidebar-nav {
-    padding: 9px 0;
-  }
-
 </style>
 
 <script src="/static/ext/js/knockout-min.js" type="text/javascript" charset="utf-8"></script>
 <script src="/static/ext/js/routie-0.3.0.min.js" type="text/javascript" charset="utf-8"></script>
 
 <div class="container-fluid">
-  <h1>${ _('Coordinator Editor') } ${ coordinator.name }</h1>
-
   <div class="row-fluid">
     <div class="span2">
-      <div class="well sidebar-nav">
+      <div class="sidebar-nav">
         <ul class="nav nav-list" style="min-height: 150px">
           <li class="nav-header">${ _('Properties') }</li>
           <li class="active"><a href="#">${ _('Edit properties') }</a></li>
@@ -58,6 +54,8 @@ ${ layout.menubar(section='coordinators') }
         </div>
     </div>
     <div class="span10">
+      <div class="card card-small">
+        <h1 class="card-heading simple">${ _('Coordinator Editor') } ${ coordinator.name }</h1>
       <ul class="nav nav-pills">
         <li class="active"><a href="#step1" class="step">${ _('Step 1: Details') }</a></li>
         <li><a href="#step2" class="step">${ _('Step 2: Frequency') }</a></li>
@@ -70,15 +68,15 @@ ${ layout.menubar(section='coordinators') }
         <div class="steps">
 
           <div id="step1" class="stepDetails">
-            <div class="alert alert-info"><h3>${ _('Coordinator data') }</h3></div>
+            <div class="alert alert-info"><h3>${ _('Schedule') }</h3></div>
             <div class="fieldWrapper">
               ${ utils.render_field_no_popover(coordinator_form['name'], extra_attrs = {'validate':'true'}) }
               ${ utils.render_field_no_popover(coordinator_form['description']) }
               ${ utils.render_field_no_popover(coordinator_form['workflow'], extra_attrs = {'validate':'true'}) }
-              ${ utils.render_field_no_popover(coordinator_form['is_shared']) }
               ${ coordinator_form['parameters'] | n,unicode }
               ${ coordinator_form['job_properties'] | n,unicode }
               <div class="hide">
+                ${ utils.render_field_no_popover(coordinator_form['is_shared']) }
                 ${ utils.render_field(coordinator_form['timeout']) }
                 ${ coordinator_form['schema_version'] | n,unicode }
               </div>
@@ -89,13 +87,24 @@ ${ layout.menubar(section='coordinators') }
             <div class="alert alert-info"><h3>${ _('Frequency') }</h3></div>
             <div class="fieldWrapper">
               <div class="row-fluid">
-                <div class="span6">
-                  ${ utils.render_field_no_popover(coordinator_form['frequency_number']) }
-                </div>
-                <div class="span6">
-                  ${ utils.render_field_no_popover(coordinator_form['frequency_unit']) }
+                <div class="alert alert-warning">
+                  ${ _('UTC time only. (e.g. if you want 10pm PST (UTC+8) set it 8 hours later to 6am the next day.') }
                 </div>
               </div>
+            </div>
+            <div class="fieldWrapper">
+              % if enable_cron_scheduling:
+                ${ coordinator_utils.frequency_fields() }
+              % else:
+                <div class="row-fluid">
+                  <div class="span6">
+                    ${ utils.render_field_no_popover(coordinator_form['frequency_number']) }
+                  </div>
+                  <div class="span6">
+                    ${ utils.render_field_no_popover(coordinator_form['frequency_unit']) }
+                  </div>
+                </div>
+              % endif
             </div>
             <div class="fieldWrapper">
               <div class="row-fluid">
@@ -119,12 +128,23 @@ ${ layout.menubar(section='coordinators') }
 
       </form>
     </div>
+    </div>
 
   </div>
 </div>
 
+<link rel="stylesheet" type="text/css" href="/static/ext/jqCron/jqCron.css" />
+<script type="text/javascript" src="/static/ext/jqCron/jqCron.min.js"></script>
+
+<script type="text/javascript" src="/oozie/static/js/coordinator.js"></script>
+
+
 <script type="text/javascript" charset="utf-8">
   $(document).ready(function () {
+
+    % if enable_cron_scheduling:
+      initCoordinator(${ coordinator_frequency | n,unicode });
+    % endif
 
     var currentStep = "step1";
 

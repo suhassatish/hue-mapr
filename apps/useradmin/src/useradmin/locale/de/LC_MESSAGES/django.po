@@ -325,54 +325,54 @@ msgstr "Ob geprüft werden soll oder nicht, dass die Shell des Benutzers nicht /
 #: src/useradmin/templates/add_ldap_users.mako:25
 #: src/useradmin/templates/edit_user.mako:23
 #: src/useradmin/templates/list_users.mako:25
-#: src/useradmin/templates/list_users.mako:29
+#: src/useradmin/templates/list_users.mako:30
 msgid "Hue Users"
 msgstr "Hue-Benutzer"
 
-#: src/useradmin/templates/add_ldap_users.mako:30
+#: src/useradmin/templates/add_ldap_users.mako:31
 msgid "Hue Users - Add/Sync LDAP user"
 msgstr "Hue-Benutzer - LDAP-Benutzer hinzufügen/synchronisieren"
 
-#: src/useradmin/templates/add_ldap_users.mako:46
-#: src/useradmin/templates/edit_user.mako:81
+#: src/useradmin/templates/add_ldap_users.mako:47
+#: src/useradmin/templates/edit_user.mako:78
 msgid "Update user"
 msgstr "Benutzer aktualisieren"
 
-#: src/useradmin/templates/add_ldap_users.mako:48
+#: src/useradmin/templates/add_ldap_users.mako:49
 msgid "Add/Sync user"
 msgstr "Benutzer hinzufügen/synchronisieren"
 
-#: src/useradmin/templates/add_ldap_users.mako:50
-#: src/useradmin/templates/edit_group.mako:75
-#: src/useradmin/templates/edit_permissions.mako:53
+#: src/useradmin/templates/add_ldap_users.mako:51
+#: src/useradmin/templates/edit_group.mako:77
+#: src/useradmin/templates/edit_permissions.mako:57
 #: src/useradmin/templates/sync_ldap_users_groups.mako:49
 msgid "Cancel"
 msgstr "Abbrechen"
 
-#: src/useradmin/templates/add_ldap_users.mako:58
-#: src/useradmin/templates/edit_group.mako:83
-#: src/useradmin/templates/edit_group.mako:90
-#: src/useradmin/templates/edit_permissions.mako:61
-#: src/useradmin/templates/edit_user.mako:114
+#: src/useradmin/templates/add_ldap_users.mako:60
+#: src/useradmin/templates/edit_group.mako:86
+#: src/useradmin/templates/edit_group.mako:93
+#: src/useradmin/templates/edit_permissions.mako:66
+#: src/useradmin/templates/edit_user.mako:93
 msgid "Select all"
 msgstr "Alle auswählen"
 
-#: src/useradmin/templates/add_ldap_users.mako:59
-#: src/useradmin/templates/edit_group.mako:84
-#: src/useradmin/templates/edit_group.mako:91
-#: src/useradmin/templates/edit_permissions.mako:62
-#: src/useradmin/templates/edit_user.mako:115
+#: src/useradmin/templates/add_ldap_users.mako:61
+#: src/useradmin/templates/edit_group.mako:87
+#: src/useradmin/templates/edit_group.mako:94
+#: src/useradmin/templates/edit_permissions.mako:67
+#: src/useradmin/templates/edit_user.mako:94
 msgid "Search"
 msgstr "Suche"
 
-#: src/useradmin/templates/add_ldap_users.mako:60
-#: src/useradmin/templates/edit_permissions.mako:63
-#: src/useradmin/templates/edit_user.mako:116
+#: src/useradmin/templates/add_ldap_users.mako:62
+#: src/useradmin/templates/edit_permissions.mako:68
+#: src/useradmin/templates/edit_user.mako:95
 msgid "No groups found."
 msgstr "Keine Gruppen gefunden."
 
-#: src/useradmin/templates/add_ldap_users.mako:60
-#: src/useradmin/templates/edit_user.mako:116
+#: src/useradmin/templates/add_ldap_users.mako:62
+#: src/useradmin/templates/edit_user.mako:95
 msgid "Create a new group now"
 msgstr "Jetzt eine neue Gruppe erstellen"
 
@@ -401,28 +401,28 @@ msgstr "Nein"
 
 #: src/useradmin/templates/edit_group.mako:26
 #: src/useradmin/templates/list_groups.mako:25
-#: src/useradmin/templates/list_groups.mako:29
+#: src/useradmin/templates/list_groups.mako:30
 msgid "Hue Groups"
 msgstr "Hue-Gruppen"
 
-#: src/useradmin/templates/edit_group.mako:47
+#: src/useradmin/templates/edit_group.mako:48
 #, python-format
 msgid "Hue Groups - Edit group: %(name)s"
 msgstr "Hue-Gruppen - Gruppe bearbeiten: %(name)s"
 
-#: src/useradmin/templates/edit_group.mako:50
+#: src/useradmin/templates/edit_group.mako:51
 msgid "Hue Groups - Add/Sync LDAP group"
 msgstr "Hue-Gruppen - LDAP-Gruppe hinzufügen/synchronisieren"
 
-#: src/useradmin/templates/edit_group.mako:52
+#: src/useradmin/templates/edit_group.mako:53
 msgid "Hue Groups - Create group"
 msgstr "Hue-Gruppen - Gruppe erstellen"
 
-#: src/useradmin/templates/edit_group.mako:67
+#: src/useradmin/templates/edit_group.mako:69
 msgid "Update group"
 msgstr "Gruppe aktualisieren"
 
-#: src/useradmin/templates/edit_group.mako:70
+#: src/useradmin/templates/edit_group.mako:72
 msgid "Add/Sync group"
 msgstr "Gruppe hinzufügen/synchronisieren"
 
@@ -431,47 +431,47 @@ msgstr "Gruppe hinzufügen/synchronisieren"
 msgid "Add group"
 msgstr "Gruppe hinzufügen"
 
-#: src/useradmin/templates/edit_group.mako:85
+#: src/useradmin/templates/edit_group.mako:88
 msgid "No users found."
 msgstr "Keine Benutzer gefunden."
 
-#: src/useradmin/templates/edit_group.mako:85
+#: src/useradmin/templates/edit_group.mako:88
 msgid "Create a new user now"
 msgstr "Jetzt einen neuen Benutzer erstellen"
 
-#: src/useradmin/templates/edit_group.mako:92
+#: src/useradmin/templates/edit_group.mako:95
 msgid "No permissions found."
 msgstr "Keine Berechtigungen gefunden."
 
 #: src/useradmin/templates/edit_permissions.mako:23
 #: src/useradmin/templates/list_permissions.mako:26
-#: src/useradmin/templates/list_permissions.mako:30
+#: src/useradmin/templates/list_permissions.mako:31
 msgid "Hue Permissions"
 msgstr "Hue-Berechtigungen"
 
-#: src/useradmin/templates/edit_permissions.mako:43
+#: src/useradmin/templates/edit_permissions.mako:44
 #, python-format
 msgid "Hue Permissions - Edit app: %(app)s"
 msgstr "Hue-Berechtigungen - App bearbeiten: %(app)s"
 
-#: src/useradmin/templates/edit_permissions.mako:52
+#: src/useradmin/templates/edit_permissions.mako:56
 msgid "Update permission"
 msgstr "Berechtigung aktualisieren"
 
-#: src/useradmin/templates/edit_user.mako:31
+#: src/useradmin/templates/edit_user.mako:29
 #, python-format
 msgid "Hue Users - Edit user: %(username)s"
 msgstr "Hue-Benutzer - Benutzer bearbeiten: %(username)s"
 
-#: src/useradmin/templates/edit_user.mako:33
+#: src/useradmin/templates/edit_user.mako:31
 msgid "Hue Users - Create user"
 msgstr "Hue-Benutzer - Benutzer erstellen"
 
-#: src/useradmin/templates/edit_user.mako:40
+#: src/useradmin/templates/edit_user.mako:38
 msgid "Step 1: Credentials (required)"
 msgstr "Schritt 1: Zugangsdaten (erforderlich)"
 
-#: src/useradmin/templates/edit_user.mako:41
+#: src/useradmin/templates/edit_user.mako:39
 msgid "Step 2: Names and Groups"
 msgstr "Schritt 2: Namen und Gruppen"
 
@@ -483,24 +483,28 @@ msgstr "Schritt 1: Namen"
 msgid "Step 3: Advanced"
 msgstr "Schritt 3: Erweitert"
 
-#: src/useradmin/templates/edit_user.mako:77
+#: src/useradmin/templates/edit_user.mako:74
 msgid "Back"
 msgstr "Zurück"
 
-#: src/useradmin/templates/edit_user.mako:78
+#: src/useradmin/templates/edit_user.mako:75
 msgid "Next"
-msgstr "Nächste"
+msgstr "Weiter"
 
 #: src/useradmin/templates/edit_user.mako:83
 #: src/useradmin/templates/list_users.mako:42
 msgid "Add user"
 msgstr "Benutzer hinzufügen"
 
-#: src/useradmin/templates/edit_user.mako:167
+#: src/useradmin/templates/edit_user.mako:146
 msgid "This field is required."
 msgstr "Dieses Feld ist erforderlich."
 
-#: src/useradmin/templates/layout.mako:51
+#: src/useradmin/templates/layout.mako:59
+msgid "User Admin"
+msgstr "Benutzeradministration"
+
+#: src/useradmin/templates/layout.mako:63
 msgid "Users"
 msgstr "Benutzer"
 
@@ -575,7 +579,7 @@ msgstr "Berechtigung bearbeiten"
 
 #: src/useradmin/templates/list_permissions.mako:64
 msgid "There are no permissions matching the search criteria."
-msgstr "Es gibt keine Gruppen, die den Suchkriterien entsprechen."
+msgstr "Es gibt keine Berechtigungen, die den Suchkriterien entsprechen."
 
 #: src/useradmin/templates/list_users.mako:33
 msgid "Search for name, group, etc..."

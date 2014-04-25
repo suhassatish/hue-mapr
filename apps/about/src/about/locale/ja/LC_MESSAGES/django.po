@@ -142,7 +142,7 @@ msgstr "戻る"
 
 #: src/about/templates/admin_wizard.mako:217
 msgid "Next"
-msgstr "次へ"
+msgstr "次ヘ"
 
 #: src/about/templates/admin_wizard.mako:247
 #: src/about/templates/admin_wizard.mako:265

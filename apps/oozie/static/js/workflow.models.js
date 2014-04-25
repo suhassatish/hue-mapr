@@ -19,6 +19,25 @@
 // These serialized values are also stored in the backend.
 var MODEL_FIELDS_JSON = ['parameters', 'job_properties', 'files', 'archives', 'prepares', 'params',
                    'deletes', 'mkdirs', 'moves', 'chmods', 'touchzs'];
+var DEFAULT_SLA = [
+    {'key': 'enabled', 'value': false},
+    {'key': 'nominal-time', 'value': ''},
+    {'key': 'should-start', 'value': ''},
+    {'key': 'should-end', 'value': ''},
+    {'key': 'max-duration', 'value': ''},
+    {'key': 'alert-events', 'value': ''},
+    {'key': 'alert-contact', 'value': ''},
+    {'key': 'notification-msg', 'value': ''},
+    {'key': 'upstream-apps', 'value': ''}
+];
+
+function getDefaultData() {
+  return {
+    'sla': DEFAULT_SLA.slice(0),
+    'credentials': []
+  };
+}
+
 function normalize_model_fields(node_model) {
   $.each(MODEL_FIELDS_JSON, function(index, field) {
     if (field in node_model && $.isArray(node_model[field])) {
@@ -39,15 +58,54 @@ var map_params = function(options, subscribe) {
     });
     return mapping;
   } else {
-    var mapping =  ko.mapping.fromJS(options.data, {});
+    var mapping = ko.mapping.fromJS(options.data, {});
     subscribe(mapping);
     return mapping;
   }
 };
 
+// Find all members of the data and apply appropriate mapping.
+// Arrays might contain literals or plain objects.
+// Plain objects should have their members mapped and literals should
+// be replaced with observables.
+// Plain object members will notify their containing arrays when they update.
+// Literals will notify their containing arrays when they've changed.
+var map_data = function(options) {
+  var data = {};
+  options.data = ($.type(options.data) == "string") ? $.parseJSON(options.data) : options.data;
+  $.each(options.data, function(member, value) {
+    // @TODO: Should we support unstructureed data as children?
+    if ($.isArray(value)) {
+      // @TODO: Support more than {'member': 'value',...} and 'value'.
+      data[member] = ko.observableArray();
+      $.each(value, function(index, object_or_literal) {
+        if ($.isPlainObject(object_or_literal)) {
+          var obj = {};
+          $.each(object_or_literal, function(key, literal) {
+            obj[key] = ko.mapping.fromJS(literal);
+            obj[key].subscribe(function() {
+              data[member].valueHasMutated();
+            });
+          });
+          data[member].push(obj);
+        } else {
+          var literal = ko.mapping.fromJS(object_or_literal);
+          data[member].push(literal);
+          literal.subscribe(function() {
+            data[member].valueHasMutated();
+          });
+        }
+      });
+    } else {
+      data[member] = ko.mapping.fromJS(value);
+    }
+  });
+  return data;
+};
+
 // Maps JSON strings to fields in the view model.
 var MAPPING_OPTIONS = {
-  ignore: ['initialize', 'toString', 'copy'],
+  ignore: ['initialize', 'toString', 'copy'], // Do not support cancel edit on data
   job_properties: {
     create: function(options) {
       var parent = options.parent;
@@ -219,7 +277,6 @@ var MAPPING_OPTIONS = {
           parent.moves.valueHasMutated();
         });
       };
-
       return map_params(options, subscribe);
     },
     update: function(options) {
@@ -232,7 +289,6 @@ var MAPPING_OPTIONS = {
           parent.moves.valueHasMutated();
         });
       };
-
       return map_params(options, subscribe);
     }
    },
@@ -326,6 +382,30 @@ var ModelModule = function($) {
   return module;
 };
 
+function initializeWorkflowData() {
+  var self = this;
+
+  self.data = ($.type(self.data) == "string") ? $.parseJSON(self.data) : self.data;
+
+  if (! ('sla' in self.data)) {
+    self.data['sla'] = DEFAULT_SLA.slice(0);
+  }
+}
+
+function initializeNodeData() {
+  var self = this;
+
+  self.data = ($.type(self.data) == "string") ? $.parseJSON(self.data) : self.data;
+
+  if (! ('sla' in self.data)) {
+    self.data['sla'] = DEFAULT_SLA.slice(0);
+  }
+
+  if (! ('credentials' in self.data)) {
+	self.data['credentials'] = getDefaultData()['credentials'].slice(0);
+  }
+}
+
 var WorkflowModel = ModelModule($);
 $.extend(WorkflowModel.prototype, {
   id: 0,
@@ -337,7 +417,9 @@ $.extend(WorkflowModel.prototype, {
   deployment_dir: '',
   is_shared: true,
   parameters: '[]',
-  job_xml: ''
+  job_xml: '',
+  data: getDefaultData(),
+  initialize: initializeWorkflowData
 });
 
 var NodeModel = ModelModule($);
@@ -381,7 +463,9 @@ $.extend(DistCPModel.prototype, {
   prepares: '[]',
   job_xml: '',
   params: '[]',
-  child_links: []
+  child_links: [],
+  data: getDefaultData(),
+  initialize: initializeNodeData
 });
 
 var MapReduceModel = ModelModule($);
@@ -397,7 +481,9 @@ $.extend(MapReduceModel.prototype, {
   jar_path: '',
   prepares: '[]',
   job_xml: '',
-  child_links: []
+  child_links: [],
+  data: getDefaultData(),
+  initialize: initializeNodeData
 });
 
 var StreamingModel = ModelModule($);
@@ -412,7 +498,9 @@ $.extend(StreamingModel.prototype, {
   job_properties: '[]',
   mapper: '',
   reducer: '',
-  child_links: []
+  child_links: [],
+  data: getDefaultData(),
+  initialize: initializeNodeData
 });
 
 var JavaModel = ModelModule($);
@@ -432,7 +520,9 @@ $.extend(JavaModel.prototype, {
   args: '',
   java_opts: '',
   capture_output: false,
-  child_links: []
+  child_links: [],
+  data: getDefaultData(),
+  initialize: initializeNodeData
 });
 
 var PigModel = ModelModule($);
@@ -449,7 +539,9 @@ $.extend(PigModel.prototype, {
   job_xml: '',
   params: '[]',
   script_path: '',
-  child_links: []
+  child_links: [],
+  data: getDefaultData(),
+  initialize: initializeNodeData
 });
 
 var HiveModel = ModelModule($);
@@ -466,7 +558,9 @@ $.extend(HiveModel.prototype, {
   job_xml: '',
   params: '[]',
   script_path: '',
-  child_links: []
+  child_links: [],
+  data: getDefaultData(),
+  initialize: initializeNodeData
 });
 
 var SqoopModel = ModelModule($);
@@ -483,7 +577,9 @@ $.extend(SqoopModel.prototype, {
   job_xml: '',
   params: '[]',
   script_path: '',
-  child_links: []
+  child_links: [],
+  data: getDefaultData(),
+  initialize: initializeNodeData
 });
 
 var ShellModel = ModelModule($);
@@ -501,7 +597,9 @@ $.extend(ShellModel.prototype, {
   params: '[]',
   command: '',
   capture_output: false,
-  child_links: []
+  child_links: [],
+  data: getDefaultData(),
+  initialize: initializeNodeData
 });
 
 var SshModel = ModelModule($);
@@ -516,7 +614,9 @@ $.extend(SshModel.prototype, {
   params: '[]',
   command: '',
   capture_output: false,
-  child_links: []
+  child_links: [],
+  data: getDefaultData(),
+  initialize: initializeNodeData
 });
 
 var FsModel = ModelModule($);
@@ -531,7 +631,9 @@ $.extend(FsModel.prototype, {
   moves: '[]',
   chmods: '[]',
   touchzs: '[]',
-  child_links: []
+  child_links: [],
+  data: getDefaultData(),
+  initialize: initializeNodeData
 });
 
 var EmailModel = ModelModule($);
@@ -545,7 +647,9 @@ $.extend(EmailModel.prototype, {
   cc: '',
   subject: '',
   body: '',
-  child_links: []
+  child_links: [],
+  data: getDefaultData(),
+  initialize: initializeNodeData
 });
 
 var SubWorkflowModel = ModelModule($);
@@ -558,7 +662,9 @@ $.extend(SubWorkflowModel.prototype, {
   sub_workflow: 0,
   propagate_configuration: true,
   job_properties: '[]',
-  child_links: []
+  child_links: [],
+  data: getDefaultData(),
+  initialize: initializeNodeData
 });
 
 var GenericModel = ModelModule($);
@@ -569,7 +675,9 @@ $.extend(GenericModel.prototype, {
   node_type: 'generic',
   workflow: 0,
   xml: '',
-  child_links: []
+  child_links: [],
+  data: getDefaultData(),
+  initialize: initializeNodeData
 });
 
 function nodeModelChooser(node_type) {

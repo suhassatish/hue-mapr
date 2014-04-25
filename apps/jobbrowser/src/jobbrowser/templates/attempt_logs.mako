@@ -20,100 +20,106 @@
 <%namespace name="comps" file="jobbrowser_components.mako" />
 
 ${ commonheader(_('Task Attempt: %(attemptId)s') % dict(attemptId=attempt.attemptId_short), "jobbrowser", user) | n,unicode }
+${ comps.menubar() }
+
 <div class="container-fluid">
-    <h1>${_('Task Attempt: %(attemptId)s - Job Browser') % dict(attemptId=attempt.attemptId_short)}</h1>
-    <div class="row-fluid">
-        <div class="span2">
-            <div class="well sidebar-nav">
-                <ul class="nav nav-list">
-                    <li class="nav-header">${_('Attempt ID')}</li>
-                    <li>${attempt.attemptId_short}</li>
-                    <li class="nav-header">${_('Task')}</li>
-                    <li><a href="${url('jobbrowser.views.single_task', job=joblnk.jobId, taskid=taskid)}" title="${_('View this task')}">${task.taskId_short}</a>
-                    </li>
-                    <li class="nav-header">${_('Job')}</li>
-                    <li><a href="${url('jobbrowser.views.single_job', job=joblnk.jobId)}" title="${_('View this job')}">${joblnk.jobId_short}</a></li>
-                    <li class="nav-header">${_('Status')}</li>
-                    <li>
-                        <%
-                            status = attempt.state.lower()
-                        %>
-                        % if status == 'running' or status == 'pending':
-                                <span class="label label-warning">${status}</span>
-                        % elif status == 'succeeded':
-                                <span class="label label-success">${status}</span>
-                        % else:
-                                <span class="label">${status}</span>
-                        % endif
-                    </li>
-                </ul>
-            </div>
-        </div>
-
-        <div class="span10">
-            <ul class="nav nav-tabs">
-                <li><a href="${ url('jobbrowser.views.single_task_attempt', job=joblnk.jobId, taskid=task.taskId, attemptid=attempt.attemptId) }#tmetadata">${_('Metadata')}</a></li>
-                <li><a href="${ url('jobbrowser.views.single_task_attempt', job=joblnk.jobId, taskid=task.taskId, attemptid=attempt.attemptId) }#tcounters">${_('Counters')}</a></li>
-                <li class="active"><a href="#logs" data-toggle="tab">${_('Logs')}</a></li>
-            </ul>
-
-            <div class="tab-content">
-                <div class="tab-pane active" id="logs">
-                  <%def name="format_log(raw)">
-                    ## have to remove any indentation here or it breaks inside the pre tags
-                    % for line in raw.split('\n'):
-${ line | unicode,trim }
-                    % endfor
-                  </%def>
-                  <%
-                      log_diagnostic = logs[0]
-                      log_stdout = logs[1]
-                      log_stderr = logs[2]
-                      log_syslog = logs[3]
-                  %>
-                  <div class="tabbable">
-                    <ul class="nav nav-pills">
-                      <li class="${ first_log_tab == 0 and 'active' or '' }"><a href="#logsDiagnostic" data-toggle="tab">${_('task diagnostic log')}</a></li>
-                      <li class="${ first_log_tab == 1 and 'active' or '' }"><a href="#logsStdOut" data-toggle="tab">${_('stdout')}</a></li>
-                      <li class="${ first_log_tab == 2 and 'active' or '' }"><a href="#logsStdErr" data-toggle="tab">${_('stderr')}</a></li>
-                      <li class="${ first_log_tab == 3 and 'active' or '' }"><a href="#logsSysLog" data-toggle="tab">${_('syslog')}</a></li>
-                    </ul>
-                    <div class="tab-content">
-                      <div class="tab-pane ${ first_log_tab == 0 and 'active' or '' }" id="logsDiagnostic">
-                          % if not log_diagnostic:
-                            <pre>-- empty --</pre>
-                          % else:
-                            <pre>${format_log(log_diagnostic)}</pre>
-                          % endif
-                      </div>
-                      <div class="tab-pane ${ first_log_tab == 1 and 'active' or '' }" id="logsStdOut">
-                          % if not log_stdout:
-                            <pre>-- empty --</pre>
-                          % else:
-                            <pre>${format_log(log_stdout)}</pre>
-                          % endif
-                      </div>
-                      <div class="tab-pane ${ first_log_tab == 2 and 'active' or '' }" id="logsStdErr">
-                          % if not log_stderr:
-                            <pre>-- empty --</pre>
-                          % else:
-                            <pre>${format_log(log_stderr)}</pre>
-                          % endif
-                      </div>
-                      <div class="tab-pane ${ first_log_tab == 3 and 'active' or '' }" id="logsSysLog">
-                          % if not log_syslog:
-                            <pre>-- empty --</pre>
-                          % else:
-                            <pre>${format_log(log_syslog)}</pre>
-                          % endif
-                      </div>
-                    </div>
-                  </div>
-
-                </div>
-            </div>
-        </div>
+  <div class="row-fluid">
+    <div class="span2">
+      <div class="sidebar-nav" style="padding-top: 0">
+        <ul class="nav nav-list">
+          <li class="nav-header">${_('Attempt ID')}</li>
+          <li class="white">${attempt.attemptId_short}</li>
+          <li class="nav-header">${_('Task')}</li>
+          <li><a href="${url('jobbrowser.views.single_task', job=joblnk.jobId, taskid=taskid)}" title="${_('View this task')}">${task.taskId_short}</a>
+          </li>
+          <li class="nav-header">${_('Job')}</li>
+          <li><a href="${url('jobbrowser.views.single_job', job=joblnk.jobId)}" title="${_('View this job')}">${joblnk.jobId_short}</a></li>
+          <li class="nav-header">${_('Status')}</li>
+          <li class="white">
+              <%
+                  status = attempt.state.lower()
+              %>
+              % if status == 'running' or status == 'pending':
+                      <span class="label label-warning">${status}</span>
+              % elif status == 'succeeded':
+                      <span class="label label-success">${status}</span>
+              % else:
+                      <span class="label">${status}</span>
+              % endif
+          </li>
+        </ul>
+      </div>
     </div>
+
+    <div class="span10">
+      <div class="card card-small">
+        <h1 class="card-heading simple">${_('Task Attempt: %(attemptId)s') % dict(attemptId=attempt.attemptId_short)}</h1>
+        <div class="card-body">
+          <p>
+            <ul class="nav nav-tabs">
+              <li><a href="${ url('jobbrowser.views.single_task_attempt', job=joblnk.jobId, taskid=task.taskId, attemptid=attempt.attemptId) }#tmetadata">${_('Metadata')}</a></li>
+              <li><a href="${ url('jobbrowser.views.single_task_attempt', job=joblnk.jobId, taskid=task.taskId, attemptid=attempt.attemptId) }#tcounters">${_('Counters')}</a></li>
+              <li class="active"><a href="#logs" data-toggle="tab">${_('Logs')}</a></li>
+            </ul>
+            <div class="tab-content">
+              <div class="tab-pane active" id="logs">
+              <%def name="format_log(raw)">
+                ## have to remove any indentation here or it breaks inside the pre tags
+                % for line in raw.split('\n'):
+  ${ line | unicode,trim }
+                % endfor
+              </%def>
+              <%
+                  log_diagnostic = logs[0]
+                  log_stdout = logs[1]
+                  log_stderr = logs[2]
+                  log_syslog = logs[3]
+              %>
+              <div class="tabbable">
+                <ul class="nav nav-pills">
+                  <li class="${ first_log_tab == 0 and 'active' or '' }"><a href="#logsDiagnostic" data-toggle="tab">${_('task diagnostic log')}</a></li>
+                  <li class="${ first_log_tab == 1 and 'active' or '' }"><a href="#logsStdOut" data-toggle="tab">${_('stdout')}</a></li>
+                  <li class="${ first_log_tab == 2 and 'active' or '' }"><a href="#logsStdErr" data-toggle="tab">${_('stderr')}</a></li>
+                  <li class="${ first_log_tab == 3 and 'active' or '' }"><a href="#logsSysLog" data-toggle="tab">${_('syslog')}</a></li>
+                </ul>
+                <div class="tab-content">
+                  <div class="tab-pane ${ first_log_tab == 0 and 'active' or '' }" id="logsDiagnostic">
+                      % if not log_diagnostic:
+                        <pre>-- empty --</pre>
+                      % else:
+                        <pre>${format_log(log_diagnostic)}</pre>
+                      % endif
+                  </div>
+                  <div class="tab-pane ${ first_log_tab == 1 and 'active' or '' }" id="logsStdOut">
+                      % if not log_stdout:
+                        <pre>-- empty --</pre>
+                      % else:
+                        <pre>${format_log(log_stdout)}</pre>
+                      % endif
+                  </div>
+                  <div class="tab-pane ${ first_log_tab == 2 and 'active' or '' }" id="logsStdErr">
+                      % if not log_stderr:
+                        <pre>-- empty --</pre>
+                      % else:
+                        <pre>${format_log(log_stderr)}</pre>
+                      % endif
+                  </div>
+                  <div class="tab-pane ${ first_log_tab == 3 and 'active' or '' }" id="logsSysLog">
+                      % if not log_syslog:
+                        <pre>-- empty --</pre>
+                      % else:
+                        <pre>${format_log(log_syslog)}</pre>
+                      % endif
+                  </div>
+                </div>
+              </div>
+            </div>
+            </div>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script src="/jobbrowser/static/js/utils.js" type="text/javascript" charset="utf-8"></script>
@@ -155,13 +161,6 @@ ${ line | unicode,trim }
     });
 
     refreshLogs();
-    var logsRefreshInterval = window.setInterval(function () {
-      refreshLogs();
-    }, 1000);
-
-    $(document).on("stopLogsRefresh", function () {
-      window.clearInterval(logsRefreshInterval);
-    });
 
     initLogsElement($("#logsDiagnostic pre"));
     initLogsElement($("#logsStdOut pre"));
@@ -181,12 +180,9 @@ ${ line | unicode,trim }
           appendAndScroll($("#logsStdErr pre"), log_stderr);
           appendAndScroll($("#logsSysLog pre"), log_syslog);
 
-          if (!data.isRunning) {
-            $(document).trigger("stopLogsRefresh");
+          if (data.isRunning) {
+            window.setTimeout(refreshLogs, 1000);
           }
-        }
-        else {
-          $(document).trigger("stopLogsRefresh");
         }
       });
     }

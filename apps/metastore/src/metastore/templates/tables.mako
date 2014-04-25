@@ -22,6 +22,10 @@ from django.utils.translation import ugettext as _
 <%namespace name="components" file="components.mako" />
 
 ${ commonheader(_('Tables'), 'metastore', user) | n,unicode }
+${ components.menubar() }
+
+<link rel="stylesheet" href="/static/ext/chosen/chosen.min.css">
+<script src="/static/ext/chosen/chosen.jquery.min.js" type="text/javascript" charset="utf-8"></script>
 
 <div class="container-fluid" id="tables">
     <h1>${_('Database %s') % database}</h1>
@@ -86,6 +90,7 @@ ${ commonheader(_('Tables'), 'metastore', user) | n,unicode }
             </table>
         </div>
     </div>
+  </div>
 </div>
 
 <div id="dropTable" class="modal hide fade">
@@ -111,25 +116,25 @@ ${ commonheader(_('Tables'), 'metastore', user) | n,unicode }
 <script type="text/javascript" charset="utf-8">
   $(document).ready(function () {
     var viewModel = {
-        availableTables : ko.observableArray(${ tables_json | n }),
-        chosenTables : ko.observableArray([])
+      availableTables: ko.observableArray(${ tables_json | n }),
+      chosenTables: ko.observableArray([])
     };
 
     ko.applyBindings(viewModel);
 
     var tables = $(".datatables").dataTable({
-      "sDom":"<'row'r>t<'row'<'span8'i><''p>>",
-      "bPaginate":false,
-      "bLengthChange":false,
-      "bInfo":false,
-      "bFilter":true,
-      "aoColumns":[
-        {"bSortable":false, "sWidth":"1%" },
+      "sDom": "<'row'r>t<'row'<'span8'i><''p>>",
+      "bPaginate": false,
+      "bLengthChange": false,
+      "bInfo": false,
+      "bFilter": true,
+      "aoColumns": [
+        {"bSortable": false, "sWidth": "1%" },
         null
       ],
-      "oLanguage":{
-        "sEmptyTable":"${_('No data available')}",
-        "sZeroRecords":"${_('No matching records')}",
+      "oLanguage": {
+        "sEmptyTable": "${_('No data available')}",
+        "sZeroRecords": "${_('No matching records')}",
       }
     });
 
@@ -139,31 +144,37 @@ ${ commonheader(_('Tables'), 'metastore', user) | n,unicode }
 
     $("a[data-row-selector='true']").jHueRowSelector();
 
-    $("#id_database").change(function () {
-      $.cookie("hueBeeswaxLastDatabase", $(this).val(), {expires:90});
+    $("#id_database").chosen({
+      disable_search_threshold: 5,
+      width: "100%",
+      no_results_text: "${_('Oops, no database found!')}"
+    });
+
+    $("#id_database").chosen().change(function () {
+      $.cookie("hueBeeswaxLastDatabase", $(this).val(), {expires: 90});
       $('#db_form').submit();
     });
 
     $(".selectAll").click(function () {
       if ($(this).attr("checked")) {
-        $(this).removeAttr("checked").removeClass("icon-ok");
-        $("." + $(this).data("selectables")).removeClass("icon-ok").removeAttr("checked");
+        $(this).removeAttr("checked").removeClass("fa-check");
+        $("." + $(this).data("selectables")).removeClass("fa-check").removeAttr("checked");
       }
       else {
-        $(this).attr("checked", "checked").addClass("icon-ok");
-        $("." + $(this).data("selectables")).addClass("icon-ok").attr("checked", "checked");
+        $(this).attr("checked", "checked").addClass("fa-check");
+        $("." + $(this).data("selectables")).addClass("fa-check").attr("checked", "checked");
       }
       toggleActions();
     });
 
     $(".tableCheck").click(function () {
       if ($(this).attr("checked")) {
-        $(this).removeClass("icon-ok").removeAttr("checked");
+        $(this).removeClass("fa-check").removeAttr("checked");
       }
       else {
-        $(this).addClass("icon-ok").attr("checked", "checked");
+        $(this).addClass("fa-check").attr("checked", "checked");
       }
-      $(".selectAll").removeAttr("checked").removeClass("icon-ok");
+      $(".selectAll").removeAttr("checked").removeClass("fa-check");
       toggleActions();
     });
 
@@ -188,13 +199,15 @@ ${ commonheader(_('Tables'), 'metastore', user) | n,unicode }
     }
 
     $("#dropBtn").click(function () {
-      $.getJSON("${ url('metastore:drop_table', database=database) }", function(data) {
+      $.getJSON("${ url('metastore:drop_table', database=database) }", function (data) {
         $("#dropTableMessage").text(data.title);
       });
-      viewModel.chosenTables.removeAll();
-      $(".hueCheckbox[checked='checked']").each(function( index ) {
-        viewModel.chosenTables.push($(this).data("drop-name"));
+      var _tempList = [];
+      $(".hueCheckbox[checked='checked']").each(function (index) {
+        _tempList.push($(this).data("drop-name"));
       });
+      viewModel.chosenTables.removeAll();
+      viewModel.chosenTables(_tempList);
       $("#dropTable").modal("show");
     });
   });

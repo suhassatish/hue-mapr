@@ -23,66 +23,57 @@
 <%namespace name="layout" file="../navigation-bar.mako" />
 <%namespace name="utils" file="../utils.inc.mako" />
 
-${ commonheader(_("Coordinator Dashboard"), "oozie", user, "100px") | n,unicode }
-${ layout.menubar(section='dashboard') }
-
+${ commonheader(_("Coordinator Dashboard"), "oozie", user) | n,unicode }
+${ layout.menubar(section='coordinators', dashboard=True) }
 
 <div class="container-fluid">
-  ${ layout.dashboard_sub_menubar(section='coordinators') }
-
-  <h1>
-    % if oozie_bundle:
-      ${ _('Bundle') } <a href="${ oozie_bundle.get_absolute_url() }">${ oozie_bundle.appName }</a> :
-    % endif
-    ${ _('Coordinator') } ${ oozie_coordinator.appName }
-  </h1>
-
+<div class="card card-small">
+  <div class="card-body">
+  <p>
 
 <div class="row-fluid">
   <div class="span2">
-    <div class="well sidebar-nav">
-      <ul class="nav nav-list">
+    <div class="sidebar-nav">
+      <ul class="nav nav-list" style="border:none">
         <li class="nav-header">${ _('Coordinator') }</li>
-        <li>
-            % if coordinator is not None:
-              <a href="${ coordinator.get_absolute_url() }">${ oozie_coordinator.appName }</a>
-            % else:
-              ${ oozie_coordinator.appName }
-            % endif
-        </li>
+        % if coordinator is not None:
+        <li><a href="${ coordinator.get_absolute_url() }">${ oozie_coordinator.appName }</a></li>
+        % else:
+        <li class="white">${ oozie_coordinator.appName }</li>
+        % endif
 
         <li class="nav-header">${ _('Submitter') }</li>
-        <li>${ oozie_coordinator.user }</li>
+        <li class="white">${ oozie_coordinator.user }</li>
 
         <li class="nav-header">${ _('Status') }</li>
-        <li id="status"><span class="label ${ utils.get_status(oozie_coordinator.status) }">${ oozie_coordinator.status }</span></li>
+        <li class="white" id="status"><span class="label ${ utils.get_status(oozie_coordinator.status) }">${ oozie_coordinator.status }</span></li>
 
         <li class="nav-header">${ _('Progress') }</li>
-        <li id="progress">
+        <li class="white" id="progress">
           <div class="progress">
             <div class="bar" style="width: 0">${ oozie_coordinator.get_progress() }%</div>
           </div>
         </li>
 
         <li class="nav-header">${ _('Frequency') }</li>
-        <li>${ oozie_coordinator.frequency } ${ oozie_coordinator.timeUnit }</li>
+        <li class="white">${ oozie_coordinator.frequency } ${ oozie_coordinator.timeUnit }</li>
 
         <li class="nav-header">${ _('Next Materialized Time') }</li>
-        <li id="nextTime">${ utils.format_time(oozie_coordinator.nextMaterializedTime) }</li>
+        <li class="white" id="nextTime">${ utils.format_time(oozie_coordinator.nextMaterializedTime) }</li>
 
         <li class="nav-header">${ _('Id') }</li>
-        <li>${ oozie_coordinator.id }</li>
+        <li class="white">${ oozie_coordinator.id }</li>
 
         % if coordinator:
             <li class="nav-header">${ _('Datasets') }</li>
           % for dataset in coordinator.dataset_set.all():
-            <li rel="tooltip" title="${ dataset.name } : ${ dataset.uri }"><i class="icon-eye-open"></i> <span class="dataset">${ dataset.name }</span></li>
+            <li rel="tooltip" title="${ dataset.name } : ${ dataset.uri }" class="white"><i class="fa fa-eye"></i> <span class="dataset">${ dataset.name }</span></li>
           % endfor
         % endif
 
         % if has_job_edition_permission(oozie_coordinator, user):
           <li class="nav-header">${ _('Manage') }</li>
-          <li>
+          <li class="white">
             <button title="${_('Kill %(coordinator)s') % dict(coordinator=oozie_coordinator.id)}"
               id="kill-btn"
               class="btn btn-small confirmationModal
@@ -134,6 +125,13 @@ ${ layout.menubar(section='dashboard') }
     </div>
   </div>
   <div class="span10">
+    <h1 class="card-heading simple card-heading-nopadding card-heading-noborder card-heading-blue" style="margin-bottom: 10px">
+      % if oozie_bundle:
+        ${ _('Bundle') } <a href="${ oozie_bundle.get_absolute_url() }">${ oozie_bundle.appName }</a> :
+      % endif
+      ${ _('Coordinator') } ${ oozie_coordinator.appName }
+    </h1>
+
     <ul class="nav nav-tabs">
       <li class="active"><a href="#calendar" data-toggle="tab">${ _('Calendar') }</a></li>
       <li><a href="#actions" data-toggle="tab">${ _('Actions') }</a></li>
@@ -141,9 +139,12 @@ ${ layout.menubar(section='dashboard') }
       <li><a href="#configuration" data-toggle="tab">${ _('Configuration') }</a></li>
       <li><a href="#log" data-toggle="tab">${ _('Log') }</a></li>
       <li><a href="#definition" data-toggle="tab">${ _('Definition') }</a></li>
+      % if oozie_coordinator.has_sla:
+      <li><a href="#sla" data-toggle="tab">${ _('SLA') }</a></li>
+      % endif
     </ul>
 
-    <div class="tab-content" style="padding-bottom:200px">
+    <div class="tab-content" style="min-height:200px">
       <div class="tab-pane active" id="calendar">
         <table class="table table-striped table-condensed">
           <thead>
@@ -155,6 +156,15 @@ ${ layout.menubar(section='dashboard') }
           <tbody data-bind="template: {name: 'calendarTemplate', foreach: actions}">
           </tbody>
           <tfoot>
+            <tr>
+              <td data-bind="visible: !isLoading() && paginate()" colspan="10">
+                </br>
+                <div class="alert">
+                  ${ _('There are older actions to be shown:') }
+                  <a class="btn" href="${ oozie_coordinator.get_absolute_url() }?show_all_actions=true">${ _('Expand') }</a>
+                </div>
+              </td>
+            </tr>
             <tr data-bind="visible: isLoading()">
               <td colspan="2" class="left">
                 <img src="/static/art/spinner.gif" />
@@ -271,6 +281,41 @@ ${ layout.menubar(section='dashboard') }
       <div class="tab-pane" id="definition">
         <textarea id="definitionEditor">${ oozie_coordinator.definition.decode('utf-8', 'replace') }</textarea>
       </div>
+
+      % if oozie_coordinator.has_sla:
+      <div class="tab-pane" id="sla" style="padding-left: 20px">
+        <div id="yAxisLabel" class="hide">${_('Time since Nominal Time in min')}</div>
+        <div id="slaChart"></div>
+        <table id="slaTable" class="table table-striped table-condensed hide">
+          <thead>
+            <th>${_('Status')}</th>
+            <th>${_('Nominal Time')}</th>
+            <th>${_('Expected Start')}</th>
+            <th>${_('Actual Start')}</th>
+            <th>${_('Expected End')}</th>
+            <th>${_('Actual End')}</th>
+            <th>${_('Expected Duration')}</th>
+            <th>${_('Actual Duration')}</th>
+            <th>${_('SLA')}</th>
+          </thead>
+          <tbody>
+          %for sla in oozie_slas:
+            <tr>
+              <td class="slaStatus">${sla['slaStatus']}</td>
+              <td><span class="nominalTime">${sla['nominalTime']}</span></td>
+              <td><span class="expectedStart">${sla['expectedStart']}</span></td>
+              <td><span class="actualStart">${sla['actualStart']}</span></td>
+              <td><span class="expectedEnd">${sla['expectedEnd']}</span></td>
+              <td><span class="actualEnd">${sla['actualEnd']}</span></td>
+              <td>${sla['expectedDuration']}</td>
+              <td>${sla['actualDuration']}</td>
+              <td><a href="${ url('oozie:list_oozie_sla') }#${ sla['id'] }"></a></td>
+            </tr>
+          %endfor
+          </tbody>
+        </table>
+      </div>
+      % endif
     </div>
 
     <div style="margin-bottom: 16px">
@@ -281,10 +326,9 @@ ${ layout.menubar(section='dashboard') }
 </div>
 
 
-
-
-
-
+  </p>
+  </div>
+</div>
 </div>
 
 <div id="confirmation" class="modal hide">
@@ -304,12 +348,37 @@ ${ layout.menubar(section='dashboard') }
 <link rel="stylesheet" href="/static/ext/css/codemirror.css">
 <script src="/static/ext/js/codemirror-xml.js"></script>
 
-<style>
+% if oozie_coordinator.has_sla:
+<script src="/static/ext/js/moment.min.js" type="text/javascript" charset="utf-8"></script>
+<script src="/oozie/static/js/sla.utils.js" type="text/javascript" charset="utf-8"></script>
+<script src="/static/ext/js/jquery/plugins/jquery.flot.min.js" type="text/javascript" charset="utf-8"></script>
+<script src="/static/ext/js/jquery/plugins/jquery.flot.selection.min.js" type="text/javascript" charset="utf-8"></script>
+<script src="/static/ext/js/jquery/plugins/jquery.flot.time.min.js" type="text/javascript" charset="utf-8"></script>
+<script src="/static/js/jquery.blueprint.js"></script>
+% endif
+
+
+<style type="text/css">
   .CodeMirror.cm-s-default {
     height:500px;
   }
-  .sidebar-nav {
-    padding: 9px 0;
+
+  #sla th {
+    vertical-align: middle !important;
+  }
+
+  #yAxisLabel {
+    -webkit-transform: rotate(270deg);
+    -moz-transform: rotate(270deg);
+    -o-transform: rotate(270deg);
+    writing-mode: lr-tb;
+    margin-left: -110px;
+    margin-top: 130px;
+    position: absolute;
+  }
+
+  #slaTable {
+    margin-top: 20px;
   }
 </style>
 
@@ -341,10 +410,23 @@ ${ layout.menubar(section='dashboard') }
     self.actions = ko.observableArray(ko.utils.arrayMap(actions), function (action) {
       return new Action(action);
     });
+    self.paginate = ko.computed(function(){
+      return self.actions().length >= ${ MAX_COORD_ACTIONS } && ${ "false" if show_all_actions else 'true' | n,unicode };
+    });
   };
 
   var viewModel = new RunningCoordinatorActionsModel([]);
   ko.applyBindings(viewModel);
+
+  var CHART_LABELS = {
+    NOMINAL_TIME: "${_('Nominal Time')}",
+    EXPECTED_START: "${_('Expected Start')}",
+    ACTUAL_START: "${_('Actual Start')}",
+    EXPECTED_END: "${_('Expected End')}",
+    ACTUAL_END: "${_('Actual End')}",
+    TOOLTIP_ADDON: "${_('click for the SLA dashboard')}"
+  }
+  var slaTable;
 
   $(document).ready(function(){
     $("a[data-row-selector='true']").jHueRowSelector();
@@ -358,6 +440,21 @@ ${ layout.menubar(section='dashboard') }
       $(this).removeClass("hide");
     });
 
+    % if oozie_coordinator.has_sla:
+    slaTable = $("#slaTable").dataTable({
+      "bPaginate": false,
+      "bLengthChange": false,
+      "bInfo": false,
+      "bAutoWidth": false,
+      "oLanguage": {
+        "sEmptyTable": "${_('No data available')}",
+        "sZeroRecords": "${_('No matching records')}"
+      }
+    });
+
+    $(".dataTables_wrapper").css("min-height", "0");
+    $(".dataTables_filter").hide();
+    % endif
 
     var definitionEditor = $("#definitionEditor")[0];
 
@@ -374,6 +471,13 @@ ${ layout.menubar(section='dashboard') }
       if ($(e.target).attr("href") == "#definition") {
         codeMirror.refresh();
       }
+      % if oozie_coordinator.has_sla:
+      if ($(e.target).attr("href") == "#sla") {
+        window.setTimeout(function () {
+          updateSLAChart(slaTable, CHART_LABELS, 30); // limits to 30 results
+        }, 100)
+      }
+      % endif
     });
 
     $(".confirmationModal").click(function(){
@@ -391,7 +495,7 @@ ${ layout.menubar(section='dashboard') }
         { 'notification': $(this).attr("data-message") },
         function(response) {
           if (response['status'] != 0) {
-            $.jHueNotify.error("${ _('Problem: ') }" + response['data']);
+            $(document).trigger("error", "${ _('Problem: ') }" + response['data']);
           } else {
             window.location.reload();
           }
@@ -406,7 +510,7 @@ ${ layout.menubar(section='dashboard') }
         { 'notification': $(this).data("message") },
         function(response) {
           if (response['status'] != 0) {
-            $.jHueNotify.error("${ _('Error: ') }" + response['data']);
+            $(document).trigger("error", "${ _('Error: ') }" + response['data']);
           } else {
             window.location.reload();
           }
@@ -430,7 +534,7 @@ ${ layout.menubar(section='dashboard') }
     var logsAtEnd = true;
 
     function refreshView() {
-      $.getJSON("${ oozie_coordinator.get_absolute_url(oozie_bundle) }" + "?format=json", function (data) {
+      $.getJSON("${ oozie_coordinator.get_absolute_url(oozie_bundle) }" + "?format=json" + "${ "&show_all_actions=true" if show_all_actions else '' | n,unicode }", function (data) {
         viewModel.isLoading(false);
         if (data.actions){
           viewModel.actions(ko.utils.arrayMap(data.actions, function (action) {
@@ -439,6 +543,8 @@ ${ layout.menubar(section='dashboard') }
         }
 
         $("#status span").attr("class", "label").addClass(getStatusClass(data.status)).text(data.status);
+
+        $.jHueTitleUpdater.set(data.progress + "%");
 
         if (data.id && data.status != "RUNNING" && data.status != "SUSPENDED" && data.status != "KILLED" && data.status != "FAILED"){
           $("#kill-btn").hide();
@@ -454,22 +560,23 @@ ${ layout.menubar(section='dashboard') }
         if (data.id && (data.status == "SUSPENDED" || data.status == "SUSPENDEDWITHERROR" || data.status == "SUSPENDEDWITHERROR"
             || data.status == "PREPSUSPENDED")){
           $("#resume-btn").show();
+          $.jHueTitleUpdater.reset();
         } else {
           $("#resume-btn").hide();
         }
 
-        $("#progress .bar").text(data.progress+"%").css("width", data.progress+"%").attr("class", "bar "+getStatusClass(data.status, "bar-"));
+        $("#progress .bar").text(data.progress + "%").css("width", data.progress + "%").attr("class", "bar " + getStatusClass(data.status, "bar-"));
 
         var _logsEl = $("#log pre");
-        var newLines = data.log.split("\n").slice(_logsEl.text().split("\n").length);
-        _logsEl.text(_logsEl.text() + newLines.join("\n"));
+        _logsEl.text(data.log);
+
         if (logsAtEnd) {
           _logsEl.scrollTop(_logsEl[0].scrollHeight - _logsEl.height());
         }
         if (data.status != "RUNNING" && data.status != "PREP"){
           return;
         }
-        window.setTimeout(refreshView, 1000);
+        window.setTimeout(refreshView, 20000);
       });
     }
 
@@ -492,6 +599,10 @@ ${ layout.menubar(section='dashboard') }
 
     function resizeLogs() {
       $("#log pre").css("overflow", "auto").height($(window).height() - $("#log pre").position().top - 80);
+    }
+
+    if (window.location.hash == "#showSla") {
+      $("a[href='#sla']").click();
     }
   });
 </script>

@@ -24,7 +24,7 @@
 <%namespace name="utils" file="utils.inc.mako" />
 
 
-${ commonheader(_('Search'), "search", user, "40px") | n,unicode }
+${ commonheader(_('Search'), "search", user, "29px") | n,unicode }
 
 <%def name="indexProperty(key)">
   %if key in solr_collection["status"][hue_collection.name]["index"]:
@@ -40,7 +40,7 @@ ${ commonheader(_('Search'), "search", user, "40px") | n,unicode }
 
 <%layout:skeleton>
   <%def name="title()">
-    <h4>${_('Customize ')} ${ hue_collection.label }</h4>
+    <h4>${ _('Properties of') } <strong>${ hue_collection.name }</strong></h4>
   </%def>
 
   <%def name="navigation()">
@@ -48,8 +48,8 @@ ${ commonheader(_('Search'), "search", user, "40px") | n,unicode }
   </%def>
 
   <%def name="content()">
-  <form method="POST">
-    <ul class="nav nav-tabs">
+  <form id="collectionProperties" method="POST">
+    <ul class="nav nav-tabs" style="margin-bottom:0; margin-top:10px">
       <li class="active">
         <a href="#index" data-toggle="tab">${_('Collection')}</a>
       </li>
@@ -60,17 +60,20 @@ ${ commonheader(_('Search'), "search", user, "40px") | n,unicode }
         <a href="#properties" data-toggle="tab">${_('Indexes')}</a>
       </li>
     </ul>
+    <div class="well">
     <div class="tab-content">
       <div class="tab-pane active" id="index">
         <div class="fieldWrapper">
           ${ utils.render_field(collection_form['enabled']) }
           ${ utils.render_field(collection_form['label']) }
           ${ utils.render_field(collection_form['name']) }
+
+          ${ _('Autocomplete and suggest queries') } <br/> <input type="checkbox" data-bind="checked: autocomplete" />
         </div>
 
-	    <div class="form-actions">
-	      <button type="submit" class="btn btn-primary" id="save-sorting">${_('Save')}</button>
-	    </div>
+      <div class="form-actions">
+        <a class="btn btn-primary" id="saveBtn">${_('Save')}</a>
+      </div>
       </div>
 
       <div class="tab-pane" id="schema">
@@ -81,6 +84,7 @@ ${ commonheader(_('Search'), "search", user, "40px") | n,unicode }
         ${_('Loading...')} <img src="/static/art/spinner.gif">
       </div>
     </div>
+    </div>
   </form>
   </%def>
 
@@ -90,16 +94,43 @@ ${ commonheader(_('Search'), "search", user, "40px") | n,unicode }
 <link rel="stylesheet" href="/static/ext/css/codemirror.css">
 <script src="/static/ext/js/codemirror-xml.js"></script>
 
+
+<script src="/static/ext/js/knockout.mapping-2.3.2.js" type="text/javascript" charset="utf-8"></script>
+
 <script type="text/javascript" charset="utf-8">
   $(document).ready(function(){
     var schemaViewer = $("#schema_field")[0];
 
     var codeMirror = CodeMirror(function (elt) {
-      schemaViewer.parentNode.replaceChild(elt, schemaViewer);
-    }, {
-      value: schemaViewer.value,
-      readOnly: true,
-      lineNumbers: true
+        schemaViewer.parentNode.replaceChild(elt, schemaViewer);
+      }, {
+        value: schemaViewer.value,
+        readOnly: true,
+        lineNumbers: true
+    });
+
+    var ViewModel = function() {
+        var self = this;
+        self.autocomplete = ko.observable(${ collection_properties | n }.autocomplete);
+
+        self.submit = function(form) {
+          var form = $("#collectionProperties");
+
+          $("<input>").attr("type", "hidden")
+                  .attr("name", "autocomplete")
+                  .attr("value", ko.utils.stringifyJson(self.autocomplete))
+                  .appendTo(form);
+
+          form.submit();
+        };
+      };
+
+    window.viewModel = new ViewModel();
+    ko.applyBindings(window.viewModel, $('#collectionProperties')[0]);
+
+
+    $("#saveBtn").click(function () {
+      window.viewModel.submit();
     });
 
     codeMirror.setSize("100%", $(document).height() - 150 - $(".form-actions").outerHeight());

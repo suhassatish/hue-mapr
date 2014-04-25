@@ -43,8 +43,8 @@ msgstr "'%s'에서 로그를 검색하는 동안 Hue에 오류가 발생했습�
 
 #: src/jobbrowser/views.py:58
 #, python-format
-msgid "Could not find job %s. The job might not be running yet."
-msgstr "Job %s을(를) 찾을 수 없습니다. Job이 아직 실행되지 않았을 수 있습니다."
+msgid "Could not find job %s."
+msgstr "Job %s을(를) 찾을 수 없습니다."
 
 #: src/jobbrowser/views.py:61
 #, fuzzy, python-format
@@ -116,8 +116,8 @@ msgstr "작업 시도: %(attemptId)s"
 #: src/jobbrowser/templates/attempt.mako:27
 #: src/jobbrowser/templates/attempt_logs.mako:24
 #, python-format
-msgid "Task Attempt: %(attemptId)s - Job Browser"
-msgstr "작업 시도: %(attemptId)s - Job Browser"
+msgid "Task Attempt: %(attemptId)s"
+msgstr "작업 시도: %(attemptId)s"
 
 #: src/jobbrowser/templates/attempt.mako:32
 #: src/jobbrowser/templates/attempt.mako:74
@@ -224,6 +224,12 @@ msgstr "상태"
 #: src/jobbrowser/templates/attempt.mako:94
 #: src/jobbrowser/templates/task.mako:66 src/jobbrowser/templates/task.mako:130
 #: src/jobbrowser/templates/tasks.mako:77
+msgid "State"
+msgstr "상태"
+
+#: src/jobbrowser/templates/attempt.mako:105
+#: src/jobbrowser/templates/task.mako:70 src/jobbrowser/templates/task.mako:135
+#: src/jobbrowser/templates/tasks.mako:78
 msgid "Start Time"
 msgstr "시작 시간"
 
@@ -282,22 +288,22 @@ msgstr "데이터를 이용할 수 없음"
 msgid "No matching records"
 msgstr "일치하는 레코드가 없음"
 
-#: src/jobbrowser/templates/attempt_logs.mako:76
+#: src/jobbrowser/templates/attempt_logs.mako:80
 msgid "task diagnostic log"
 msgstr "작업 진단 로그"
 
-#: src/jobbrowser/templates/attempt_logs.mako:77
-#: src/jobbrowser/templates/job_attempt_logs.mako:44
+#: src/jobbrowser/templates/attempt_logs.mako:81
+#: src/jobbrowser/templates/job_attempt_logs.mako:46
 msgid "stdout"
 msgstr "stdout"
 
-#: src/jobbrowser/templates/attempt_logs.mako:78
-#: src/jobbrowser/templates/job_attempt_logs.mako:45
+#: src/jobbrowser/templates/attempt_logs.mako:82
+#: src/jobbrowser/templates/job_attempt_logs.mako:47
 msgid "stderr"
 msgstr "stderr"
 
-#: src/jobbrowser/templates/attempt_logs.mako:79
-#: src/jobbrowser/templates/job_attempt_logs.mako:46
+#: src/jobbrowser/templates/attempt_logs.mako:83
+#: src/jobbrowser/templates/job_attempt_logs.mako:48
 msgid "syslog"
 msgstr "syslog"
 
@@ -479,11 +485,20 @@ msgstr "Job Browser"
 msgid "Attempt: %(attempt_index)s"
 msgstr "시도: %(attempt_index)s"
 
-#: src/jobbrowser/templates/job_attempt_logs.mako:52
-#: src/jobbrowser/templates/job_attempt_logs.mako:58
-#: src/jobbrowser/templates/job_attempt_logs.mako:64
+#: src/jobbrowser/templates/job_attempt_logs.mako:54
+#: src/jobbrowser/templates/job_attempt_logs.mako:60
+#: src/jobbrowser/templates/job_attempt_logs.mako:66
+#: src/jobbrowser/templates/job_not_assigned.mako:43
 msgid "Loading..."
 msgstr "로드 중..."
+
+#: src/jobbrowser/templates/job_not_assigned.mako:47
+msgid "The application might not be running yet or there is no Node Manager or Container available."
+msgstr "애플리케이션이 아직 실행되고 있지 않거나, 노드 관리자 또는 컨테이너를 사용할 수 없습니다."
+
+#: src/jobbrowser/templates/job_not_assigned.mako:48
+msgid "This page will be automatically refreshed."
+msgstr "이 페이지는 자동으로 새로 고쳐집니다."
 
 #: src/jobbrowser/templates/jobbrowser_components.mako:29
 #: src/jobbrowser/templates/jobbrowser_components.mako:55
@@ -573,8 +588,8 @@ msgstr "Job 작업: %(taskId)s"
 
 #: src/jobbrowser/templates/task.mako:27
 #, python-format
-msgid "Job Task: %(taskId)s - Job Browser"
-msgstr "Job 작업: %(taskId)s - Job Browser"
+msgid "Job Task: %(taskId)s"
+msgstr "Job 작업: %(taskId)s"
 
 #: src/jobbrowser/templates/task.mako:67 src/jobbrowser/templates/tasks.mako:78
 msgid "End Time"
@@ -614,67 +629,67 @@ msgstr "실행 완료 시간"
 msgid "Task View: Job: %(jobId)s"
 msgstr "작업 뷰: Job: %(jobId)s"
 
-#: src/jobbrowser/templates/tasks.mako:36
+#: src/jobbrowser/templates/tasks.mako:39
 msgid "Filter tasks:"
 msgstr "작업 필터:"
 
-#: src/jobbrowser/templates/tasks.mako:39
+#: src/jobbrowser/templates/tasks.mako:41
 msgid "All states"
 msgstr "모든 상태"
 
-#: src/jobbrowser/templates/tasks.mako:40
+#: src/jobbrowser/templates/tasks.mako:42
 msgid "succeeded"
 msgstr "성공함"
 
-#: src/jobbrowser/templates/tasks.mako:41
+#: src/jobbrowser/templates/tasks.mako:43
 msgid "running"
 msgstr "실행 중"
 
-#: src/jobbrowser/templates/tasks.mako:42
+#: src/jobbrowser/templates/tasks.mako:44
 msgid "failed"
 msgstr "실패함"
 
-#: src/jobbrowser/templates/tasks.mako:43
+#: src/jobbrowser/templates/tasks.mako:45
 msgid "killed"
 msgstr "중지됨"
 
-#: src/jobbrowser/templates/tasks.mako:44
+#: src/jobbrowser/templates/tasks.mako:46
 msgid "pending"
 msgstr "대기 중"
 
-#: src/jobbrowser/templates/tasks.mako:48
+#: src/jobbrowser/templates/tasks.mako:50
 msgid "All types"
 msgstr "모든 유형"
 
-#: src/jobbrowser/templates/tasks.mako:49
+#: src/jobbrowser/templates/tasks.mako:51
 msgid "maps"
 msgstr "Map"
 
-#: src/jobbrowser/templates/tasks.mako:50
+#: src/jobbrowser/templates/tasks.mako:52
 msgid "reduces"
 msgstr "Reduce"
 
-#: src/jobbrowser/templates/tasks.mako:51
+#: src/jobbrowser/templates/tasks.mako:53
 msgid "cleanups"
 msgstr "정리"
 
-#: src/jobbrowser/templates/tasks.mako:52
+#: src/jobbrowser/templates/tasks.mako:54
 msgid "setups"
 msgstr "설정"
 
-#: src/jobbrowser/templates/tasks.mako:56
+#: src/jobbrowser/templates/tasks.mako:57
 msgid "Text filter"
 msgstr "텍스트 필터"
 
-#: src/jobbrowser/templates/tasks.mako:66
+#: src/jobbrowser/templates/tasks.mako:67
 msgid "There were no tasks that match your search criteria."
 msgstr "입력한 검색 기준과 일치하는 작업이 없습니다."
 
-#: src/jobbrowser/templates/tasks.mako:79
+#: src/jobbrowser/templates/tasks.mako:80
 msgid "View Attempts"
 msgstr "시도 보기"
 
-#: src/jobbrowser/templates/tasks.mako:97
+#: src/jobbrowser/templates/tasks.mako:98
 #, python-format
 msgid "Show only %(state)s tasks"
 msgstr "%(state)s 작업만 표시"
@@ -684,65 +699,44 @@ msgstr "%(state)s 작업만 표시"
 msgid "Tracker: %(trackerId)s"
 msgstr "Tracker: %(trackerId)s"
 
-#: src/jobbrowser/templates/tasktracker.mako:26
+#: src/jobbrowser/templates/tasktracker.mako:33
 #, python-format
 msgid "Tracker at %(trackerHost)s on port %(trackerPort)s"
 msgstr "포트 %(trackerPort)s의 %(trackerHost)s에 위치한 Tracker"
 
-#: src/jobbrowser/templates/tasktracker.mako:32
+#: src/jobbrowser/templates/tasktracker.mako:38
 msgid "Last heard from at"
 msgstr "마지막 연결 시간:"
 
-#: src/jobbrowser/templates/tasktracker.mako:39
-#: src/jobbrowser/templates/tasktracker.mako:57
-msgid "Memory Metrics"
-msgstr "메모리 메트릭"
-
-#: src/jobbrowser/templates/tasktracker.mako:42
-msgid "Node Id"
-msgstr "노드 Id"
-
-#: src/jobbrowser/templates/tasktracker.mako:48
-msgid "Diagnostics"
-msgstr "진단"
-
-#: src/jobbrowser/templates/tasktracker.mako:50
-msgid "Total Memory Needed in MB"
-msgstr "필요한 총 메모리(MB)"
-
-#: src/jobbrowser/templates/tasktracker.mako:52
-msgid "Exit Code"
-msgstr "종료 코드"
-
-#: src/jobbrowser/templates/tasktracker.mako:60
+#: src/jobbrowser/templates/tasktracker.mako:46
 msgid "Total virtual memory:"
 msgstr "총 가상 메모리:"
 
-#: src/jobbrowser/templates/tasktracker.mako:62
+#: src/jobbrowser/templates/tasktracker.mako:48
 msgid "Total physical memory:"
 msgstr "총 물리적 메모리:"
 
-#: src/jobbrowser/templates/tasktracker.mako:64
+#: src/jobbrowser/templates/tasktracker.mako:50
 msgid "Available space:"
 msgstr "사용 가능한 공간:"
 
-#: src/jobbrowser/templates/tasktracker.mako:69
+#: src/jobbrowser/templates/tasktracker.mako:55
 msgid "Map and Reduce"
 msgstr "Map 및 Reduce"
 
-#: src/jobbrowser/templates/tasktracker.mako:72
+#: src/jobbrowser/templates/tasktracker.mako:58
 msgid "Map count:"
 msgstr "Map 수:"
 
-#: src/jobbrowser/templates/tasktracker.mako:74
+#: src/jobbrowser/templates/tasktracker.mako:60
 msgid "Reduce count:"
 msgstr "Reduce 수:"
 
-#: src/jobbrowser/templates/tasktracker.mako:76
+#: src/jobbrowser/templates/tasktracker.mako:62
 msgid "Max map tasks:"
 msgstr "최대 Map 작업:"
 
-#: src/jobbrowser/templates/tasktracker.mako:78
+#: src/jobbrowser/templates/tasktracker.mako:64
 msgid "Max reduce tasks:"
 msgstr "최대 Reduce 작업:"
 
@@ -751,39 +745,39 @@ msgstr "최대 Reduce 작업:"
 msgid "Task Trackers"
 msgstr "TaskTracker"
 
-#: src/jobbrowser/templates/tasktrackers.mako:30
+#: src/jobbrowser/templates/tasktrackers.mako:36
 msgid "Host"
 msgstr "호스트"
 
-#: src/jobbrowser/templates/tasktrackers.mako:31
+#: src/jobbrowser/templates/tasktrackers.mako:37
 msgid "Port"
 msgstr "포트"
 
-#: src/jobbrowser/templates/tasktrackers.mako:32
+#: src/jobbrowser/templates/tasktrackers.mako:38
 msgid "Last Seen"
 msgstr "마지막 표시"
 
-#: src/jobbrowser/templates/tasktrackers.mako:33
+#: src/jobbrowser/templates/tasktrackers.mako:39
 msgid "Available Space"
 msgstr "사용 가능한 공간"
 
-#: src/jobbrowser/templates/tasktrackers.mako:34
+#: src/jobbrowser/templates/tasktrackers.mako:40
 msgid "Failure Count"
 msgstr "실패 수"
 
-#: src/jobbrowser/templates/tasktrackers.mako:35
+#: src/jobbrowser/templates/tasktrackers.mako:41
 msgid "Map Count"
 msgstr "Map 수"
 
-#: src/jobbrowser/templates/tasktrackers.mako:36
+#: src/jobbrowser/templates/tasktrackers.mako:42
 msgid "Reduce Count"
 msgstr "Reduce 수"
 
-#: src/jobbrowser/templates/tasktrackers.mako:37
+#: src/jobbrowser/templates/tasktrackers.mako:43
 msgid "Max Map Tasks"
 msgstr "최대 Map 작업"
 
-#: src/jobbrowser/templates/tasktrackers.mako:38
+#: src/jobbrowser/templates/tasktrackers.mako:44
 msgid "Max Reduce Tasks"
 msgstr "최대 Reduce 작업"
 

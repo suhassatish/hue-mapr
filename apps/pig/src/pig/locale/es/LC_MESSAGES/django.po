@@ -61,7 +61,7 @@ msgstr "Se necesita una solicitud POST."
 
 #: src/pig/views.py:104
 msgid "Error stopping Pig script."
-msgstr "Error al detener la secuencia de Pig."
+msgstr "Error al detener la secuencia de comandos de Pig."
 
 #: src/pig/views.py:149
 msgid " (Copy)"
@@ -71,12 +71,12 @@ msgstr " (Copiar)"
 msgid "A POST request is required."
 msgstr "Se necesita una solicitud POST."
 
-#: src/pig/management/commands/pig_setup.py:46
+#: src/pig/management/commands/pig_setup.py:48
 #, python-format
 msgid "Copying examples %(local_dir)s to %(remote_data_dir)s\n"
 msgstr "Copiando ejemplos de %(local_dir)s a %(remote_data_dir)s\n"
 
-#: src/pig/management/commands/pig_setup.py:53
+#: src/pig/management/commands/pig_setup.py:55
 #, python-format
 msgid "Copying data %(local_dir)s to %(remote_data_dir)s\n"
 msgstr "Copiando datos de %(local_dir)s a %(remote_data_dir)s\n"
@@ -85,15 +85,15 @@ msgstr "Copiando datos de %(local_dir)s a %(remote_data_dir)s\n"
 msgid "Editor"
 msgstr "Editor"
 
-#: src/pig/templates/app.mako:29
+#: src/pig/templates/app.mako:37
 msgid "Scripts"
 msgstr "Secuencias de comandos"
 
-#: src/pig/templates/app.mako:30
+#: src/pig/templates/app.mako:38
 msgid "Dashboard"
 msgstr "Panel"
 
-#: src/pig/templates/app.mako:40
+#: src/pig/templates/app.mako:50
 msgid "Search for script name or content"
 msgstr "Buscar el nombre o el contenido de la secuencia de comandos"
 
@@ -106,7 +106,7 @@ msgstr "Ejecutar esta secuencia de comandos"
 msgid "Run"
 msgstr "Ejecutar"
 
-#: src/pig/templates/app.mako:45
+#: src/pig/templates/app.mako:55
 msgid "Copy this script"
 msgstr "Copiar esta secuencia de comandos"
 
@@ -114,7 +114,7 @@ msgstr "Copiar esta secuencia de comandos"
 msgid "Copy"
 msgstr "Copiar"
 
-#: src/pig/templates/app.mako:46
+#: src/pig/templates/app.mako:56
 msgid "Delete this script"
 msgstr "Eliminar esta secuencia de comandos"
 
@@ -122,7 +122,7 @@ msgstr "Eliminar esta secuencia de comandos"
 msgid "Delete"
 msgstr "Eliminar"
 
-#: src/pig/templates/app.mako:50
+#: src/pig/templates/app.mako:60
 msgid "Create a new script"
 msgstr "Crear una nueva secuencia de comandos"
 
@@ -145,7 +145,7 @@ msgstr "Nombre"
 msgid "Script"
 msgstr "Secuencia de comandos"
 
-#: src/pig/templates/app.mako:77
+#: src/pig/templates/app.mako:87
 msgid "There are no scripts matching the search criteria."
 msgstr "No hay ninguna secuencia de comandos que coincida con los criterios de búsqueda."
 

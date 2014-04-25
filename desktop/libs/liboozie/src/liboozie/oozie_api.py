@@ -23,27 +23,16 @@ from desktop.conf import TIME_ZONE
 from desktop.lib.rest.http_client import HttpClient
 from desktop.lib.rest.resource import Resource
 
+from liboozie.conf import SECURITY_ENABLED
+from liboozie.conf import OOZIE_URL
 from liboozie.types import WorkflowList, CoordinatorList, Coordinator, Workflow,\
   CoordinatorAction, WorkflowAction, BundleList, Bundle, BundleAction
 from liboozie.utils import config_gen
 
-# Manage deprecation after HUE-792.
-# To Remove in Hue 3.
-import jobsub.conf as jobsub_conf
-
-if jobsub_conf.SECURITY_ENABLED.get() is not None:
-  from jobsub.conf import SECURITY_ENABLED
-else:
-  from liboozie.conf import SECURITY_ENABLED
-
-if jobsub_conf.OOZIE_URL.get() is not None:
-  from jobsub.conf import OOZIE_URL
-else:
-  from liboozie.conf import OOZIE_URL
 
 LOG = logging.getLogger(__name__)
 DEFAULT_USER = 'hue'
-API_VERSION = 'v1'
+API_VERSION = 'v1' # Overridden to v2 for SLA
 
 _XML_CONTENT_TYPE = 'application/xml;charset=UTF-8'
 
@@ -51,31 +40,31 @@ _api_cache = None
 _api_cache_lock = threading.Lock()
 
 
-def get_oozie():
-  """Return a cached OozieApi"""
+def get_oozie(user, api_version=API_VERSION):
   global _api_cache
-  if _api_cache is None:
+  if _api_cache is None or _api_cache.api_version != api_version:
     _api_cache_lock.acquire()
     try:
-      if _api_cache is None:
+      if _api_cache is None or _api_cache.api_version != api_version:
         secure = SECURITY_ENABLED.get()
-        _api_cache = OozieApi(OOZIE_URL.get(), secure)
+        _api_cache = OozieApi(OOZIE_URL.get(), secure, api_version)
     finally:
       _api_cache_lock.release()
+  _api_cache.setuser(user)
   return _api_cache
 
 
 class OozieApi(object):
-  def __init__(self, oozie_url, security_enabled=False):
-    self._url = posixpath.join(oozie_url, API_VERSION)
+  def __init__(self, oozie_url, security_enabled=False, api_version=API_VERSION):
+    self._url = posixpath.join(oozie_url, api_version)
     self._client = HttpClient(self._url, logger=LOG)
     if security_enabled:
       self._client.set_kerberos_auth()
     self._root = Resource(self._client)
     self._security_enabled = security_enabled
-
-    # To store user info
+    # To store username info
     self._thread_local = threading.local()
+    self.api_version = api_version
 
   def __str__(self):
     return "OozieApi at %s" % (self._url,)
@@ -90,16 +79,13 @@ class OozieApi(object):
 
   @property
   def user(self):
-    try:
-      return self._thread_local.user
-    except AttributeError:
-      return DEFAULT_USER
+    return self._thread_local.user
 
   def setuser(self, user):
-    """Return the previous user"""
-    prev = self.user
-    self._thread_local.user = user
-    return prev
+    if hasattr(user, 'username'):
+      self._thread_local.user = user.username
+    else:
+      self._thread_local.user = user
 
   def _get_params(self):
     if self.security_enabled:
@@ -171,6 +157,7 @@ class OozieApi(object):
 
   def get_coordinator(self, jobid):
     params = self._get_params()
+    params.update({'len': -1})
     resp = self._root.get('job/%s' % (jobid,), params)
     return Coordinator(self, resp)
 
@@ -301,3 +288,16 @@ class OozieApi(object):
     params = self._get_params()
     resp = self._root.get('admin/status', params)
     return resp
+
+  def get_oozie_slas(self, **kwargs):
+    """
+    filter=
+      app_name=my-sla-app
+      id=0000002-131206135002457-oozie-oozi-W
+      nominal_start=2013-06-18T00:01Z
+      nominal_end=2013-06-23T00:01Z
+    """
+    params = self._get_params()
+    params['filter'] = ';'.join(['%s=%s' % (key, val) for key, val in kwargs.iteritems()])
+    resp = self._root.get('sla', params)
+    return resp['slaSummaryList']

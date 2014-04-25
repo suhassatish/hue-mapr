@@ -19,24 +19,27 @@ import logging
 from datetime import datetime,  timedelta
 
 from django import forms
-from django.db.models import Q
 from django.core.exceptions import ValidationError
 from django.forms.widgets import TextInput
 from django.utils.functional import curry
 from django.utils.translation import ugettext_lazy as _t
 
 from desktop.lib.django_forms import MultiForm, SplitDateTimeWidget
+from desktop.models import Document
+
+from oozie.conf import ENABLE_CRON_SCHEDULING
 from oozie.models import Workflow, Node, Java, Mapreduce, Streaming, Coordinator,\
   Dataset, DataInput, DataOutput, Pig, Link, Hive, Sqoop, Ssh, Shell, DistCp, Fs,\
   Email, SubWorkflow, Generic, Bundle, BundledCoordinator
+
 
 
 LOG = logging.getLogger(__name__)
 
 
 class ParameterForm(forms.Form):
-  name = forms.CharField(max_length=40, widget=forms.widgets.HiddenInput())
-  value = forms.CharField(max_length=1024, required=False)
+  name = forms.CharField(max_length=1024, widget=forms.widgets.HiddenInput())
+  value = forms.CharField(max_length=4096, required=False)
 
   NON_PARAMETERS = (
       'user.name',
@@ -63,7 +66,7 @@ class ParameterForm(forms.Form):
 class WorkflowForm(forms.ModelForm):
   class Meta:
     model = Workflow
-    exclude = ('owner', 'start', 'end')
+    exclude = ('owner', 'start', 'end', 'data')
     widgets = {
       'description': forms.TextInput(attrs={'class': 'span5'}),
       'deployment_dir': forms.TextInput(attrs={'class': 'pathChooser span7'}),
@@ -93,7 +96,7 @@ class ImportJobsubDesignForm(forms.Form):
 
 class NodeForm(forms.ModelForm):
   class Meta:
-    ALWAYS_HIDE = ('workflow', 'children', 'node_type')
+    ALWAYS_HIDE = ('workflow', 'children', 'node_type', 'data')
     model = Node
     exclude = ALWAYS_HIDE
 
@@ -273,8 +276,8 @@ class SubWorkflowForm(forms.ModelForm):
     user = kwargs.pop('user')
     workflow = kwargs.pop('workflow')
     super(SubWorkflowForm, self).__init__(*args, **kwargs)
-    choices=((wf.id, wf) for wf in Workflow.objects.available().filter(owner=user).exclude(id=workflow.id))
-    self.fields['sub_workflow'] = forms.ChoiceField(choices=choices, widget=forms.RadioSelect(attrs={'class':'radio'}))
+    choices=((wf.id, wf) for wf in Document.objects.available(Workflow, user) if workflow.id != id)
+    self.fields['sub_workflow'] = forms.ChoiceField(choices=choices, required=False, widget=forms.RadioSelect(attrs={'class':'radio'}))
 
   class Meta:
     model = SubWorkflow
@@ -338,6 +341,8 @@ class CoordinatorForm(forms.ModelForm):
   class Meta:
     model = Coordinator
     exclude = ('owner', 'deployment_dir')
+    if ENABLE_CRON_SCHEDULING.get():
+        exclude += ('frequency_number', 'frequency_unit')
     widgets = {
       'description': forms.TextInput(attrs={'class': 'span5'}),
       'parameters': forms.widgets.HiddenInput(),
@@ -350,13 +355,29 @@ class CoordinatorForm(forms.ModelForm):
     user = kwargs['user']
     del kwargs['user']
     super(CoordinatorForm, self).__init__(*args, **kwargs)
-    qs = Workflow.objects.available().filter(Q(is_shared=True) | Q(owner=user))
+    qs = Document.objects.available(Workflow, user)
     workflows = []
     for workflow in qs:
-      if workflow.is_accessible(user):
+      if workflow.can_read(user):
         workflows.append(workflow.id)
-    qs = qs.filter(id__in=workflows)
+    qs = Workflow.objects.filter(id__in=workflows)
     self.fields['workflow'].queryset = qs
+
+
+class ImportCoordinatorForm(CoordinatorForm):
+  definition_file = forms.FileField(label=_t("Local coordinator.xml file"))
+  resource_archive = forms.FileField(label=_t("Coordinator resource archive (zip)"), required=False)
+  start = forms.SplitDateTimeField(input_time_formats=[TIME_FORMAT],
+                                   widget=SplitDateTimeWidget(attrs={'class': 'input-small', 'id': 'coordinator_start'},
+                                                              date_format=DATE_FORMAT, time_format=TIME_FORMAT),
+                                   required=False)
+  end = forms.SplitDateTimeField(input_time_formats=[TIME_FORMAT],
+                                 widget=SplitDateTimeWidget(attrs={'class': 'input-small', 'id': 'coordinator_end'},
+                                                            date_format=DATE_FORMAT, time_format=TIME_FORMAT),
+                                 required=False)
+
+  class Meta(CoordinatorForm.Meta):
+    exclude = ('owner', 'deployment_dir', 'timezone', 'frequency_number', 'frequency_unit', 'schema_version', 'job_properties', 'parameters')
 
 
 class DatasetForm(forms.ModelForm):

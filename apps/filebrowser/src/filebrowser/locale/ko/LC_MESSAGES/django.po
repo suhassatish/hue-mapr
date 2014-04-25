@@ -113,7 +113,7 @@ msgstr "디렉토리 이름"
 
 #: src/filebrowser/forms.py:142
 msgid "Path in which to create the file"
-msgstr "파일 생성 경로"
+msgstr "파일을 생성할 경로"
 
 #: src/filebrowser/forms.py:143
 #: src/filebrowser/templates/listdir_components.mako:468
@@ -229,7 +229,7 @@ msgstr "오프셋은 음수일 수 없습니다."
 
 #: src/filebrowser/views.py:617
 msgid "Length may not be less than zero."
-msgstr "길이는 음수일 수 없습니다."
+msgstr "길이는 0보다 작을 수 없습니다."
 
 #: src/filebrowser/views.py:619
 #, fuzzy, python-format
@@ -371,7 +371,7 @@ msgstr "파일 콘텐츠를 압축 해제할 수 없습니다."
 msgid "Could not interpret archive type."
 msgstr "아카이브 유형을 해석할 수 없습니다."
 
-#: src/filebrowser/lib/archives.py:40
+#: src/filebrowser/lib/archives.py:41
 msgid "Must implement 'extract' method."
 msgstr "'extract' 메서드를 구현해야 합니다."
 
@@ -381,31 +381,106 @@ msgstr "'extract' 메서드를 구현해야 합니다."
 msgid "%(filename)s - File Viewer"
 msgstr "%(filename)s - 파일 뷰어"
 
-#: src/filebrowser/templates/display.mako:46
+#: src/filebrowser/templates/display.mako:49
+msgid "The current file is empty."
+msgstr "현재 파일이 비어 있습니다."
+
+#: src/filebrowser/templates/display.mako:63
+msgid "Viewing Bytes:"
+msgstr "바이트 표시:"
+
+#: src/filebrowser/templates/display.mako:68
+#, python-format
+msgid "(%(length)s B block size)"
+msgstr "(%(length)s B 블록 크기)"
+
+#: src/filebrowser/templates/display.mako:78
+msgid "Warning: some binary data has been masked out with '&#xfffd'."
+msgstr "경고: 일부 바이너리 데이터는 '&#xfffd'(으)로 마스킹되었을 수 있습니다."
+
+#: src/filebrowser/templates/edit.mako:62
+#: src/filebrowser/templates/edit.mako:92
+msgid "Save"
+msgstr "저장"
+
+#: src/filebrowser/templates/edit.mako:63
+#: src/filebrowser/templates/edit.mako:77
+msgid "Save as"
+msgstr "다른 이름으로 저장"
+
+#: src/filebrowser/templates/edit.mako:80
+#: src/filebrowser/templates/saveas.mako:33
+msgid "Enter the location where you would like to save the file."
+msgstr "파일을 저장할 위치를 입력하십시오."
+
+#: src/filebrowser/templates/edit.mako:87
+#: src/filebrowser/templates/listdir_components.mako:262
+#: src/filebrowser/templates/listdir_components.mako:301
+#: src/filebrowser/templates/listdir_components.mako:390
+#: src/filebrowser/templates/listdir_components.mako:416
+msgid "Name is required."
+msgstr "이름을 입력해야 합니다."
+
+#: src/filebrowser/templates/edit.mako:91
+#: src/filebrowser/templates/listdir_components.mako:244
+#: src/filebrowser/templates/listdir_components.mako:269
+#: src/filebrowser/templates/listdir_components.mako:303
+#: src/filebrowser/templates/listdir_components.mako:366
+#: src/filebrowser/templates/listdir_components.mako:392
+#: src/filebrowser/templates/listdir_components.mako:418
+#: src/filebrowser/templates/listdir_components.mako:475
+#: src/filebrowser/templates/listdir_components.mako:499
+#: src/filebrowser/templates/listdir_components.mako:1277
+#: src/filebrowser/templates/listdir_components.mako:1327
+msgid "Cancel"
+msgstr "취소"
+
+#: src/filebrowser/templates/fb_components.mako:25
+#: src/filebrowser/templates/fb_components.mako:40
+msgid "Home"
+msgstr "홈"
+
+#: src/filebrowser/templates/fb_components.mako:27
+msgid "Edit path"
+msgstr "경로 편집"
+
+#: src/filebrowser/templates/fb_components.mako:35
+msgid "View trash"
+msgstr "휴지통 보기"
+
+#: src/filebrowser/templates/fb_components.mako:36
+msgid "Trash"
+msgstr "휴지통"
+
+#: src/filebrowser/templates/fb_components.mako:68
+msgid "File Browser"
+msgstr "파일 브라우저"
+
+#: src/filebrowser/templates/fb_components.mako:81
 msgid "Actions"
 msgstr "작업"
 
-#: src/filebrowser/templates/display.mako:48
+#: src/filebrowser/templates/fb_components.mako:87
 msgid "View as text"
 msgstr "텍스트로 보기"
 
-#: src/filebrowser/templates/display.mako:52
+#: src/filebrowser/templates/fb_components.mako:91
 msgid "View as binary"
 msgstr "바이너리로 보기"
 
-#: src/filebrowser/templates/display.mako:56
+#: src/filebrowser/templates/fb_components.mako:95
 msgid "Preview as Gzip"
 msgstr "Gzip으로 미리 보기"
 
-#: src/filebrowser/templates/display.mako:60
+#: src/filebrowser/templates/fb_components.mako:99
 msgid "Preview as Avro"
 msgstr "Avro로 미리 보기"
 
-#: src/filebrowser/templates/display.mako:64
+#: src/filebrowser/templates/fb_components.mako:103
 msgid "Stop preview"
 msgstr "미리 보기 중지"
 
-#: src/filebrowser/templates/display.mako:68
+#: src/filebrowser/templates/fb_components.mako:107
 msgid "Edit file"
 msgstr "파일 편집"
 
@@ -414,11 +489,11 @@ msgstr "파일 편집"
 msgid "Download"
 msgstr "다운로드"
 
-#: src/filebrowser/templates/display.mako:72
+#: src/filebrowser/templates/fb_components.mako:114
 msgid "View file location"
 msgstr "파일 위치 보기"
 
-#: src/filebrowser/templates/display.mako:73
+#: src/filebrowser/templates/fb_components.mako:115
 msgid "Refresh"
 msgstr "새로 고침"
 
@@ -804,7 +879,7 @@ msgstr "파일 생성"
 
 #: src/filebrowser/templates/listdir_components.mako:473
 msgid "File name is required."
-msgstr "파일 이름이 필요합니다."
+msgstr "파일 이름을 입력해야 합니다."
 
 #: src/filebrowser/templates/listdir_components.mako:546
 msgid "User is required."

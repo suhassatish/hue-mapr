@@ -24,7 +24,7 @@
 <%namespace name="properties" file="coordinator_properties.mako" />
 <%namespace name="utils" file="../utils.inc.mako" />
 
-${ commonheader(_("Edit Bundle"), "oozie", user, "100px") | n,unicode }
+${ commonheader(_("Edit Bundle"), "oozie", user) | n,unicode }
 ${ layout.menubar(section='bundles') }
 
 <style type="text/css">
@@ -41,9 +41,6 @@ ${ layout.menubar(section='bundles') }
   .help-block {
     color: #999999;
   }
-  .sidebar-nav {
-    padding: 9px 0;
-  }
 </style>
 
 <script src="/static/ext/js/knockout-min.js" type="text/javascript" charset="utf-8"></script>
@@ -51,11 +48,10 @@ ${ layout.menubar(section='bundles') }
 
 
 <div class="container-fluid">
-  <h1>${ _('Bundle Editor : ') } ${ bundle.name }</h1>
 
   <div class="row-fluid">
     <div class="span2">
-      <div class="well sidebar-nav">
+      <div class="sidebar-nav">
         <ul class="nav nav-list">
           <li class="nav-header">${ _('Properties') }</li>
           <li class="active"><a href="#properties"><i class="icon-reorder"></i> ${ _('Edit properties') }</a></li>
@@ -75,12 +71,12 @@ ${ layout.menubar(section='bundles') }
               <li class="nav-header">${ _('Actions') }</li>
               <li>
                 <a id="submit-btn" href="javascript:void(0)" data-submit-url="${ url('oozie:submit_bundle', bundle=bundle.id) }"
-                   title="${ _('Submit this bundle') }" rel="tooltip" data-placement="right"><i class="icon-play"></i> ${ _('Submit') }
+                   title="${ _('Submit this bundle') }" rel="tooltip" data-placement="right"><i class="fa fa-play"></i> ${ _('Submit') }
                 </a>
               </li>
               <li>
                 <a id="clone-btn" href="javascript:void(0)" data-clone-url="${ url('oozie:clone_bundle', bundle=bundle.id) }"
-                   title="${ _('Copy this bundle') }" rel="tooltip" data-placement="right"><i class="icon-copy"></i> ${ _('Copy') }
+                   title="${ _('Copy this bundle') }" rel="tooltip" data-placement="right"><i class="fa fa-files-o"></i> ${ _('Copy') }
                 </a>
              </li>
           % endif
@@ -90,6 +86,8 @@ ${ layout.menubar(section='bundles') }
     </div>
 
     <div class="span10">
+      <div class="card card-small">
+      <h1 class="card-heading simple">${ _('Bundle Editor : ') } ${ bundle.name }</h1>
       <form id="jobForm" class="form-horizontal" action="${ url('oozie:edit_bundle', bundle=bundle.id) }" method="POST">
 
       <div id="properties" class="section">
@@ -116,9 +114,9 @@ ${ layout.menubar(section='bundles') }
                     </div>
                   </div>
                 </div>
-                ${ utils.render_field_no_popover(bundle_form['is_shared']) }
                 ${ bundle_form['parameters'] | n,unicode }
                 <div class="hide">
+                  ${ utils.render_field_no_popover(bundle_form['is_shared']) }
                   ${ bundle_form['schema_version']  | n,unicode }
                 </div>
               </div>
@@ -166,7 +164,7 @@ ${ layout.menubar(section='bundles') }
                 <tr title="${ _('Click to view the coordinator') }" rel="tooltip">
                   <td>
                     <a href="${ url('oozie:edit_coordinator', coordinator=form.instance.coordinator.id) }" target="_blank">
-                    <i class="icon-share-alt"></i> ${ form.instance.coordinator.name }
+                    <i class="fa fa-share"></i> ${ form.instance.coordinator.name }
                     </a>
                   </td>
                   <td>
@@ -236,10 +234,13 @@ ${ layout.menubar(section='bundles') }
               % for record in history:
               <tr>
                 <td>
-                  <a href="${ url('oozie:list_history_record', record_id=record.id) }" data-row-selector="true"></a>
                   ${ utils.format_date(record.submission_date) }
                 </td>
-                <td>${ record.oozie_job_id }</td>
+                <td>
+                  <a href="${ record.get_absolute_oozie_url() }" data-row-selector="true">
+                    ${ record.oozie_job_id }
+                  </a>
+                </td>
               </tr>
               % endfor
               </tbody>
@@ -249,7 +250,7 @@ ${ layout.menubar(section='bundles') }
         </div>
 
     </div>
-
+      </div>
   </div>
   </form>
 
@@ -523,6 +524,6 @@ ${ layout.menubar(section='bundles') }
 % endif
 
 
-${ utils.decorate_datetime_fields() }
+${ utils.decorate_datetime_fields(False) }
 
 ${ commonfooter(messages) | n,unicode }

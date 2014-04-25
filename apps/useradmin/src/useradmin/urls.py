@@ -21,6 +21,7 @@ from desktop.lib.django_util import get_username_re_rule, get_groupname_re_rule
 username_re = get_username_re_rule()
 groupname_re = get_groupname_re_rule()
 
+
 urlpatterns = patterns('useradmin.views',
   url(r'^$', 'list_users'),
   url(r'^users$', 'list_users'),

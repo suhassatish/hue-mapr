@@ -17,38 +17,25 @@
 
 import logging
 import os
-import pwd
 import simplejson
 
 from django.core.management.base import NoArgsCommand
 from django.contrib.auth.models import User
 from django.utils.translation import ugettext as _
 
-import beeswax.conf
-import hive_metastore.ttypes
-from beeswaxd.ttypes import BeeswaxException
-from beeswax.models import SavedQuery
-from beeswax.server.dbms import get_query_server_config
+from desktop.models import Document
+from hadoop import cluster
 
-from beeswax import models
+import beeswax.conf
+
+from beeswax.models import SavedQuery, IMPALA
 from beeswax.design import hql_query
 from beeswax.server import dbms
+from beeswax.server.dbms import get_query_server_config, QueryServerException
+from useradmin.models import install_sample_user
 
 
 LOG = logging.getLogger(__name__)
-DEFAULT_INSTALL_USER = 'hue'
-
-
-def get_install_user():
-  """Use the DEFAULT_INSTALL_USER if it exists, else try the current user"""
-  try:
-    pwd.getpwnam(DEFAULT_INSTALL_USER)
-    return DEFAULT_INSTALL_USER
-  except KeyError:
-    pw_struct = pwd.getpwuid(os.geteuid())
-    LOG.info("Default sample installation user '%s' does not exist. Using '%s'"
-             % (DEFAULT_INSTALL_USER, pw_struct.pw_name))
-    return pw_struct.pw_name
 
 
 class InstallException(Exception):
@@ -60,26 +47,24 @@ class Command(NoArgsCommand):
   Install examples but do not overwrite them.
   """
   def handle_noargs(self, **options):
-    """Main entry point to install or re-install examples. May raise InstallException"""
-    try:
-      user = self._install_user()
-      self._install_tables(user, options['app_name'])
-      self._install_queries(user, options['app_name'])
-    except Exception, ex:
-      LOG.exception(ex)
-      raise InstallException(ex)
+    exception = None
 
-  def _install_user(self):
-    """
-    Setup the sample user
-    """
-    USERNAME = 'sample'
+    # Documents will belong to this user but we run the install as the current user
     try:
-      user = User.objects.get(username=USERNAME)
-    except User.DoesNotExist:
-      user = User.objects.create(username=USERNAME, password='!', is_active=False, is_superuser=False, id=1100713, pk=1100713)
-      LOG.info('Installed a user called "%s"' % (USERNAME,))
-    return user
+      sample_user = install_sample_user()
+      self._install_tables(options['user'], options['app_name'])
+    except Exception, ex:
+      exception = ex
+
+    try:
+      self._install_queries(sample_user, options['app_name'])
+    except Exception, ex:
+      exception = ex
+
+    Document.objects.sync()
+
+    if exception is not None:
+      raise exception
 
   def _install_tables(self, django_user, app_name):
     data_dir = beeswax.conf.LOCAL_EXAMPLES_DATA_DIR.get()
@@ -92,8 +77,7 @@ class Command(NoArgsCommand):
       try:
         table.install(django_user)
       except Exception, ex:
-        LOG.exception(ex)
-        LOG.error('Could not install table: %s' % (ex,))
+        raise InstallException(_('Could not install table: %s') % ex)
 
   def _install_queries(self, django_user, app_name):
     design_file = file(os.path.join(beeswax.conf.LOCAL_EXAMPLES_DATA_DIR.get(), 'designs.json'))
@@ -102,13 +86,12 @@ class Command(NoArgsCommand):
 
     for design_dict in design_list:
       if app_name == 'impala':
-        design_dict['type'] = models.IMPALA
+        design_dict['type'] = IMPALA
       design = SampleDesign(design_dict)
       try:
         design.install(django_user)
       except Exception, ex:
-        LOG.exception(ex)
-        LOG.error('Could not install query: %s' % (ex,))
+        raise InstallException(_('Could not install query: %s') % ex)
 
 
 class SampleTable(object):
@@ -120,6 +103,7 @@ class SampleTable(object):
     self.filename = data_dict['data_file']
     self.hql = data_dict['create_hql']
     self.query_server = get_query_server_config(app_name)
+    self.app_name = app_name
 
     # Sanity check
     self._data_dir = beeswax.conf.LOCAL_EXAMPLES_DATA_DIR.get()
@@ -135,7 +119,7 @@ class SampleTable(object):
 
   def create(self, django_user):
     """
-    Create in Hive. Raise InstallException on failure.
+    Create table in the Hive Metastore.
     """
     LOG.info('Creating table "%s"' % (self.name,))
     db = dbms.get(django_user, self.query_server)
@@ -160,17 +144,35 @@ class SampleTable(object):
 
   def load(self, django_user):
     """
-    Load data into table. Raise InstallException on failure.
+    Upload data to HDFS home of user then load (aka move) it into the Hive table (in the Hive metastore in HDFS).
     """
     LOAD_HQL = \
       """
-      LOAD DATA local INPATH
+      LOAD DATA INPATH
       '%(filename)s' OVERWRITE INTO TABLE %(tablename)s
       """
 
+    fs = cluster.get_hdfs()
+
+    if self.app_name == 'impala':
+      # Because Impala does not have impersonation on by default, we use a public destination for the upload.
+      from impala.conf import IMPERSONATION_ENABLED
+      if not IMPERSONATION_ENABLED.get():
+        tmp_public = '/tmp/public_hue_examples'
+        fs.do_as_user(django_user, fs.mkdir, tmp_public, '0777')
+        hdfs_root_destination = tmp_public
+    else:
+      hdfs_root_destination = fs.do_as_user(django_user, fs.get_home_dir)
+
+    hdfs_destination = os.path.join(hdfs_root_destination, self.name)
+
+    LOG.info('Uploading local data %s to HDFS table "%s"' % (self.name, hdfs_destination))
+    fs.do_as_user(django_user, fs.copyFromLocal, self._contents_file, hdfs_destination)
+
     LOG.info('Loading data into table "%s"' % (self.name,))
-    hql = LOAD_HQL % dict(tablename=self.name, filename=self._contents_file)
+    hql = LOAD_HQL % {'tablename': self.name, 'filename': hdfs_destination}
     query = hql_query(hql)
+
     try:
       results = dbms.get(django_user, self.query_server).execute_and_wait(query)
       if not results:
@@ -198,12 +200,9 @@ class SampleDesign(object):
     LOG.info('Installing sample query: %s' % (self.name,))
     try:
       # Don't overwrite
-      model = models.SavedQuery.objects.get(owner=django_user, name=self.name, type=self.type)
-      msg = _('Sample design %(name)s already exists.') % {'name': self.name}
-      LOG.error(msg)
-      raise InstallException(msg)
-    except models.SavedQuery.DoesNotExist:
-      model = models.SavedQuery(owner=django_user, name=self.name)
+      model = SavedQuery.objects.get(owner=django_user, name=self.name, type=self.type)
+    except SavedQuery.DoesNotExist:
+      model = SavedQuery(owner=django_user, name=self.name)
       model.type = self.type
       # The data field needs to be a string. The sample file writes it
       # as json (without encoding into a string) for readability.

@@ -21,10 +21,29 @@ from django.utils.translation import ugettext as _
 <%namespace name="components" file="components.mako" />
 
 ${ commonheader(_('Databases'), 'metastore', user) | n,unicode }
+${ components.menubar() }
 
 <div class="container-fluid" id="databases">
-    <h1>${_('Databases')}</h1>
-    ${ components.breadcrumbs(breadcrumbs) }
+  <div class="row-fluid">
+  % if has_write_access:
+    <div class="span3">
+      <div class="sidebar-nav card-small">
+        <ul class="nav nav-list">
+          <li class="nav-header">${_('actions')}</li>
+          <li><a href="${ url('beeswax:create_database') }"><i class="fa fa-plus-circle"></i> ${_('Create a new database')}</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="span9">
+  %else:
+    <div class="span12">
+  % endif
+      <div class="card card-small">
+        <h1 class="card-heading simple">${ components.breadcrumbs(breadcrumbs) }</h1>
+        <%actionbar:render>
+          <%def name="search()">
+            <input id="filterInput" type="text" class="input-xlarge search-query" placeholder="${_('Search for database name')}">
+          </%def>
 
     <div class="row-fluid">
         <div class="span3">
@@ -73,6 +92,7 @@ ${ commonheader(_('Databases'), 'metastore', user) | n,unicode }
             </table>
         </div>
     </div>
+  </div>
 </div>
 
 <div id="dropDatabase" class="modal hide fade">
@@ -98,25 +118,25 @@ ${ commonheader(_('Databases'), 'metastore', user) | n,unicode }
 <script type="text/javascript" charset="utf-8">
   $(document).ready(function () {
     var viewModel = {
-        availableDatabases : ko.observableArray(${ databases_json | n,unicode }),
-        chosenDatabases : ko.observableArray([])
+      availableDatabases: ko.observableArray(${ databases_json | n,unicode }),
+      chosenDatabases: ko.observableArray([])
     };
 
     ko.applyBindings(viewModel);
 
     var databases = $(".datatables").dataTable({
-      "sDom":"<'row'r>t<'row'<'span8'i><''p>>",
-      "bPaginate":false,
-      "bLengthChange":false,
-      "bInfo":false,
-      "bFilter":true,
-      "aoColumns":[
-        {"bSortable":false, "sWidth":"1%" },
+      "sDom": "<'row'r>t<'row'<'span8'i><''p>>",
+      "bPaginate": false,
+      "bLengthChange": false,
+      "bInfo": false,
+      "bFilter": true,
+      "aoColumns": [
+        {"bSortable": false, "sWidth": "1%" },
         null
       ],
-      "oLanguage":{
-        "sEmptyTable":"${_('No data available')}",
-        "sZeroRecords":"${_('No matching records')}",
+      "oLanguage": {
+        "sEmptyTable": "${_('No data available')}",
+        "sZeroRecords": "${_('No matching records')}",
       }
     });
 
@@ -128,24 +148,24 @@ ${ commonheader(_('Databases'), 'metastore', user) | n,unicode }
 
     $(".selectAll").click(function () {
       if ($(this).attr("checked")) {
-        $(this).removeAttr("checked").removeClass("icon-ok");
-        $("." + $(this).data("selectables")).removeClass("icon-ok").removeAttr("checked");
+        $(this).removeAttr("checked").removeClass("fa-check");
+        $("." + $(this).data("selectables")).removeClass("fa-check").removeAttr("checked");
       }
       else {
-        $(this).attr("checked", "checked").addClass("icon-ok");
-        $("." + $(this).data("selectables")).addClass("icon-ok").attr("checked", "checked");
+        $(this).attr("checked", "checked").addClass("fa-check");
+        $("." + $(this).data("selectables")).addClass("fa-check").attr("checked", "checked");
       }
       toggleActions();
     });
 
     $(".databaseCheck").click(function () {
       if ($(this).attr("checked")) {
-        $(this).removeClass("icon-ok").removeAttr("checked");
+        $(this).removeClass("fa-check").removeAttr("checked");
       }
       else {
-        $(this).addClass("icon-ok").attr("checked", "checked");
+        $(this).addClass("fa-check").attr("checked", "checked");
       }
-      $(".selectAll").removeAttr("checked").removeClass("icon-ok");
+      $(".selectAll").removeAttr("checked").removeClass("fa-check");
       toggleActions();
     });
 
@@ -158,13 +178,15 @@ ${ commonheader(_('Databases'), 'metastore', user) | n,unicode }
     }
 
     $("#dropBtn").click(function () {
-      $.getJSON("${ url('metastore:drop_database') }", function(data) {
+      $.getJSON("${ url('metastore:drop_database') }", function (data) {
         $("#dropDatabaseMessage").text(data.title);
       });
-      viewModel.chosenDatabases.removeAll();
-      $(".hueCheckbox[checked='checked']").each(function( index ) {
-        viewModel.chosenDatabases.push($(this).data("drop-name"));
+      var _tempList = [];
+      $(".hueCheckbox[checked='checked']").each(function (index) {
+        _tempList.push($(this).data("drop-name"));
       });
+      viewModel.chosenDatabases.removeAll();
+      viewModel.chosenDatabases(_tempList);
       $("#dropDatabase").modal("show");
     });
   });

@@ -13,13 +13,15 @@
 ## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 ## See the License for the specific language governing permissions and
 ## limitations under the License.
+
 <%!
 from desktop.views import commonheader, commonfooter
+from django.core.urlresolvers import reverse
 from django.utils.encoding import smart_unicode
 from django.utils.translation import ugettext as _
 %>
 
-${ commonheader(_('Quick Start'), "quickstart", user, "100px") | n,unicode }
+<%namespace name="header" file="header.mako" />
 
 % if user.is_superuser:
   <div class="row-fluid">
@@ -42,10 +44,228 @@ ${ commonheader(_('Quick Start'), "quickstart", user, "100px") | n,unicode }
 </div>
 
 <div class="container-fluid">
-  <div class="row-fluid">
-    <h2>
-      % if user.is_superuser:
-        ${ _('Quick Start Wizard') } -
+  <div class="row-fluid" style="margin-bottom: 100px;">
+    <div class="card card-small">
+      <h2 class="card-heading simple">
+        % if user.is_superuser:
+          ${ _('Quick Start Wizard') } -
+        % endif
+        Hue&trade; ${version} - <a href="http://gethue.com" target="_blank" style="color:#777" title="${ _('Visit the project website!') }">${ _("The Hadoop UI") }</a>
+      </h2>
+
+     % if user.is_superuser:
+
+      <div class="card-body">
+        <br/>
+
+         <div class="row-fluid">
+          <div id="properties" class="section">
+            <ul class="nav nav-tabs" style="margin-bottom: 0">
+              <li class="active"><a href="#step1" class="step">${ _('Step 1:') } <i
+                  class="fa fa-cogs"></i> ${ _('Check Configuration') }</a></li>
+              <li><a href="#step2" class="step">${ _('Step 2:') } <i class="fa fa-book"></i> ${ _('Examples') }</a></li>
+              <li><a href="#step3" class="step">${ _('Step 3:') } <i class="fa fa-group"></i> ${ _('Users') }</a></li>
+              <li><a id="lastStep" href="#step4" class="step">${ _('Step 4:') } <i class="fa fa-flag"></i> ${_('Go!') }</a></li>
+            </ul>
+
+          <div class="steps">
+          <div id="step1" class="stepDetails">
+            <div class="card card-tab">
+              <h2 class="card-heading simple">${ _('Checking current configuration') }</h2>
+
+              <div class="card-body">
+                <div id="check-config-section" style="margin-bottom:20px">
+                  <div class="spinner">
+                    <!--[if !IE]> --><i class="fa fa-spinner fa-spin" style="font-size: 60px; color: #DDD"></i><!-- <![endif]-->
+                    <!--[if IE]><img src="/static/art/spinner.gif" /><![endif]-->
+                  </div>
+                  <div class="info hide"></div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <div id="step2" class="stepDetails hide">
+            <div class="card card-tab card-listcontent">
+              <h2 class="card-heading simple">${ _('Install all the application examples') }</h2>
+
+              <div class="card-body">
+                <p>
+                <ul>
+                  <li>
+                    <a href="#" class="installAllBtn" data-loading-text="${ _('Installing...') }">
+                      <i class="fa fa-download"></i> ${ _('All') }
+                    </a>
+                  </li>
+                </ul>
+                </p>
+              </div>
+            </div>
+
+          <div class="card card-home card-tab card-tab-bordertop card-listcontent">
+            <h2 class="card-heading simple">${ _('Install individual application examples') }</h2>
+          <div class="card-body">
+            <p>
+          <ul>
+          % if 'beeswax' in app_names:
+              <li>
+                <a href="#" class="installBtn" data-loading-text="${ _('Installing...') }"
+                   data-sample-url="${ url('beeswax:install_examples') }">
+                  <i class="fa fa-download"></i> ${ apps['beeswax'].nice_name }
+                </a>
+              </li>
+          % endif
+          % if 'impala' in app_names:
+              <li>
+                <a href="#" class="installBtn" data-loading-text="${ _('Installing...') }"
+                   data-sample-url="${ url('impala:install_examples') }">
+                  <i class="fa fa-download"></i> ${ apps['impala'].nice_name }
+                </a>
+              </li>
+          % endif
+          % if 'search' in app_names:
+              <li>
+                <a href="#" class="installBtn" data-loading-text="${ _('Installing...') }"
+                   data-sample-url="${ url('search:install_examples') }">
+                  <i class="fa fa-download"></i> ${ apps['search'].nice_name }
+                </a>
+              </li>
+          % endif
+          % if 'oozie' in app_names:
+              <li>
+                <a href="#" class="installBtn" data-loading-text="${ _('Installing...') }"
+                   data-sample-url="${ url('oozie:install_examples') }">
+                  <i class="fa fa-download"></i> ${ apps['oozie'].nice_name }
+                </a>
+              </li>
+          % endif
+          % if 'hbase' in app_names:
+              <li>
+                <a href="#" class="installBtn" data-loading-text="${ _('Installing...') }"
+                   data-sample-url="${ url('hbase:install_examples') }">
+                  <i class="fa fa-download"></i> ${ apps['hbase'].nice_name }
+                </a>
+              </li>
+          % endif
+          % if 'pig' in app_names:
+              <li>
+                <a href="#" class="installBtn" data-loading-text="${ _('Installing...') }"
+                   data-sample-url="${ url('pig:install_examples') }">
+                  <i class="fa fa-download"></i> ${ apps['pig'].nice_name }
+                </a>
+              </li>
+          % endif
+          % if 'jobsub' in app_names:
+              <li>
+                <a href="#" class="installBtn" data-loading-text="${ _('Installing...') }"
+                   data-sample-url="${ url('oozie:install_examples') }">
+                  <i class="fa fa-download"></i> ${ apps['jobsub'].nice_name }
+                </a>
+              </li>
+          % endif
+          </ul>
+            </p>
+          </div>
+          </div>
+          </div>
+
+            <div id="step3" class="stepDetails hide">
+              <div class="card card-tab card-listcontent">
+                <h2 class="card-heading simple">${ _('Create or import users') }</h2>
+
+                <div class="card-body">
+                  <p>
+                    <a href="${ url('useradmin.views.list_users') }" target="_blank" style="padding-left: 2px"><img
+                        src="/useradmin/static/art/icon_useradmin_24.png"
+                        style="margin-right: 4px;"> ${ _('User Admin') }</a>
+                  </p>
+                </div>
+              </div>
+
+              <div class="card card-home card-tab card-tab-bordertop card-listcontent">
+                <h2 class="card-heading simple">${ _('Tours and tutorials') }</h2>
+
+                <div class="card-body">
+                  <p>
+                    <label class="checkbox">
+                      <input class="updatePreferences" type="checkbox" name="tours_and_tutorials"
+                             style="margin-right: 10px"
+                             title="${ _('Check to enable the tours and tutorials') }" ${ tours_and_tutorials and 'checked' or '' }/>
+                      ${ _('Display the "Available Tours" question mark when tours are available for a specific page.') }
+                    </label>
+                  </p>
+                </div>
+              </div>
+
+          <div class="card card-home card-tab card-tab-bordertop card-listcontent">
+            <h2 class="card-heading simple">${ _('Anonymous usage analytics') }</h2>
+
+            <div class="card-body">
+              <label class="checkbox">
+                <input class="updatePreferences" type="checkbox" name="collect_usage" style="margin-right: 10px" title="${ _('Check to enable usage analytics') }" ${ collect_usage and 'checked' or '' }/>
+                ${ _('Help improve Hue with anonymous usage analytics.') }
+                <a href="javascript:void(0)" style="display: inline" data-trigger="hover" data-toggle="popover" data-placement="right" rel="popover"
+                   title="${ _('How does it work?') }"
+                   data-content="${ _('We are using Google Analytics to see how many times an application or specific section of an application is used, nothing more.') }">
+                   <i class="fa fa-question-circle"></i>
+                </a>
+              </label>
+            </div>
+          </div>
+
+            </div>
+
+            <div id="step4" class="stepDetails hide">
+              <div class="card card-tab card-listcontent">
+                <h2 class="card-heading simple">${ _('Use the applications') }</h2>
+
+                <div class="card-body">
+                  <p>
+                    <a href="${ url('desktop.views.home') }" class="step"><i class="fa fa-home"></i> ${ _('Hue Home') }
+                    </a>
+                  </p>
+                </div>
+              </div>
+
+              <div class="card card-home card-tab card-tab-bordertop card-listcontent">
+                <h2 class="card-heading simple">${ _('Skip wizard next time') }</h2>
+
+                <div class="card-body">
+                  <p>
+                    <label class="checkbox">
+                      <input id="updateSkipWizard" type="checkbox"
+                             style="margin-right: 10px"
+                             title="${ _('Check to skip this wizard next time.') }"/>
+                      ${ _('Skip the Quick Start Wizard at next login and land directly on the home page.') }
+                    </label>
+                  </p>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          </div>
+          </div>
+      </div>
+
+      <div class="form-actions">
+        <a id="backBtn" class="btn disabled">${ _('Back') }</a>
+        <a id="nextBtn" class="btn btn-primary disable-feedback">${ _('Next') }</a>
+        <div class="pull-right muted">${ _('Hue and the Hue logo are trademarks of Cloudera, Inc.') }</div>
+      </div>
+      % else:
+       <div class="card-body">
+        <p>
+          ${ _('Learn more about Hue and Hadoop on') } <a href="http://gethue.com" target="_blank">http://gethue.com</a>.
+          <span class="muted">${ _('Hue and the Hue logo are trademarks of Cloudera, Inc.') }</span>
+          % if not user.is_authenticated():
+            <br/>
+            <a href="${ reverse('desktop.auth.views.dt_login') }" class="btn btn-primary" style="margin-top: 50px;margin-bottom: 20px"><i class="fa fa-sign-in"></i> ${ _('Sign in now!') }</a>
+          % endif
+        </p>
+       </div>
       % endif
       Hue ${version}
     </h2>
@@ -226,18 +446,43 @@ ${ commonheader(_('Quick Start'), "quickstart", user, "100px") | n,unicode }
 <style type="text/css">
   .steps {
     min-height: 300px;
-    margin-bottom: 80px;
   }
 
   input[type=submit] {
     margin-left: 50px;
   }
+
+  @media all and (max-height: 800px) {
+    .form-actions {
+      position:fixed;
+      bottom:0;
+      margin:0;
+      left:0;
+      right:0;
+    }
+  }
+
+  .footer {
+    text-align: center;
+  }
+
 </style>
 
 <script src="/static/ext/js/routie-0.3.0.min.js" type="text/javascript" charset="utf-8"></script>
 
 <script type="text/javascript" charset="utf-8">
+
 $(document).ready(function(){
+
+  $.get("${ url('desktop.views.check_config') }", function(response) {
+    $("#check-config-section .spinner").css({
+      'position': 'absolute',
+      'top': '-100px'
+    });
+    $("#check-config-section .info").html(response);
+    $("#check-config-section .info").removeClass('hide');
+  })
+  .fail(function() { $(document).trigger('error', '${ _("Check config failed: ")}'); });
 
   $("[rel='popover']").popover();
 
@@ -246,9 +491,9 @@ $(document).ready(function(){
     $(button).button('loading');
     $.post($(this).data("sample-url"), function(data) {
       if (data.status == 0) {
-        $.jHueNotify.info('${ _("Examples refreshed") }');
+        $(document).trigger('info','${ _("Examples refreshed") }');
       } else {
-        $.jHueNotify.error(data.message);
+        $(document).trigger('error', data.message);
       }
     })
     .always(function(data) {
@@ -264,7 +509,7 @@ $(document).ready(function(){
     });
     $.when.apply(this, calls)
       .then(function() {
-        $.jHueNotify.info('${ _("Examples refreshed") }');
+        $(document).trigger('info', '${ _("Examples refreshed") }');
       })
       .always(function(data) {
         $(button).button('reset');
@@ -328,9 +573,9 @@ $(document).ready(function(){
   $(".updatePreferences").click(function () {
     $.post("${ url('about:update_preferences') }", $("input").serialize(), function(data) {
       if (data.status == 0) {
-        $.jHueNotify.info('${ _("Configuration updated") }');
+        $(document).trigger('info', '${ _("Configuration updated") }');
       } else {
-        $.jHueNotify.error(data.data);
+        $(document).trigger('error', data.data);
       }
     });
   });

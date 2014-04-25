@@ -16,10 +16,13 @@
 # limitations under the License.
 
 import logging
+import json
 import os.path
 import re
 import tempfile
 import kerberos
+
+from datetime import datetime
 
 from django.conf import settings
 from django.contrib import messages
@@ -30,7 +33,6 @@ import django.db
 from django.http import HttpResponseNotAllowed, HttpResponseForbidden
 from django.core.urlresolvers import resolve
 from django.http import HttpResponseRedirect, HttpResponse
-from django.utils.importlib import import_module
 from django.utils.translation import ugettext as _
 from django.utils.http import urlquote
 from django.utils.encoding import iri_to_uri
@@ -38,6 +40,7 @@ import django.views.static
 import django.views.generic.simple
 
 import desktop.conf
+from desktop.context_processors import get_app_name
 from desktop.lib import apputil, i18n
 from desktop.lib.django_util import render, render_json, is_jframe_request
 from desktop.lib.exceptions import StructuredException
@@ -45,7 +48,7 @@ from desktop.lib.exceptions_renderable import PopupException
 from desktop.log.access import access_log, log_page_hit
 from desktop import appmanager
 from hadoop import cluster
-import simplejson
+from desktop.log import get_audit_logger
 
 
 LOG = logging.getLogger(__name__)
@@ -59,29 +62,6 @@ DJANGO_VIEW_AUTH_WHITELIST = [
   django.views.generic.simple.redirect_to,
 ]
 
-class UserGroupSynchronizationMiddleware(object):
-  """
-  Middleware that synchronizes users and groups
-  """
-  def load_backend(self, path):
-    i = path.rfind('.')
-    module, attr = path[:i], path[i+1:]
-    try:
-      mod = import_module(module)
-    except ImportError, e:
-      raise ImproperlyConfigured('Error importing synchronization backend %s: "%s"' % (module, e))
-    try:
-        cls = getattr(mod, attr)
-    except AttributeError:
-      raise ImproperlyConfigured('Module "%s" does not define a "%s" synchronization backend' % (module, attr))
-    return cls()
-
-  def get_backend(self):
-    return self.load_backend(desktop.conf.AUTH.USER_GROUP_MEMBERSHIP_SYNCHRONIZATION_BACKEND.get())
-
-  def process_request(self, request):
-    backend = self.get_backend()
-    backend.sync(request)
 
 class AjaxMiddleware(object):
   """
@@ -139,7 +119,7 @@ class JFrameMiddleware(object):
         if hasattr(request, "flash"):
           flashes = request.flash.get()
           if flashes:
-            response['X-Hue-Flash-Messages'] = simplejson.dumps(flashes)
+            response['X-Hue-Flash-Messages'] = json.dumps(flashes)
 
     return response
 
@@ -191,8 +171,12 @@ class NotificationMiddleware(object):
     def error(title, detail=None):
       messages.error(request, message(title, detail))
 
+    def warn(title, detail=None):
+      messages.warning(request, message(title, detail))
+
     request.info = info
     request.error = error
+    request.warn = warn
 
 
 class AppSpecificMiddleware(object):
@@ -330,13 +314,21 @@ class LoginAndPermissionMiddleware(object):
         access_log(request, 'error checking view perm: %s', e, level=access_log_level)
         access_view =''
 
-      if request._desktop_app and \
-          request._desktop_app != "desktop" and \
-          not (request.user.has_hue_permission(action="access", app=request._desktop_app) or
-               request.user.has_hue_permission(action=access_view, app=request._desktop_app)):
+      # Accessing an app can access an underlying other app.
+      # e.g. impala or spark uses code from beeswax and so accessing impala shows up as beeswax here.
+      # Here we trust the URL to be the real app we need to check the perms.
+      app_accessed = request._desktop_app
+      ui_app_accessed = get_app_name(request)
+      if app_accessed != ui_app_accessed and ui_app_accessed not in ('logs', 'accounts', 'login'):
+        app_accessed = ui_app_accessed
+
+      if app_accessed and \
+          app_accessed not in ("desktop", "home", "about") and \
+          not (request.user.has_hue_permission(action="access", app=app_accessed) or
+               request.user.has_hue_permission(action=access_view, app=app_accessed)):
         access_log(request, 'permission denied', level=access_log_level)
-        return PopupException(_("You do not have permission to access the %(app_name)s application.") %
-                              {'app_name': request._desktop_app.capitalize()}, error_code=401).response(request)
+        return PopupException(
+            _("You do not have permission to access the %(app_name)s application.") % {'app_name': app_accessed.capitalize()}, error_code=401).response(request)
       else:
         log_page_hit(request, view_func, level=access_log_level)
         return None
@@ -352,6 +344,43 @@ class LoginAndPermissionMiddleware(object):
       return response
     else:
       return HttpResponseRedirect("%s?%s=%s" % (settings.LOGIN_URL, REDIRECT_FIELD_NAME, urlquote(request.get_full_path())))
+
+
+class JsonMessage(object):
+  def __init__(self, **kwargs):
+    self.kwargs = kwargs
+
+  def __str__(self):
+    return json.dumps(self.kwargs)
+
+
+class AuditLoggingMiddleware(object):
+
+  def __init__(self):
+    from desktop.conf import AUDIT_EVENT_LOG_DIR
+
+    if not AUDIT_EVENT_LOG_DIR.get():
+      LOG.info('Unloading AuditLoggingMiddleware')
+      raise exceptions.MiddlewareNotUsed
+
+  def process_response(self, request, response):
+    try:
+      audit_logger = get_audit_logger()
+      audit_logger.debug(JsonMessage(**{
+          datetime.utcnow().strftime('%s'): {
+            'user': request.user.username  if hasattr(request, 'user') else 'anonymous',
+            "status": response.status_code,
+            "impersonator": None,
+            "ip_address": request.META.get('REMOTE_ADDR'),
+            "authorization_failure": response.status_code == 401,
+            "service": get_app_name(request),
+            "url": request.path,
+          }
+      }))
+      response['audited'] = True
+    except Exception, e:
+      LOG.error('Could not audit the request: %s' % e)
+    return response
 
 
 class SessionOverPostMiddleware(object):
@@ -610,6 +639,7 @@ class SpnegoMiddleware(object):
     except AttributeError:
       pass
     return username
+
 
 class HueRemoteUserMiddleware(RemoteUserMiddleware):
   """

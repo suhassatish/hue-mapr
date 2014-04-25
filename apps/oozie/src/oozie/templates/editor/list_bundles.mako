@@ -24,7 +24,7 @@
 <%namespace name="layout" file="../navigation-bar.mako" />
 <%namespace name="utils" file="../utils.inc.mako" />
 
-${ commonheader(_("Bundles"), "oozie", user, "100px") | n,unicode }
+${ commonheader(_("Bundles"), "oozie", user) | n,unicode }
 ${ layout.menubar(section='bundles') }
 
 <style type="text/css">
@@ -34,7 +34,8 @@ ${ layout.menubar(section='bundles') }
 </style>
 
 <div class="container-fluid">
-  <h1>${ _('Bundle Manager') }</h1>
+  <div class="card card-small">
+  <h1 class="card-heading simple">${ _('Bundle Manager') }</h1>
 
   <%actionbar:render>
     <%def name="search()">
@@ -43,31 +44,31 @@ ${ layout.menubar(section='bundles') }
 
     <%def name="actions()">
       <div class="btn-toolbar" style="display: inline; vertical-align: middle">
-        <button class="btn toolbarBtn" id="submit-btn" disabled="disabled"><i class="icon-play"></i> ${ _('Submit') }</button>
-        <button class="btn toolbarBtn" id="clone-btn" disabled="disabled"><i class="icon-copy"></i> ${ _('Copy') }</button>
+        <button class="btn toolbarBtn" id="submit-btn" disabled="disabled"><i class="fa fa-play"></i> ${ _('Submit') }</button>
+        <button class="btn toolbarBtn" id="clone-btn" disabled="disabled"><i class="fa fa-files-o"></i> ${ _('Copy') }</button>
         <div id="delete-dropdown" class="btn-group" style="vertical-align: middle">
-          <button id="trash-btn" class="btn toolbarBtn" disabled="disabled"><i class="icon-remove"></i> ${_('Move to trash')}</button>
+          <button id="trash-btn" class="btn toolbarBtn" disabled="disabled"><i class="fa fa-times"></i> ${_('Move to trash')}</button>
           <button id="trash-btn-caret" class="btn toolbarBtn dropdown-toggle" data-toggle="dropdown" disabled="disabled">
             <span class="caret"></span>
           </button>
           <ul class="dropdown-menu">
-            <li><a href="javascript:void(0);" id="destroy-btn" title="${_('Delete forever')}"><i class="icon-bolt"></i> ${_('Delete forever')}</a></li>
+            <li><a href="javascript:void(0);" id="destroy-btn" title="${_('Delete forever')}"><i class="fa fa-bolt"></i> ${_('Delete forever')}</a></li>
           </ul>
         </div>
       </div>
     </%def>
 
     <%def name="creation()">
-        <a href="${ url('oozie:list_trashed_bundles') }" class="btn"><i class="icon-trash"></i> ${ _('View trash') }</a>
-        &nbsp;&nbsp;
-        <a href="${ url('oozie:create_bundle') }" class="btn"><i class="icon-plus-sign"></i> ${ _('Create') }</a>
+      <a href="${ url('oozie:create_bundle') }" class="btn"><i class="fa fa-plus-circle"></i> ${ _('Create') }</a>
+      &nbsp;&nbsp;
+      <a href="${ url('oozie:list_trashed_bundles') }" class="btn"><i class="fa fa-trash-o"></i> ${ _('View trash') }</a>
     </%def>
   </%actionbar:render>
 
   <table id="bundleTable" class="table datatables">
     <thead>
       <tr>
-        <th width="1%"><div class="hueCheckbox selectAll" data-selectables="bundleCheck"></div></th>
+        <th width="1%"><div class="hueCheckbox selectAll fa" data-selectables="bundleCheck"></div></th>
         <th width="10%">${ _('Name') }</th>
         <th width="20%">${ _('Description') }</th>
         <th width="35%">${ _('Coordinators') }</th>
@@ -81,8 +82,8 @@ ${ layout.menubar(section='bundles') }
       % for bundle in jobs:
         <tr>
           <td data-row-selector-exclude="true">
-            <div class="hueCheckbox bundleCheck" data-row-selector-exclude="true"
-              % if bundle.is_accessible(user):
+            <div class="hueCheckbox bundleCheck fa" data-row-selector-exclude="true"
+              % if bundle.can_read(user):
                   data-clone-url="${ url('oozie:clone_bundle', bundle=bundle.id) }"
                   data-submit-url="${ url('oozie:submit_bundle', bundle=bundle.id) }"
               % endif
@@ -91,7 +92,7 @@ ${ layout.menubar(section='bundles') }
               % endif
               >
             </div>
-            % if bundle.is_accessible(user):
+            % if bundle.can_read(user):
               <a href="${ url('oozie:edit_bundle', bundle=bundle.id) }" data-row-selector="true"/>
             % endif
           </td>
@@ -116,7 +117,16 @@ ${ layout.menubar(section='bundles') }
     </tbody>
   </table>
 </div>
+</div>
 
+<div class="hueOverlay" data-bind="visible: isLoading">
+  <!--[if lte IE 9]>
+    <img src="/static/art/spinner-big.gif" />
+  <![endif]-->
+  <!--[if !IE]> -->
+    <i class="fa fa-spinner fa-spin"></i>
+  <!-- <![endif]-->
+</div>
 
 <div id="submit-job-modal" class="modal hide"></div>
 
@@ -158,38 +168,39 @@ ${ layout.menubar(section='bundles') }
 <script type="text/javascript" charset="utf-8">
   $(document).ready(function () {
     var viewModel = {
-        availableJobs : ko.observableArray(${ json_jobs | n }),
-        chosenJobs : ko.observableArray([])
+      availableJobs : ko.observableArray(${ json_jobs | n }),
+      chosenJobs : ko.observableArray([]),
+      isLoading: ko.observable(false)
     };
 
     ko.applyBindings(viewModel);
 
     $(".selectAll").click(function () {
       if ($(this).attr("checked")) {
-        $(this).removeAttr("checked").removeClass("icon-ok");
-        $("." + $(this).data("selectables")).removeClass("icon-ok").removeAttr("checked");
+        $(this).removeAttr("checked").removeClass("fa-check");
+        $("." + $(this).data("selectables")).removeClass("fa-check").removeAttr("checked");
       }
       else {
-        $(this).attr("checked", "checked").addClass("icon-ok");
-        $("." + $(this).data("selectables")).addClass("icon-ok").attr("checked", "checked");
+        $(this).attr("checked", "checked").addClass("fa-check");
+        $("." + $(this).data("selectables")).addClass("fa-check").attr("checked", "checked");
       }
       toggleActions();
     });
 
     $(".bundleCheck").click(function () {
       if ($(this).attr("checked")) {
-        $(this).removeClass("icon-ok").removeAttr("checked");
+        $(this).removeClass("fa-check").removeAttr("checked");
       }
       else {
-        $(this).addClass("icon-ok").attr("checked", "checked");
+        $(this).addClass("fa-check").attr("checked", "checked");
       }
-      $(".selectAll").removeAttr("checked").removeClass("icon-ok");
+      $(".selectAll").removeAttr("checked").removeClass("fa-check");
       toggleActions();
     });
 
     function toggleActions() {
       $(".toolbarBtn").attr("disabled", "disabled");
-      var selector = $(".hueCheckbox[checked='checked']");
+      var selector = $(".hueCheckbox[checked='checked']:not(.selectAll)");
       if (selector.length == 1) {
         var action_buttons = [
           ['#submit-btn', 'data-submit-url'],
@@ -205,7 +216,7 @@ ${ layout.menubar(section='bundles') }
         });
       }
       var can_delete = $(".hueCheckbox[checked='checked'][data-delete-id]");
-      if (can_delete.length >= 1 && can_delete.length == selector.length) {
+      if (can_delete.length > 0 && can_delete.length == selector.length) {
         $("#trash-btn").removeAttr("disabled");
         $("#trash-btn-caret").removeAttr("disabled");
       }
@@ -238,6 +249,7 @@ ${ layout.menubar(section='bundles') }
     });
 
     $("#clone-btn").click(function (e) {
+      viewModel.isLoading(true);
       var _this = $(".hueCheckbox[checked='checked']");
       var _url = _this.attr("data-clone-url");
       $.post(_url, function (data) {
@@ -249,7 +261,7 @@ ${ layout.menubar(section='bundles') }
       "sPaginationType":"bootstrap",
       'iDisplayLength':50,
       "bLengthChange":false,
-      "sDom":"<'row'r>t<'row'<'span8'i><''p>>",
+      "sDom": "<'row'r>t<'row-fluid'<'dt-pages'p><'dt-records'i>>",
       "aoColumns":[
         { "bSortable":false },
         null,
@@ -275,6 +287,9 @@ ${ layout.menubar(section='bundles') }
           "sNext":"${_('Next')}",
           "sPrevious":"${_('Previous')}"
         }
+      },
+      "fnDrawCallback":function (oSettings) {
+        $("a[data-row-selector='true']").jHueRowSelector();
       }
     });
 

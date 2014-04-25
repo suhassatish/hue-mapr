@@ -23,39 +23,38 @@
 <%namespace name="layout" file="../navigation-bar.mako" />
 <%namespace name="utils" file="../utils.inc.mako" />
 
-${ commonheader(_("Coordinators Dashboard"), "oozie", user, "100px") | n,unicode }
-${layout.menubar(section='dashboard')}
+${ commonheader(_("Coordinators Dashboard"), "oozie", user) | n,unicode }
+${layout.menubar(section='coordinators', dashboard=True)}
 
 
 <div class="container-fluid">
-  ${ layout.dashboard_sub_menubar(section='coordinators') }
+  <div class="card card-small">
+  <div class="card-body">
+  <p>
+  <form>
+    <input type="text" id="filterInput" class="input-xlarge search-query" placeholder="${ _('Search for username, name, etc...') }">
 
-  <div class="well hueWell">
-    <form>
-      <input type="text" id="filterInput" class="input-xlarge search-query" placeholder="${ _('Search for username, name, etc...') }">
-
-      <span class="pull-right">
-        <span style="padding-right:10px;float:left;margin-top:3px">
-        ${ _('Show only') }
-        </span>
-        <span class="btn-group" style="float:left">
-          <a class="btn btn-date btn-info" data-value="1">${ _('1') }</a>
-          <a class="btn btn-date btn-info" data-value="7">${ _('7') }</a>
-          <a class="btn btn-date btn-info" data-value="15">${ _('15') }</a>
-          <a class="btn btn-date btn-info" data-value="30">${ _('30') }</a>
-        </span>
-        <span style="float:left;padding-left:10px;padding-right:10px;margin-top:3px">${ _('days with status') }</span>
-        <span class="btn-group" style="float:left;">
-          <a class="btn btn-status btn-success" data-value='SUCCEEDED'>${ _('Succeeded') }</a>
-          <a class="btn btn-status btn-warning" data-value='RUNNING'>${ _('Running') }</a>
-          <a class="btn btn-status btn-danger disable-feedback" data-value='KILLED'>${ _('Killed') }</a>
-        </span>
+    <span class="pull-right">
+      <span style="padding-right:10px;float:left;margin-top:3px">
+      ${ _('Show only') }
       </span>
-   </form>
-  </div>
+      <span class="btn-group" style="float:left">
+        <a class="btn btn-date btn-info" data-value="1">${ _('1') }</a>
+        <a class="btn btn-date btn-info" data-value="7">${ _('7') }</a>
+        <a class="btn btn-date btn-info" data-value="15">${ _('15') }</a>
+        <a class="btn btn-date btn-info" data-value="30">${ _('30') }</a>
+      </span>
+      <span style="float:left;padding-left:10px;padding-right:10px;margin-top:3px">${ _('days with status') }</span>
+      <span class="btn-group" style="float:left;">
+        <a class="btn btn-status btn-success" data-value='SUCCEEDED'>${ _('Succeeded') }</a>
+        <a class="btn btn-status btn-warning" data-value='RUNNING'>${ _('Running') }</a>
+        <a class="btn btn-status btn-danger disable-feedback" data-value='KILLED'>${ _('Killed') }</a>
+      </span>
+    </span>
+  </form>
 
   <div style="min-height:200px">
-    <h1>${ _('Running') }</h1>
+    <h1 class="card-heading simple">${ _('Running') }</h1>
     <table class="table table-condensed" id="running-table">
       <thead>
         <tr>
@@ -78,7 +77,7 @@ ${layout.menubar(section='dashboard')}
   </div>
 
   <div>
-    <h1>${ _('Completed') }</h1>
+    <h1 class="card-heading simple">${ _('Completed') }</h1>
     <table class="table table-condensed" id="completed-table" data-tablescroller-disable="true">
       <thead>
         <tr>
@@ -98,6 +97,9 @@ ${layout.menubar(section='dashboard')}
       </tbody>
      </table>
    </div>
+  </p>
+  </div>
+  </div>
 </div>
 
 
@@ -297,7 +299,7 @@ ${layout.menubar(section='dashboard')}
                 { "notification":$(this).attr("data-message") },
                 function (response) {
                   if (response["status"] != 0) {
-                    $.jHueNotify.error("${ _('Problem: ') }" + response["data"]);
+                    $(document).trigger("error", "${ _('Problem: ') }" + response["data"]);
                   } else {
                     window.location.reload();
                   }
@@ -374,7 +376,7 @@ ${layout.menubar(section='dashboard')}
                       '>${ _('Resume') }</a>';
             }
             if (foundRow == null) {
-              if (['RUNNING', 'PREP', 'WAITING', 'SUSPENDED', 'PREPSUSPENDED', 'PREPPAUSED', 'PAUSED'].indexOf(coord.status) > -1) {
+              if (['RUNNING', 'PREP', 'WAITING', 'SUSPENDED', 'PREPSUSPENDED', 'PREPPAUSED', 'PAUSED', 'STARTED', 'FINISHING'].indexOf(coord.status) > -1) {
                 try {
                   runningTable.fnAddData([
                     emptyStringIfNull(coord.endTime),
@@ -390,7 +392,7 @@ ${layout.menubar(section='dashboard')}
                   ]);
                 }
                 catch (error) {
-                  $.jHueNotify.error(error);
+                  $(document).trigger("error", error);
                 }
               }
             }
@@ -410,7 +412,7 @@ ${layout.menubar(section='dashboard')}
         }
         numRunning = data.length;
 
-        window.setTimeout(refreshRunning, 1000);
+        window.setTimeout(refreshRunning, 20000);
       });
     }
 
@@ -433,7 +435,7 @@ ${layout.menubar(section='dashboard')}
             ], false);
           }
           catch (error) {
-            $.jHueNotify.error(error);
+            $(document).trigger("error", error);
           }
         });
         completedTable.fnDraw();

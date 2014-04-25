@@ -22,11 +22,11 @@ msgstr ""
 msgid "Path"
 msgstr "路径"
 
-#: src/metastore/forms.py:49
+#: src/metastore/forms.py:47
 msgid "Overwrite?"
 msgstr "是否覆盖？"
 
-#: src/metastore/forms.py:62
+#: src/metastore/forms.py:60
 #, python-format
 msgid "%(column_name)s (partition key with type %(column_type)s)"
 msgstr "%(column_name)s（类型为 %(column_type)s 的分区键）"
@@ -74,9 +74,20 @@ msgstr "无法加载数据： "
 msgid "Table '%(table)s' is not partitioned."
 msgstr "表 '%(table)s' 未分区。"
 
-#: src/metastore/templates/components.mako:24
+#: src/metastore/views.py:305
+msgid "Column analysis not supportet yet"
+msgstr "尚不支持列分析"
+
+#: src/metastore/views.py:307
+msgid "A POST request is required"
+msgstr "需要 POST 请求"
+
+#: src/metastore/templates/components.mako:30
+msgid "Metastore Manager"
+msgstr "Metastore Manager"
+
+#: src/metastore/templates/components.mako:44
 #: src/metastore/templates/databases.mako:23
-#: src/metastore/templates/databases.mako:26
 msgid "Databases"
 msgstr "数据库"
 
@@ -162,7 +173,6 @@ msgid "View"
 msgstr "查看"
 
 #: src/metastore/templates/describe_table.mako:28
-#: src/metastore/templates/describe_table.mako:55
 msgid "Table"
 msgstr "表"
 
@@ -171,15 +181,16 @@ msgstr "表"
 msgid "%s : %s"
 msgstr "%s : %s"
 
-#: src/metastore/templates/describe_table.mako:36
+#: src/metastore/templates/describe_table.mako:37
+#: src/metastore/templates/describe_table.mako:145
 msgid "Name"
 msgstr "名称"
 
-#: src/metastore/templates/describe_table.mako:37
+#: src/metastore/templates/describe_table.mako:38
 msgid "Type"
 msgstr "类型"
 
-#: src/metastore/templates/describe_table.mako:38
+#: src/metastore/templates/describe_table.mako:39
 msgid "Comment"
 msgstr "备注"
 
@@ -265,6 +276,10 @@ msgstr "删除所选表"
 #: src/metastore/templates/tables.mako:67
 msgid "Table Name"
 msgstr "表名"
+
+#: src/metastore/templates/tables.mako:149
+msgid "Oops, no database found!"
+msgstr "很抱歉，找不到数据库！"
 
 #: src/metastore/templates/util.mako:66
 msgid "Unsaved Query"

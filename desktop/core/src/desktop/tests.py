@@ -29,9 +29,12 @@ import proxy.conf
 from nose.plugins.attrib import attr
 from nose.tools import assert_true, assert_equal, assert_not_equal, assert_raises
 from django.conf.urls.defaults import patterns, url
+from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
 from django.http import HttpResponse
 from django.db.models import query, CharField, SmallIntegerField
+
+from useradmin.models import GroupPermission
 
 from desktop.lib import django_mako
 from desktop.lib.django_test_util import make_logged_in_client
@@ -40,7 +43,8 @@ from desktop.lib.conf import validate_path
 from desktop.lib.django_util import TruncatingModel
 from desktop.lib.exceptions_renderable import PopupException
 from desktop.lib.test_utils import grant_access
-from desktop.views import check_config_ajax
+from desktop.views import check_config, home
+from beeswax.conf import HIVE_SERVER_HOST
 
 
 def setup_test_environment():
@@ -76,6 +80,40 @@ def teardown_test_environment():
   django_mako.render_to_string = django_mako.render_to_string_normal
 teardown_test_environment.__test__ = False
 
+def test_home():
+  c = make_logged_in_client()
+  response = c.get(reverse(home))
+
+  assert_equal(200, response.status_code)
+
+def test_skip_wizard():
+  c = make_logged_in_client() # is_superuser
+
+  response = c.get('/', follow=True)
+  assert_true(['admin_wizard.mako' in _template.filename for _template in response.template], [_template.filename for _template in response.template])
+
+  c.cookies['hueLandingPage'] = 'home'
+  response = c.get('/', follow=True)
+  assert_true(['home.mako' in _template.filename for _template in response.template], [_template.filename for _template in response.template])
+
+  c.cookies['hueLandingPage'] = ''
+  response = c.get('/', follow=True)
+  assert_true(['admin_wizard.mako' in _template.filename for _template in response.template], [_template.filename for _template in response.template])
+
+
+  c = make_logged_in_client(username="test_skip_wizard", password="test_skip_wizard", is_superuser=False)
+
+  response = c.get('/', follow=True)
+  assert_true(['home.mako' in _template.filename for _template in response.template], [_template.filename for _template in response.template])
+
+  c.cookies['hueLandingPage'] = 'home'
+  response = c.get('/', follow=True)
+  assert_true(['home.mako' in _template.filename for _template in response.template], [_template.filename for _template in response.template])
+
+  c.cookies['hueLandingPage'] = ''
+  response = c.get('/', follow=True)
+  assert_true(['home.mako' in _template.filename for _template in response.template], [_template.filename for _template in response.template])
+
 def test_log_view():
   c = make_logged_in_client()
 
@@ -99,16 +137,30 @@ def test_log_view():
   response = c.get(URL)
   assert_equal(200, response.status_code)
 
+def test_download_log_view():
+  c = make_logged_in_client()
+
+  URL = reverse(views.download_log_view)
+
+  LOG = logging.getLogger(__name__)
+  LOG.warn(u'une voix m’a réveillé')
+
+  # UnicodeDecodeError: 'ascii' codec can't decode byte... should not happen
+  response = c.get(URL)
+  assert_equal("application/zip", response.get('Content-Type', ''))
+
 def test_dump_config():
   c = make_logged_in_client()
 
   CANARY = "abracadabra"
-  clear = desktop.conf.HTTP_HOST.set_for_testing(CANARY)
 
-  response1 = c.get('/dump_config')
-  assert_true(CANARY in response1.content)
+  # Depending on the order of the conf.initialize() in settings, the set_for_testing() are not seen in the global settings variable
+  clear = HIVE_SERVER_HOST.set_for_testing(CANARY)
 
-  response2 = c.get('/dump_config', dict(private="true"))
+  response1 = c.get(reverse('desktop.views.dump_config'))
+  assert_true(CANARY in response1.content, response1.content)
+
+  response2 = c.get(reverse('desktop.views.dump_config'), dict(private="true"))
   assert_true(CANARY in response2.content)
 
   # There are more private variables...
@@ -119,16 +171,16 @@ def test_dump_config():
   CANARY = "(localhost|127\.0\.0\.1):(50030|50070|50060|50075)"
   clear = proxy.conf.WHITELIST.set_for_testing(CANARY)
 
-  response1 = c.get('/dump_config')
+  response1 = c.get(reverse('desktop.views.dump_config'))
   assert_true(CANARY in response1.content)
 
   clear()
 
   # Malformed port per HUE-674
   CANARY = "asdfoijaoidfjaosdjffjfjaoojosjfiojdosjoidjfoa"
-  clear = desktop.conf.HTTP_PORT.set_for_testing(CANARY)
+  clear = HIVE_SERVER_HOST.set_for_testing(CANARY)
 
-  response1 = c.get('/dump_config')
+  response1 = c.get(reverse('desktop.views.dump_config'))
   assert_true(CANARY in response1.content, response1.content)
 
   clear()
@@ -136,20 +188,24 @@ def test_dump_config():
   CANARY = '/tmp/spacé.dat'
   finish = proxy.conf.WHITELIST.set_for_testing(CANARY)
   try:
-    response = c.get('/dump_config')
+    response = c.get(reverse('desktop.views.dump_config'))
     assert_true(CANARY in response.content, response.content)
   finally:
     finish()
+
+  # Not showing some passwords
+  response = c.get(reverse('desktop.views.dump_config'))
+  assert_false('bind_password' in response.content)
 
   # Login as someone else
   client_not_me = make_logged_in_client(username='not_me', is_superuser=False, groupname='test')
   grant_access("not_me", "test", "desktop")
 
-  response = client_not_me.get('/dump_config')
-  assert_equal("You must be a superuser.", response.content)
+  response = client_not_me.get(reverse('desktop.views.dump_config'))
+  assert_true("You must be a superuser" in response.content, response.content)
 
   os.environ["HUE_CONF_DIR"] = "/tmp/test_hue_conf_dir"
-  resp = c.get('/dump_config')
+  resp = c.get(reverse('desktop.views.dump_config'))
   del os.environ["HUE_CONF_DIR"]
   assert_true('/tmp/test_hue_conf_dir' in resp.content, resp)
 
@@ -158,34 +214,34 @@ def test_prefs():
   c = make_logged_in_client()
 
   # Get everything
-  response = c.get('/prefs/')
+  response = c.get('/desktop/prefs/')
   assert_equal('{}', response.content)
 
   # Set and get
-  response = c.get('/prefs/foo', dict(set="bar"))
+  response = c.get('/desktop/prefs/foo', dict(set="bar"))
   assert_equal('true', response.content)
-  response = c.get('/prefs/foo')
+  response = c.get('/desktop/prefs/foo')
   assert_equal('"bar"', response.content)
 
   # Reset (use post this time)
-  c.post('/prefs/foo', dict(set="baz"))
-  response = c.get('/prefs/foo')
+  c.post('/desktop/prefs/foo', dict(set="baz"))
+  response = c.get('/desktop/prefs/foo')
   assert_equal('"baz"', response.content)
 
   # Check multiple values
-  c.post('/prefs/elephant', dict(set="room"))
-  response = c.get('/prefs/')
+  c.post('/desktop/prefs/elephant', dict(set="room"))
+  response = c.get('/desktop/prefs/')
   assert_true("baz" in response.content)
   assert_true("room" in response.content)
 
   # Delete everything
-  c.get('/prefs/elephant', dict(delete=""))
-  c.get('/prefs/foo', dict(delete=""))
-  response = c.get('/prefs/')
+  c.get('/desktop/prefs/elephant', dict(delete=""))
+  c.get('/desktop/prefs/foo', dict(delete=""))
+  response = c.get('/desktop/prefs/')
   assert_equal('{}', response.content)
 
   # Check non-existent value
-  response = c.get('/prefs/doesNotExist')
+  response = c.get('/desktop/prefs/doesNotExist')
   assert_equal('null', response.content)
 
 def test_status_bar():
@@ -204,7 +260,7 @@ def test_status_bar():
     raise Exception()
   views.register_status_bar_view(f)
 
-  response = c.get("/status_bar")
+  response = c.get("/desktop/status_bar")
   assert_equal("foobar", response.content)
 
   views._status_bar_views = backup
@@ -253,7 +309,7 @@ def test_paginator():
 
 def test_thread_dump():
   c = make_logged_in_client()
-  response = c.get("/debug/threads")
+  response = c.get("/desktop/debug/threads")
   assert_true("test_thread_dump" in response.content)
 
 def test_truncating_model():
@@ -274,6 +330,8 @@ def test_truncating_model():
 
 
 def test_error_handling():
+  raise SkipTest
+
   restore_django_debug = desktop.conf.DJANGO_DEBUG_MODE.set_for_testing(False)
   restore_500_debug = desktop.conf.HTTP_500_DEBUG_MODE.set_for_testing(False)
 
@@ -297,7 +355,7 @@ def test_error_handling():
     c.store_exc_info = store_exc_info
 
     response = c.get('/500_internal_error')
-    assert_true('500.mako' in response.template)
+    assert_true(any(["500.mako" in _template.filename for _template in response.template]))
     assert_true('Thank you for your patience' in response.content)
     assert_true(exc_msg not in response.content)
 
@@ -309,7 +367,7 @@ def test_error_handling():
 
     # PopupException
     response = c.get('/popup_exception')
-    assert_true('popup_error.mako' in response.template)
+    assert_true(any(["popup_error.mako" in _template.filename for _template in response.template]))
     assert_true(exc_msg in response.content)
   finally:
     # Restore the world
@@ -317,6 +375,58 @@ def test_error_handling():
       desktop.urls.urlpatterns.remove(i)
     restore_django_debug()
     restore_500_debug()
+
+
+def test_desktop_permissions():
+  USERNAME = 'test_core_permissions'
+  GROUPNAME = 'default'
+
+  c = make_logged_in_client(USERNAME, groupname=GROUPNAME, recreate=True, is_superuser=False)
+
+  # Access to the basic works
+  assert_equal(200, c.get('/accounts/login/', follow=True).status_code)
+  assert_equal(200, c.get('/accounts/logout', follow=True).status_code)
+  assert_equal(200, c.get('/home', follow=True).status_code)
+
+
+def test_app_permissions():
+  USERNAME = 'test_app_permissions'
+  GROUPNAME = 'impala_only'
+
+  c = make_logged_in_client(USERNAME, groupname=GROUPNAME, recreate=True, is_superuser=False)
+
+  # Reset all perms
+  GroupPermission.objects.filter(group__name=GROUPNAME).delete()
+
+  # Access to nothing
+  assert_equal(401, c.get('/beeswax', follow=True).status_code)
+  assert_equal(401, c.get('/impala', follow=True).status_code)
+  assert_equal(401, c.get('/hbase', follow=True).status_code)
+
+  # Add access to beeswax
+  grant_access(USERNAME, GROUPNAME, "beeswax")
+  assert_equal(200, c.get('/beeswax', follow=True).status_code)
+  assert_equal(401, c.get('/impala', follow=True).status_code)
+  assert_equal(401, c.get('/hbase', follow=True).status_code)
+
+  # Add access to hbase
+  grant_access(USERNAME, GROUPNAME, "hbase")
+  assert_equal(200, c.get('/beeswax', follow=True).status_code)
+  assert_equal(401, c.get('/impala', follow=True).status_code)
+  assert_equal(200, c.get('/hbase', follow=True).status_code)
+
+  # Reset all perms
+  GroupPermission.objects.filter(group__name=GROUPNAME).delete()
+
+  assert_equal(401, c.get('/beeswax', follow=True).status_code)
+  assert_equal(401, c.get('/impala', follow=True).status_code)
+  assert_equal(401, c.get('/hbase', follow=True).status_code)
+
+  # Test only impala perm
+  grant_access(USERNAME, GROUPNAME, "impala")
+  assert_equal(401, c.get('/beeswax', follow=True).status_code)
+  assert_equal(200, c.get('/impala', follow=True).status_code)
+  assert_equal(401, c.get('/hbase', follow=True).status_code)
 
 
 def test_error_handling_failure():
@@ -356,7 +466,7 @@ def test_404_handling():
   view_name = '/the-view-that-is-not-there'
   c = make_logged_in_client()
   response = c.get(view_name)
-  assert_true('404.mako' in response.template)
+  assert_true(any(['404.mako' in _template.filename for _template in response.template]), response.template)
   assert_true('Not Found' in response.content)
   assert_true(view_name in response.content)
 
@@ -374,20 +484,20 @@ def test_log_event():
   handler = RecordingHandler()
   root.addHandler(handler)
 
-  c.get("/log_frontend_event?level=info&message=foo")
+  c.get("/desktop/log_frontend_event?level=info&message=foo")
   assert_equal("INFO", handler.records[-1].levelname)
   assert_equal("Untrusted log event from user test: foo", handler.records[-1].message)
   assert_equal("desktop.views.log_frontend_event", handler.records[-1].name)
 
-  c.get("/log_frontend_event?level=error&message=foo2")
+  c.get("/desktop/log_frontend_event?level=error&message=foo2")
   assert_equal("ERROR", handler.records[-1].levelname)
   assert_equal("Untrusted log event from user test: foo2", handler.records[-1].message)
 
-  c.get("/log_frontend_event?message=foo3")
+  c.get("/desktop/log_frontend_event?message=foo3")
   assert_equal("INFO", handler.records[-1].levelname)
   assert_equal("Untrusted log event from user test: foo3", handler.records[-1].message)
 
-  c.post("/log_frontend_event", {
+  c.post("/desktop/log_frontend_event", {
     "message": "01234567" * 1024})
   assert_equal("INFO", handler.records[-1].levelname)
   assert_equal("Untrusted log event from user test: " + "01234567"*(1024/8),
@@ -415,7 +525,7 @@ def test_config_check():
 
   try:
     cli = make_logged_in_client()
-    resp = cli.get('/debug/check_config')
+    resp = cli.get('/desktop/debug/check_config')
     assert_true('Secret key should be configured' in resp.content, resp)
     assert_true('desktop.ssl_certificate' in resp.content, resp)
     assert_true('Path does not exist' in resp.content, resp)
@@ -425,13 +535,9 @@ def test_config_check():
 
     # Set HUE_CONF_DIR and make sure check_config returns appropriate conf
     os.environ["HUE_CONF_DIR"] = "/tmp/test_hue_conf_dir"
-    resp = cli.get('/debug/check_config')
+    resp = cli.get('/desktop/debug/check_config')
     del os.environ["HUE_CONF_DIR"]
     assert_true('/tmp/test_hue_conf_dir' in resp.content, resp)
-
-    # Alert present in the status bar
-    resp = cli.get('/about', follow=True)
-    assert_true('misconfiguration' in resp.content, resp.content)
   finally:
     for old_conf in reset:
       old_conf()
@@ -442,7 +548,7 @@ def test_last_access_time():
   c.post('/accounts/login/')
   login = desktop.auth.views.get_current_users()
   before_access_time = time.time()
-  response = c.post('/status_bar')
+  response = c.get('/home')
   after_access_time = time.time()
   access = desktop.auth.views.get_current_users()
 
@@ -475,5 +581,5 @@ def test_ui_customizations():
 @attr('requires_hadoop')
 def test_check_config_ajax():
   c = make_logged_in_client()
-  response = c.get(reverse(check_config_ajax))
-  assert_true("Misconfiguration" in response.content, response.content)
+  response = c.get(reverse(check_config))
+  assert_true("misconfiguration" in response.content, response.content)

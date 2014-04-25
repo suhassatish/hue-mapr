@@ -17,15 +17,11 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 0.9.6\n"
 
-#: src/jobsub/conf.py:31
-msgid "Location on HDFS where the jobsub examples and templates are stored."
-msgstr "Local no HDFS onde os exemplos e modelos de jobsub são armazenados."
-
-#: src/jobsub/conf.py:36
+#: src/jobsub/conf.py:28
 msgid "Location on local filesystem where examples and template are stored."
 msgstr "Localização no sistema de arquivos local onde os exemplos e modelos são armazenados."
 
-#: src/jobsub/conf.py:42
+#: src/jobsub/conf.py:34
 msgid "Location on local filesystem where sample data is stored."
 msgstr "Localização no sistema de arquivos local onde as amostras são armazenadas."
 
@@ -82,15 +78,15 @@ msgstr "Mapper"
 msgid "Reducer"
 msgstr "Redutor"
 
-#: src/jobsub/models.py:136
+#: src/jobsub/models.py:132
 msgid "Name of the design, which must be unique per user."
 msgstr "Nome do projeto, que deve ser único por usuário."
 
-#: src/jobsub/models.py:196 src/jobsub/models.py:245
+#: src/jobsub/models.py:192 src/jobsub/models.py:241
 msgid "List of paths to files to be added to the distributed cache."
 msgstr "Lista de caminhos para arquivos a serem adicionados ao cache distribuído."
 
-#: src/jobsub/models.py:198 src/jobsub/models.py:247
+#: src/jobsub/models.py:194 src/jobsub/models.py:243
 msgid "List of paths to archives to be added to the distributed cache."
 msgstr "Lista de caminhos para o arquivo a ser adicionado ao cache distribuído."
 
@@ -446,7 +442,7 @@ msgstr "Corpo"
 
 #: src/jobsub/templates/designs.mako:393
 msgid "Job properties"
-msgstr "Propriedades da tarefa"
+msgstr "Propriedades do job"
 
 #: src/jobsub/templates/designs.mako:394
 msgid "Property name"

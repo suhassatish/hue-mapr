@@ -22,6 +22,7 @@ except:
   pass
 
 import cgi
+import datetime
 import logging
 import urllib
 
@@ -36,12 +37,12 @@ from django.utils.translation import ugettext as _
 from hadoop.fs.exceptions import WebHdfsException
 from useradmin.views import ensure_home_directory
 
-from desktop.auth.backend import AllowFirstUserDjangoBackend
-from desktop.auth.forms import UserCreationForm, AuthenticationForm
+from desktop.auth import forms as auth_forms
 from desktop.lib.django_util import render
 from desktop.lib.django_util import login_notrequired
 from desktop.log.access import access_warn, last_access_map
-from desktop.conf import OAUTH
+from desktop.conf import AUTH, LDAP, OAUTH, DEMO_ENABLED
+
 
 LOG = logging.getLogger(__name__)
 
@@ -70,7 +71,7 @@ def get_current_users():
 def first_login_ever():
   backends = get_backends()
   for backend in backends:
-    if isinstance(backend, AllowFirstUserDjangoBackend) and backend.is_first_login_ever():
+    if hasattr(backend, 'is_first_login_ever') and backend.is_first_login_ever():
       return True
   return False
 
@@ -81,10 +82,17 @@ def get_backend_name():
 
 @login_notrequired
 def dt_login(request):
-  """Used by the non-jframe login"""
   redirect_to = request.REQUEST.get('next', '/')
   is_first_login_ever = first_login_ever()
   backend_name = get_backend_name()
+  is_active_directory = backend_name == 'LdapBackend' and ( bool(LDAP.NT_DOMAIN.get()) or bool(LDAP.LDAP_SERVERS.get()) )
+
+  if is_active_directory:
+    UserCreationForm = auth_forms.LdapUserCreationForm
+    AuthenticationForm = auth_forms.LdapAuthenticationForm
+  else:
+    UserCreationForm = auth_forms.UserCreationForm
+    AuthenticationForm = auth_forms.AuthenticationForm
 
   if request.method == 'POST':
     # For first login, need to validate user info!
@@ -99,11 +107,10 @@ def dt_login(request):
         # It provides 'backends' on the User object.
         user = auth_form.get_user()
         login(request, user)
-
         if request.session.test_cookie_worked():
           request.session.delete_test_cookie()
 
-        if is_first_login_ever or backend_name == 'AllowAllBackend':
+        if is_first_login_ever or backend_name in ('AllowAllBackend', 'LdapBackend'):
           # Create home directory for first user.
           try:
             ensure_home_directory(request.fs, user.username)
@@ -121,6 +128,12 @@ def dt_login(request):
     first_user_form = None
     auth_form = AuthenticationForm()
 
+  if DEMO_ENABLED.get() and not 'admin' in request.REQUEST:
+    user = authenticate(username='', password='')
+    login(request, user)
+    ensure_home_directory(request.fs, user.username)
+    return HttpResponseRedirect(redirect_to)
+
   request.session.set_test_cookie()
   return render('login.mako', request, {
     'action': urlresolvers.reverse('desktop.auth.views.dt_login'),
@@ -128,7 +141,8 @@ def dt_login(request):
     'next': redirect_to,
     'first_login_ever': is_first_login_ever,
     'login_errors': request.method == 'POST',
-    'backend_name': backend_name
+    'backend_name': backend_name,
+    'active_directory': is_active_directory
   })
 
 

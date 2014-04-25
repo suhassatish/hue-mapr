@@ -23,7 +23,7 @@
     %>
     % for group in counters.groups:
         <h3>${format_counter_name(group.displayName)}</h3>
-        <table class="taskCountersTable table table-striped table-condensed">
+        <table class="taskCountersTable table table-condensed">
             <thead>
             <tr>
                 <th>${_('Counter Name')}</th>
@@ -49,7 +49,7 @@
     %>
     % for group in counters.get('taskCounterGroup', []):
         <h3>${ format_counter_name(group['counterGroupName']) }</h3>
-        <table class="taskCountersTable table table-striped table-condensed">
+        <table class="taskCountersTable table table-condensed">
             <thead>
             <tr>
                 <th>${_('Counter Name')}</th>
@@ -75,7 +75,7 @@
     %>
     % for group in counters.itervalues():
         <h3>${format_counter_name(group['displayName'])}</h3>
-        <table class="jobCountersTable table table-striped table-condensed">
+        <table class="jobCountersTable table table-condensed">
             <thead>
             <tr>
                 <th>${_('Name')}</th>
@@ -116,7 +116,7 @@
     %>
     % for counter_group in counters.get('counterGroup', []):
         <h3>${ format_counter_name(counter_group['counterGroupName']) }</h3>
-        <table class="jobCountersTable table table-striped table-condensed">
+        <table class="jobCountersTable table table-condensed">
             <thead>
             <tr>
                 <th>${_('Name')}</th>
@@ -185,16 +185,16 @@
     additional_class = get_bootstrap_class(job, 'label')
     %>
     % if job.is_retired and not job.is_mr2:
-        <span class="label ${additional_class}"><i class="icon-briefcase icon-white" title="${ _('Retired') }"></i> ${job.status.lower()}</span>
+        <span class="label ${additional_class}"><i class="fa fa-briefcase" style="color: #FFFFFF" title="${ _('Retired') }"></i> ${job.status.lower()}</span>
     % else:
         <span class="label ${additional_class}">${job.status.lower()}</span>
     % endif
 </%def>
 
-<%def name="get_container_link(status, container_id)">
+<%def name="get_container_link(status, node_manager_http_address, container_id)">
     ## As soon as the job finishes the container disappears
-    % if status.lower() in ('running', 'prep', 'accepted', 'finishing'):
-        <a href="${ url('jobbrowser.views.single_tracker',trackerid=container_id) }" class="task_tracker_link">${ container_id }</a>
+    % if status.lower() in ('running', 'accepted', 'ready', 'prep', 'waiting', 'suspended', 'prepsuspended', 'preppaused', 'paused', 'submitted', 'suspendedwitherror', 'pausedwitherror', 'finishing', 'started'):
+        <a href="${ url('jobbrowser.views.container', node_manager_http_address=node_manager_http_address, containerid=container_id) }" class="task_tracker_link">${ container_id }</a>
     % else:
         ${ container_id }
     % endif
@@ -226,3 +226,23 @@
     return additional_class
     %>
 </%def>
+
+<%def name="menubar()">
+  <div class="navbar navbar-inverse navbar-fixed-top nokids">
+      <div class="navbar-inner">
+        <div class="container-fluid">
+          <div class="nav-collapse">
+            <ul class="nav">
+              <li class="currentApp">
+                <a href="/${app_name}">
+                  <img src="/jobbrowser/static/art/icon_jobbrowser_24.png" />
+                  ${ _('Job Browser') }
+                </a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+  </div>
+</%def>
+

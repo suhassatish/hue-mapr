@@ -63,12 +63,12 @@ from django.utils.translation import ugettext as _
 </form>
 
 
-<style>
+<style type="text/css">
    #filechooser {
      display: none;
      min-height: 100px;
      height: 250px;
-     overflow-y: scroll;
+     overflow-y: auto;
      margin-top: 10px;
    }
 

@@ -17,15 +17,11 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 0.9.6\n"
 
-#: src/jobsub/conf.py:31
-msgid "Location on HDFS where the jobsub examples and templates are stored."
-msgstr "Jobsub 예제와 템플릿이 저장되는 HDFS 상의 위치입니다."
-
-#: src/jobsub/conf.py:36
+#: src/jobsub/conf.py:28
 msgid "Location on local filesystem where examples and template are stored."
 msgstr "예제와 템플릿이 저장되는 로컬 파일 시스템상의 위치입니다."
 
-#: src/jobsub/conf.py:42
+#: src/jobsub/conf.py:34
 msgid "Location on local filesystem where sample data is stored."
 msgstr "샘플 데이터가 저장되는 로컬 파일 시스템상의 위치입니다."
 
@@ -82,15 +78,15 @@ msgstr "Mapper"
 msgid "Reducer"
 msgstr "Reducer"
 
-#: src/jobsub/models.py:136
+#: src/jobsub/models.py:132
 msgid "Name of the design, which must be unique per user."
 msgstr "디자인 이름으로, 사용자마다 고유해야 합니다."
 
-#: src/jobsub/models.py:196 src/jobsub/models.py:245
+#: src/jobsub/models.py:192 src/jobsub/models.py:241
 msgid "List of paths to files to be added to the distributed cache."
 msgstr "분산 캐시에 추가할 파일의 경로 목록입니다."
 
-#: src/jobsub/models.py:198 src/jobsub/models.py:247
+#: src/jobsub/models.py:194 src/jobsub/models.py:243
 msgid "List of paths to archives to be added to the distributed cache."
 msgstr "분산 캐시에 추가할 아카이브의 경로 목록입니다."
 
@@ -113,7 +109,7 @@ msgstr "POST 요청이어야 합니다."
 #: src/jobsub/views.py:133 src/jobsub/views.py:155
 #, python-format
 msgid "Access denied: delete design %(id)s."
-msgstr "액세스 거부됨: 디자인 %(id)s 삭제."
+msgstr "액세스 거부됨: %(id)s 디자인을 삭제합니다."
 
 #: src/jobsub/views.py:141 src/jobsub/views.py:161
 #, python-format
@@ -123,7 +119,7 @@ msgstr "디자인 %s을(를) 찾을 수 없습니다."
 #: src/jobsub/views.py:181
 #, python-format
 msgid "Access denied: edit design %(id)s."
-msgstr "액세스 거부됨: 디자인 %(id)s 편집."
+msgstr "액세스 거부됨: %(id)s 디자인을 편집합니다."
 
 #: src/jobsub/views.py:187 src/jobsub/views.py:229
 msgid "Error saving design"
@@ -213,7 +209,7 @@ msgstr "Java 디자인 생성"
 
 #: src/jobsub/templates/designs.mako:96
 msgid "Create Streaming design"
-msgstr "Streaming Design 생성"
+msgstr "스트리밍 디자인 생성"
 
 #: src/jobsub/templates/designs.mako:99
 msgid "Create Hive design"

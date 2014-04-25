@@ -81,27 +81,36 @@ msgstr "Comparta las consultas guardadas con otros usuarios. Si se establece en 
 msgid "The application won't work without a running Beeswax/HiveServer2 server and/or Hive Metastore."
 msgstr "La aplicación no funcionará sin un servidor Beeswax/HiveServer2 o Hive Metastore en ejecución."
 
-#: src/beeswax/create_table.py:91
+#: src/beeswax/conf.py:135
+msgid "The application won't work without a running HiveServer2."
+msgstr "La aplicación no funcionará sin un servidor HiveServer2 en ejecución."
+
+#: src/beeswax/conf.py:142
+#, python-format
+msgid "Failed to access Hive warehouse: %s"
+msgstr "Error al acceder al alamcén Hive: %s"
+
+#: src/beeswax/create_table.py:98
 msgid "ctrl-As"
 msgstr "ctrl-As"
 
-#: src/beeswax/create_table.py:92
+#: src/beeswax/create_table.py:99
 msgid "ctrl-Bs"
 msgstr "ctrl-Bs"
 
-#: src/beeswax/create_table.py:93
+#: src/beeswax/create_table.py:100
 msgid "ctrl-Cs"
 msgstr "ctrl-Cs"
 
-#: src/beeswax/create_table.py:94
+#: src/beeswax/create_table.py:101
 msgid "tabs"
 msgstr "tabuladores"
 
-#: src/beeswax/create_table.py:95
+#: src/beeswax/create_table.py:102
 msgid "commas"
 msgstr "comas"
 
-#: src/beeswax/create_table.py:96
+#: src/beeswax/create_table.py:103
 msgid "spaces"
 msgstr "espacios"
 
@@ -138,7 +147,12 @@ msgstr "Error al abrir el archivo '%(path)s': %(error)s."
 msgid "Internal error: Missing needed parameter to load data into table."
 msgstr "Error interno: parámetro necesario no encontrado para cargar datos en la tabla."
 
-#: src/beeswax/forms.py:46
+#: src/beeswax/data_export.py:60
+#, python-format
+msgid "%s already exists."
+msgstr "%s ya existe."
+
+#: src/beeswax/forms.py:45
 msgid "Change the name to save as a new design."
 msgstr "Cambie el nombre que desea guardar como diseño nuevo."
 
@@ -158,7 +172,7 @@ msgstr "Descripción"
 msgid "Save"
 msgstr "Guardar"
 
-#: src/beeswax/forms.py:55 src/beeswax/forms.py:56
+#: src/beeswax/forms.py:54 src/beeswax/forms.py:55
 msgid "Save As"
 msgstr "Guardar como"
 
@@ -172,13 +186,13 @@ msgstr "Introduzca un nombre."
 msgid "Table Name"
 msgstr "Nombre de tabla"
 
-#: src/beeswax/forms.py:92
+#: src/beeswax/forms.py:122
 msgid "Name of the new table"
 msgstr "Nombre de la nueva tabla"
 
-#: src/beeswax/forms.py:93
-msgid "Results Location"
-msgstr "Ubicación de resultados"
+#: src/beeswax/forms.py:142
+msgid "Invalid table prefix name"
+msgstr "Nombre de prefijo de tabla no válido"
 
 #: src/beeswax/forms.py:95
 #, fuzzy
@@ -225,7 +239,7 @@ msgstr "Terminador de campo"
 
 #: src/beeswax/forms.py:198
 msgid "Collection terminator"
-msgstr "Terminador de recolección"
+msgstr "Terminador de recopilación"
 
 #: src/beeswax/forms.py:200
 msgid "Map key terminator"
@@ -333,21 +347,21 @@ msgstr "Utilizar ubicación predeterminada"
 
 #: src/beeswax/forms.py:365
 msgid "Path to HDFS directory or file of database data."
-msgstr "Ruta al directorio de HDFS o al archivo de base de datos."
+msgstr "Ruta al directorio de HDFS o al archivo de datos de base de datos."
 
-#: src/beeswax/models.py:69
+#: src/beeswax/models.py:75
 msgid "Host of the query server."
 msgstr "Host del servidor de consultas."
 
-#: src/beeswax/models.py:70
+#: src/beeswax/models.py:76
 msgid "Port of the query server."
 msgstr "Puerto del servidor de consultas."
 
-#: src/beeswax/models.py:71
+#: src/beeswax/models.py:77
 msgid "Name of the query server."
 msgstr "Nombre del servidor de consultas."
 
-#: src/beeswax/models.py:72
+#: src/beeswax/models.py:78
 msgid "Type of the query server."
 msgstr "Tipo de servidor de consultas."
 
@@ -510,12 +524,22 @@ msgstr "Error al contactar con el servidor para comprobar el estado de la consul
 msgid "Cannot find table data in \"%(file)s\"."
 msgstr "No se han encontrado datos de tabla en \"%(file)s\"."
 
-#: src/beeswax/management/commands/beeswax_install_examples.py:146
+#: src/beeswax/management/commands/beeswax_install_examples.py:94
+#, python-format
+msgid "Could not install query: %s"
+msgstr "No se ha podido instalar la consulta: %s"
+
+#: src/beeswax/management/commands/beeswax_install_examples.py:112
+#, python-format
+msgid "Cannot find table data in \"%(file)s\"."
+msgstr "No se han encontrado datos de tabla en \"%(file)s\"."
+
+#: src/beeswax/management/commands/beeswax_install_examples.py:130
 #, python-format
 msgid "Table \"%(table)s\" already exists."
 msgstr "La tabla \"%(table)s\" ya existe."
 
-#: src/beeswax/management/commands/beeswax_install_examples.py:153
+#: src/beeswax/management/commands/beeswax_install_examples.py:137
 #, python-format
 msgid "Error creating table %(table)s: Operation timeout."
 msgstr "Error al crear la tabla %(table)s: tiempo de espera de la operación."
@@ -525,7 +549,7 @@ msgstr "Error al crear la tabla %(table)s: tiempo de espera de la operación."
 msgid "Error creating table %(table)s: %(error)s."
 msgstr "Error al crear la tabla %(table)s: %(error)s."
 
-#: src/beeswax/management/commands/beeswax_install_examples.py:177
+#: src/beeswax/management/commands/beeswax_install_examples.py:179
 #, python-format
 msgid "Error loading table %(table)s: Operation timeout."
 msgstr "Error al cargar la tabla %(table)s: tiempo de espera de la operación."
@@ -535,7 +559,7 @@ msgstr "Error al cargar la tabla %(table)s: tiempo de espera de la operación."
 msgid "Error loading table %(table)s: %(error)s."
 msgstr "Error al cargar la tabla %(table)s: %(error)s."
 
-#: src/beeswax/management/commands/beeswax_install_examples.py:202
+#: src/beeswax/server/dbms.py:140
 #, python-format
 msgid "Sample design %(name)s already exists."
 msgstr "El diseño de muestra %(name)s ya existe."
@@ -582,23 +606,23 @@ msgstr "La autenticación del servidor de %s no es compatible. Las válidas son 
 msgid "Beginning of List"
 msgstr "Principio de la lista"
 
-#: src/beeswax/templates/beeswax_components.mako:207
+#: src/beeswax/templates/beeswax_components.mako:212
 msgid "Previous Page"
 msgstr "Página anterior"
 
-#: src/beeswax/templates/beeswax_components.mako:208
+#: src/beeswax/templates/beeswax_components.mako:213
 msgid "Next page"
 msgstr "Página siguiente"
 
-#: src/beeswax/templates/beeswax_components.mako:208
+#: src/beeswax/templates/beeswax_components.mako:213
 msgid "Next Page"
 msgstr "Página siguiente"
 
-#: src/beeswax/templates/beeswax_components.mako:209
+#: src/beeswax/templates/beeswax_components.mako:214
 msgid "End of List"
 msgstr "Fin de la lista"
 
-#: src/beeswax/templates/beeswax_components.mako:211
+#: src/beeswax/templates/beeswax_components.mako:216
 #, python-format
 msgid "Showing %(start)s to %(end)s of %(count)s items, page %(page)s of %(pages)s"
 msgstr "Mostrando de %(start)s a %(end)s elementos de %(count)s, página %(page)s de %(pages)s"
@@ -748,8 +772,8 @@ msgid "Choose a file"
 msgstr "Seleccionar un archivo"
 
 #: src/beeswax/templates/configuration.mako:24
-#: src/beeswax/templates/configuration.mako:28
-#: src/beeswax/templates/layout.mako:38
+#: src/beeswax/templates/configuration.mako:29
+#: src/beeswax/templates/execute.mako:37
 msgid "Settings"
 msgstr "Ajustes"
 
@@ -759,14 +783,20 @@ msgid "Search for key, value, etc."
 msgstr "Buscar clave, valor, etc."
 
 #: src/beeswax/templates/configuration.mako:33
+msgid "Search for key, value, etc."
+msgstr "Buscar clave, valor, etc."
+
+#: src/beeswax/templates/configuration.mako:34
 msgid "Clear"
 msgstr "Limpiar"
 
-#: src/beeswax/templates/configuration.mako:40
+#: src/beeswax/templates/configuration.mako:39
+#: src/beeswax/templates/execute.mako:74
 msgid "Key"
 msgstr "Clave"
 
-#: src/beeswax/templates/configuration.mako:41
+#: src/beeswax/templates/configuration.mako:40
+#: src/beeswax/templates/execute.mako:79
 msgid "Value"
 msgstr "Valor"
 
@@ -1100,7 +1130,7 @@ msgstr "Escriba aquí el terminador de campo"
 
 #: src/beeswax/templates/create_table_manually.mako:511
 msgid "Type your collection terminator here"
-msgstr "Escriba aquí el terminador de recolección"
+msgstr "Escriba aquí el terminador de recopilación"
 
 #: src/beeswax/templates/create_table_manually.mako:520
 msgid "Type your map key terminator here"
@@ -1353,27 +1383,44 @@ msgstr "¿Faltan algunas tablas? Para actualizar la lista de tablas/metadatos qu
 msgid "Did you know?"
 msgstr "¿Lo sabía?"
 
-#: src/beeswax/templates/explain.mako:25
-msgid "Query Explanation"
-msgstr "Explicación de la consulta"
+#: src/beeswax/templates/execute.mako:2256
+#: src/beeswax/templates/execute.mako:2263
+msgid "Missing some tables? In order to update the list of tables/metadata seen by Impala, execute one of these queries:"
+msgstr "¿Faltan algunas tablas? Para actualizar la lista de tablas/metadatos que ve Impala, ejecute una de las siguientes consultas:"
 
-#: src/beeswax/templates/explain.mako:29
-msgid "Query Explanation:"
-msgstr "Explicación de la consulta:"
+#: src/beeswax/templates/layout.mako:41
+msgid "Spark Igniter"
+msgstr "Spark Igniter"
 
-#: src/beeswax/templates/explain.mako:32
-msgid "Explanation"
-msgstr "Explicación"
+#: src/beeswax/templates/layout.mako:44
+msgid "Editor"
+msgstr "Editor"
 
-#: src/beeswax/templates/layout.mako:35
+#: src/beeswax/templates/layout.mako:46
+msgid "Applications"
+msgstr "Aplicaciones"
+
+#: src/beeswax/templates/layout.mako:48
+msgid "Dashboard"
+msgstr "Panel"
+
+#: src/beeswax/templates/layout.mako:49
+msgid "Contexts"
+msgstr "Contextos"
+
+#: src/beeswax/templates/layout.mako:50
+msgid "Uploads"
+msgstr "Cargas"
+
+#: src/beeswax/templates/layout.mako:77
 #: src/beeswax/templates/my_queries.mako:29
-#: src/beeswax/templates/my_queries.mako:39
+#: src/beeswax/templates/my_queries.mako:40
 msgid "My Queries"
 msgstr "Mis consultas"
 
-#: src/beeswax/templates/layout.mako:36
-#: src/beeswax/templates/list_designs.mako:27
-#: src/beeswax/templates/list_designs.mako:32
+#: src/beeswax/templates/layout.mako:78
+#: src/beeswax/templates/list_designs.mako:29
+#: src/beeswax/templates/list_designs.mako:38
 #: src/beeswax/templates/list_trashed_designs.mako:27
 msgid "Saved Queries"
 msgstr "Consultas guardadas"
@@ -1599,7 +1646,7 @@ msgstr "¿Desea vaciar la papelera?"
 
 #: src/beeswax/templates/my_queries.mako:48
 msgid "View the result of the selected"
-msgstr "Ver el resultado de la consulta seleccionada"
+msgstr "Ver el resultado de la selección"
 
 #: src/beeswax/templates/my_queries.mako:48
 msgid "View result"
@@ -1625,9 +1672,9 @@ msgstr "Ver todas mis consultas"
 msgid "View my entire query history"
 msgstr "Ver todo mi historial de consultas"
 
-#: src/beeswax/templates/parameterization.mako:24
-msgid "Parameterize Query"
-msgstr "Parametrizar consulta"
+#: src/beeswax/templates/my_queries.mako:330
+msgid "Move the selected queries to the trash?"
+msgstr "¿Mover las consultas seleccionadas a la papelera?"
 
 #: src/beeswax/templates/parameterization.mako:32
 msgid "Explain query"
@@ -1666,7 +1713,7 @@ msgid "Unsaved Query"
 msgstr "Consulta sin guardar"
 
 #: src/beeswax/templates/util.mako:71
-#: src/beeswax/templates/watch_results.mako:26
+#: src/beeswax/templates/watch_results.mako:27
 msgid "Query Results"
 msgstr "Resultados de la consulta"
 

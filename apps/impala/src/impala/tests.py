@@ -24,6 +24,7 @@ from desktop.lib.django_test_util import make_logged_in_client
 from beeswax.models import SavedQuery, QueryHistory
 from beeswax.server import dbms
 from beeswax.design import hql_query
+from desktop.models import Document
 
 
 class MockDbms:
@@ -48,7 +49,7 @@ class TestMockedImpala:
 
   def test_basic_flow(self):
     response = self.client.get("/impala/")
-    assert_true(re.search('<li id="impalaIcon"\W+class="active', response.content), response.content)
+    assert_true(re.search('Impala Editor', response.content), response.content)
     assert_true('Query Editor' in response.content)
 
     response = self.client.get("/impala/execute/")
@@ -70,9 +71,6 @@ class TestMockedImpala:
       response = self.client.get("/impala/list_designs")
       assert_equal(len(response.context['page'].object_list), 1)
 
-      response = self.client.get("/impala/execute_parameterized/%s" % impala_query.id)
-      assert_true('specify parameters' in response.content)
-
       # Test my query page
       QueryHistory.objects.create(owner=user, design=impala_query, query='', last_state=QueryHistory.STATE.available.index)
 
@@ -86,7 +84,7 @@ class TestMockedImpala:
         impala_query.delete()
 
 
-# Can be refactored with SavedQuery.create_empty() in Hue 2.3
+# Could be refactored with SavedQuery.create_empty()
 def create_saved_query(app_name, owner):
     query_type = SavedQuery.TYPES_MAPPING[app_name]
     design = SavedQuery(owner=owner, type=query_type)
@@ -95,4 +93,7 @@ def create_saved_query(app_name, owner):
     design.data = hql_query('show $tables', database='db1').dumps()
     design.is_auto = False
     design.save()
+
+    Document.objects.link(design, owner=design.owner, extra=design.type, name=design.name, description=design.desc)
+
     return design

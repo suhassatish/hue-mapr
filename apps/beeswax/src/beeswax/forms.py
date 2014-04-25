@@ -18,8 +18,6 @@
 from django import forms
 from django.utils.translation import ugettext as _, ugettext_lazy as _t
 
-import hive_metastore
-
 from desktop.lib.django_forms import simple_formset_factory, DependencyAwareForm
 from desktop.lib.django_forms import ChoiceOrOtherField, MultiForm, SubmitButton
 from filebrowser.forms import PathField
@@ -35,7 +33,8 @@ class QueryForm(MultiForm):
       settings=SettingFormSet,
       file_resources=FileResourceFormSet,
       functions=FunctionFormSet,
-      saveform=SaveForm)
+      saveform=SaveForm
+    )
 
 
 class SaveForm(forms.Form):
@@ -78,14 +77,45 @@ class SaveForm(forms.Form):
     self.data = data2
 
 
-class SaveResultsForm(DependencyAwareForm):
-  """Used for saving the query result data"""
+class SaveResultsDirectoryForm(forms.Form):
+  """Used for saving the query result data to hdfs directory"""
 
-  SAVE_TYPES = (SAVE_TYPE_TBL, SAVE_TYPE_DIR) = ('to a new table', 'to HDFS directory')
-  save_target = forms.ChoiceField(required=True,
-                                  choices=common.to_choices(SAVE_TYPES),
-                                  widget=forms.RadioSelect,
-                                  initial=SAVE_TYPE_TBL)
+  target_dir = forms.CharField(label=_t("Directory"),
+                               required=True,
+                               help_text=_t("Path to directory"))
+
+  def __init__(self, *args, **kwargs):
+    self.fs = kwargs.pop('fs', None)
+    super(SaveResultsDirectoryForm, self).__init__(*args, **kwargs)
+
+  def clean_target_dir(self):
+    if not self.cleaned_data['target_dir'].startswith('/'):
+      raise forms.ValidationError(_("Target directory should begin with a /"))
+    elif self.fs.exists(self.cleaned_data['target_dir']):
+      raise forms.ValidationError(_('Directory already exists.'))
+    return self.cleaned_data['target_dir']
+
+
+class SaveResultsFileForm(forms.Form):
+  """Used for saving the query result data to hdfs file"""
+
+  target_file = forms.CharField(label=_t("File path"),
+                                required=True,
+                                help_text=_t("Path to file"))
+  overwrite = forms.BooleanField(label=_t('Overwrite'),
+                                 required=False,
+                                 help_text=_t("Overwrite the selected files"))
+
+  def clean_target_file(self):
+    if not self.cleaned_data['target_file'].startswith('/'):
+      raise forms.ValidationError("Target file should begin with a /")
+
+    return self.cleaned_data['target_file']
+
+
+class SaveResultsTableForm(forms.Form):
+  """Used for saving the query result data to hive table"""
+
   target_table = common.HiveIdentifierField(
                                   label=_t("Table Name"),
                                   required=False,
@@ -100,11 +130,11 @@ class SaveResultsForm(DependencyAwareForm):
 
   def __init__(self, *args, **kwargs):
     self.db = kwargs.pop('db', None)
-    self.fs = kwargs.pop('fs', None)
-    super(SaveResultsForm, self).__init__(*args, **kwargs)
+    self.target_database = kwargs.pop('database', 'default')
+    super(SaveResultsTableForm, self).__init__(*args, **kwargs)
 
   def clean(self):
-    cleaned_data = super(SaveResultsForm, self).clean()
+    cleaned_data = super(SaveResultsTableForm, self).clean()
 
     if cleaned_data.get('save_target') == SaveResultsForm.SAVE_TYPE_TBL:
       tbl = cleaned_data.get('target_table')
@@ -259,8 +289,8 @@ def _clean_tablename(db, name, database='default'):
 
 
 def _clean_terminator(val):
-  if val is not None and len(val.decode('string_escape')) != 1:
-    raise forms.ValidationError(_('Terminator must be exactly one character.'))
+  if val is not None and val == '':
+    raise forms.ValidationError(_('Terminator must not be empty.'))
   return val
 
 
@@ -295,10 +325,10 @@ class CreateByImportDelimForm(forms.Form):
     delimiter = self.cleaned_data.get('delimiter')
     if delimiter.isdigit():
       try:
-        chr(int(delimiter))
+        unichr(int(delimiter))
         return int(delimiter)
       except ValueError:
-        raise forms.ValidationError(_('Delimiter value must be smaller than 256.'))
+        raise forms.ValidationError(_('Delimiter value must be smaller than 65533.'))
     if not delimiter:
       raise forms.ValidationError(_('Delimiter value is required.'))
     _clean_terminator(delimiter)

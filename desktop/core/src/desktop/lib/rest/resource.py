@@ -14,10 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-try:
-  import json
-except ImportError:
-  import simplejson as json
 import logging
 import posixpath
 
@@ -28,13 +24,15 @@ class Resource(object):
   """
   Encapsulates a resource, and provides actions to invoke on it.
   """
-  def __init__(self, client, relpath=""):
+  def __init__(self, client, relpath="", urlencode=True):
     """
     @param client: A Client object.
     @param relpath: The relative path of the resource.
+    @param urlencode: percent encode paths.
     """
     self._client = client
     self._path = relpath.strip('/')
+    self._urlencode = urlencode
 
   @property
   def base_url(self):
@@ -97,7 +95,7 @@ class Resource(object):
 
     @return: A dictionary of the JSON result.
     """
-    return self.invoke("GET", relpath, params, headers=headers)
+    return self.invoke("GET", relpath, params, headers=headers, allow_redirects=True)
 
 
   def delete(self, relpath=None, params=None):

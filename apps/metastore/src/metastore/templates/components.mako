@@ -18,23 +18,41 @@
   from django.utils.translation import ugettext as _
 %>
 
+<%def name="menubar()">
+  <div class="navbar navbar-inverse navbar-fixed-top nokids">
+      <div class="navbar-inner">
+        <div class="container-fluid">
+          <div class="nav-collapse">
+            <ul class="nav">
+              <li class="currentApp">
+                <a href="/${app_name}">
+                  <img src="/metastore/static/art/icon_metastore_24.png" />
+                  ${ _('Metastore Manager') }
+                </a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+  </div>
+</%def>
+
+
 <%def name="breadcrumbs(breadcrumbs)">
   <ul class="nav nav-pills hueBreadcrumbBar" id="breadcrumbs">
     <li>
-      <a href="${url('metastore:databases')}"><i class="icon-sitemap"></i> ${_('Databases')}</a>
+      <a href="${url('metastore:databases')}">${_('Databases')}</a><span class="divider">&gt;</span>
     </li>
+    % for crumb in breadcrumbs:
     <li>
-      <ul class="hueBreadcrumb">
-        % for crumb in breadcrumbs:
-          <li>
-            <a href="${ crumb['url'] }">${ crumb['name'] }</a>
-            % if not loop.last:
-              <span class="divider">/</span>
-            % endif
-          </li>
-        % endfor
-      </ul>
+      % if not loop.last:
+        <a href="${ crumb['url'] }">${ crumb['name'] }</a>
+        <span class="divider">&gt;</span>
+      % else:
+        <span style="padding-left:12px">${ crumb['name'] }</span>
+      % endif
     </li>
+    % endfor
   </ul>
 </%def>
 

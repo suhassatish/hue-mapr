@@ -18,17 +18,14 @@
 import logging
 import time
 
-try:
-  import json
-except ImportError:
-  import simplejson as json
-
 from nose.tools import assert_true, assert_false, assert_equal, assert_raises
 from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
 
 from desktop.lib.django_test_util import make_logged_in_client
-from liboozie.oozie_api_test import OozieServerProvider
+from desktop.models import Document
+
+from liboozie.oozie_api_tests import OozieServerProvider
 from oozie.models import Workflow, Node, Action, Start, Kill, End, Link
 
 
@@ -38,9 +35,10 @@ class TestJobsubWithHadoop(OozieServerProvider):
 
   def setUp(self):
     OozieServerProvider.setup_class()
-    self.cluster.fs.do_as_user('test', self.cluster.fs.create_home_dir, '/user/jobsub_test')
-    self.cluster.fs.do_as_superuser(self.cluster.fs.chmod, '/user/jobsub_test', 0777, True)
+    self.cluster.fs.do_as_user('jobsub_test', self.cluster.fs.create_home_dir, '/user/jobsub_test')
+    self.cluster.fs.do_as_superuser(self.cluster.fs.chmod, '/user/jobsub_test', 0777, True) # Hum?
     self.client = make_logged_in_client(username='jobsub_test')
+    self.user = User.objects.get(username='jobsub_test')
 
     # Ensure access to MR folder.
     # Need to chmod because jobs are submitted as a
@@ -112,47 +110,57 @@ class TestJobsubWithHadoop(OozieServerProvider):
 
   def test_delete_design(self):
     # Trash
-    assert_equal(1, Workflow.objects.available().count())
+    n_available = Document.objects.available_docs(Workflow, self.user).count()
+    n_trashed = Document.objects.trashed_docs(Workflow, self.user).count()
+
     response = self.client.post(reverse('jobsub.views.delete_design',
       kwargs={'design_id': self.design.id}),
       follow=True,
       HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+
     assert_equal(response.status_code, 200)
-    assert_equal(0, Workflow.objects.available().count())
-    assert_equal(1, Workflow.objects.trashed().count())
+    assert_equal(n_available - 1, Document.objects.available_docs(Workflow, self.user).count())
+    assert_equal(n_trashed + 1, Document.objects.trashed_docs(Workflow, self.user).count())
 
     # Destroy
     response = self.client.post(reverse('jobsub.views.delete_design',
       kwargs={'design_id': self.design.id}) + '?skip_trash',
       follow=True,
       HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+
     assert_equal(response.status_code, 200)
-    assert_equal(0, Workflow.objects.available().count())
-    assert_equal(0, Workflow.objects.trashed().count())
+    assert_equal(n_available - 1, Document.objects.available_docs(Workflow, self.user).count())
+    assert_equal(n_trashed, Document.objects.trashed_docs(Workflow, self.user).count())
 
   def test_clone_design(self):
-    assert_equal(1, Workflow.objects.available().count())
+    n_available = Document.objects.available_docs(Workflow, self.user).count()
+
     response = self.client.post(reverse('jobsub.views.clone_design',
       kwargs={'design_id': self.design.id}),
       follow=True,
       HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+
     assert_equal(response.status_code, 200)
-    assert_equal(2, Workflow.objects.available().count())
+    assert_equal(n_available + 1, Document.objects.available_docs(Workflow, self.user).count())
 
   def test_restore_design(self):
-    assert_equal(1, Workflow.objects.available().count())
+    n_available = Document.objects.available_docs(Workflow, self.user).count()
+    n_trashed = Document.objects.trashed_docs(Workflow, self.user).count()
+
     response = self.client.post(reverse('jobsub.views.delete_design',
       kwargs={'design_id': self.design.id}),
       follow=True,
       HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+
     assert_equal(response.status_code, 200)
-    assert_equal(0, Workflow.objects.available().count())
-    assert_equal(1, Workflow.objects.trashed().count())
+    assert_equal(n_available - 1, Document.objects.available_docs(Workflow, self.user).count())
+    assert_equal(n_trashed + 1, Document.objects.trashed_docs(Workflow, self.user).count())
 
     response = self.client.post(reverse('jobsub.views.restore_design',
       kwargs={'design_id': self.design.id}),
       follow=True,
       HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+
     assert_equal(response.status_code, 200)
-    assert_equal(1, Workflow.objects.available().count())
-    assert_equal(0, Workflow.objects.trashed().count())
+    assert_equal(n_available, Document.objects.available_docs(Workflow, self.user).count())
+    assert_equal(n_trashed, Document.objects.trashed_docs(Workflow, self.user).count())

@@ -15,13 +15,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-try:
-  import json
-except ImportError:
-  import simplejson as json
+import json
 import logging
 import re
+import urlparse
+from datetime import datetime
 
+from django.utils.formats import localize_input
 from django.utils.translation import ugettext as _
 from jobsub.parameterization import find_variables
 
@@ -31,14 +31,18 @@ LOG = logging.getLogger(__name__)
 JSON_FIELDS = ('parameters', 'job_properties', 'files', 'archives', 'prepares', 'params',
                'deletes', 'mkdirs', 'moves', 'chmods', 'touchzs')
 BOOLEAN_FIELDS = ('propagate_configuration','capture_output')
-NUMBER_FIELDS = ('sub_workflow',)
+NUMBER_FIELDS_OR_NULL = ('sub_workflow',)
+GMT_TIME_FORMAT = "%Y-%m-%dT%H:%MGMT%z"
+UTC_TIME_FORMAT = "%Y-%m-%dT%H:%MZ"
+FREQUENCY_REGEX = r'^\$\{coord:(?P<frequency_unit>\w+)\((?P<frequency_number>\d+)\)\}$'
+
 
 def format_field_value(field, value):
   if field in JSON_FIELDS:
     if not isinstance(value, basestring):
       return json.dumps(value)
-  if field in NUMBER_FIELDS:
-    if not isinstance(value, int):
+  if field in NUMBER_FIELDS_OR_NULL:
+    if not isinstance(value, int) and value is not None:
       return int(value)
   if field in BOOLEAN_FIELDS:
     return str(value).lower() == 'true'
@@ -50,9 +54,10 @@ def format_dict_field_values(dictionary):
     dictionary[key] = format_field_value(key, dictionary[key])
   return dictionary
 
+
 def model_to_dict(model):
   from django.db import models
-  from datetime import datetime
+
   dictionary = {}
   for field in model._meta.fields:
     try:
@@ -94,7 +99,7 @@ def smart_path(path, mapping):
   # This dynamic checking enable the use of <prepares> statements in a workflow scheduled manually of by a coordinator.
   # The logic is a bit complicated but Oozie is not consistent with data paths, prepare, coordinator paths and Fs action.
 
-  if not path.startswith('$') and not path.startswith('/') and not path.startswith('hdfs://'):
+  if not path.startswith('$') and not path.startswith('/') and not urlparse.urlsplit(path).scheme:
     path = '/user/%(username)s/%(path)s' % {'username': '${wf:user()}', 'path': path}
 
   if path.startswith('$'):
@@ -103,14 +108,35 @@ def smart_path(path, mapping):
       prefix = '${%s}' % var
       if path.startswith(prefix):
         if var in mapping:
-          if not mapping[var].startswith('hdfs://') and not mapping[var].startswith('$'):
+          if not urlparse.urlsplit(mapping[var]).scheme and not mapping[var].startswith('$'):
             path = '%(nameNode)s%(path)s' % {'nameNode': '${nameNode}', 'path': path}
   else:
-    if not path.startswith('hdfs://'):
+    if not urlparse.urlsplit(path).scheme:
       path = '%(nameNode)s%(path)s' % {'nameNode': '${nameNode}', 'path': path}
 
   return path
 
 
-def xml_tag(element):
-  return re.sub(r'^\{.+\}', '', element.tag)
+def utc_datetime_format(utc_time):
+  return utc_time.strftime(UTC_TIME_FORMAT)
+
+
+def oozie_to_django_datetime(dt_string):
+  try:
+    return localize_input(datetime.strptime(dt_string, UTC_TIME_FORMAT))
+  except ValueError:
+    pass
+
+  try:
+    return localize_input(datetime.strptime(dt_string, GMT_TIME_FORMAT))
+  except ValueError:
+    pass
+
+  return None
+
+
+def oozie_to_hue_frequency(frequency_string):
+  # Get frequency number and units from frequency
+  # frequency units and number are just different parts of the EL function.
+  matches = re.match(FREQUENCY_REGEX, frequency_string)
+  return matches.group('frequency_unit'), matches.group('frequency_number')

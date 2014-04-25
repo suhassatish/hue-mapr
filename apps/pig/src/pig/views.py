@@ -15,12 +15,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-try:
-  import json
-except ImportError:
-  import simplejson as json
+import json
 import logging
-
 
 from django.core.urlresolvers import reverse
 from django.http import HttpResponse
@@ -30,6 +26,8 @@ from django.views.decorators.http import require_http_methods
 from desktop.lib.django_util import render
 from desktop.lib.exceptions_renderable import PopupException
 from desktop.lib.rest.http_client import RestException
+from desktop.models import Document
+
 from oozie.views.dashboard import show_oozie_error, check_job_access_permission,\
                                   check_job_edition_permission
 
@@ -57,7 +55,7 @@ def dashboard(request):
   pig_api = api.get(request.fs, request.jt, request.user)
 
   jobs = pig_api.get_jobs()
-  hue_jobs = PigScript.objects.filter(owner=request.user)
+  hue_jobs = Document.objects.available(PigScript, request.user, with_history=True)
   massaged_jobs = pig_api.massaged_jobs_for_json(request, jobs, hue_jobs)
 
   return HttpResponse(json.dumps(massaged_jobs), mimetype="application/json")
@@ -143,27 +141,32 @@ def copy(request):
     raise PopupException(_('POST request required.'))
 
   pig_script = PigScript.objects.get(id=request.POST.get('id'))
-  pig_script.can_edit_or_exception(request.user)
+  pig_script.doc.get().can_edit_or_exception(request.user)
 
   existing_script_data = pig_script.dict
+
+  owner = request.user
   name = existing_script_data["name"] + _(' (Copy)')
   script = existing_script_data["script"]
   parameters = existing_script_data["parameters"]
   resources = existing_script_data["resources"]
   hadoopProperties = existing_script_data["hadoopProperties"]
 
-  pig_script = PigScript.objects.create(owner=request.user)
-  pig_script.update_from_dict({
+  script_copy = PigScript.objects.create(owner=owner)
+  script_copy.update_from_dict({
       'name': name,
       'script': script,
       'parameters': parameters,
       'resources': resources,
       'hadoopProperties': hadoopProperties
   })
-  pig_script.save()
+  script_copy.save()
+
+  copy_doc = pig_script.doc.get().copy(name=name, owner=owner)
+  script_copy.doc.add(copy_doc)
 
   response = {
-    'id': pig_script.id,
+    'id': script_copy.id,
     'name': name,
     'script': script,
     'parameters': parameters,
@@ -184,6 +187,7 @@ def delete(request):
     try:
       pig_script = PigScript.objects.get(id=script_id)
       pig_script.can_edit_or_exception(request.user)
+      pig_script.doc.all().delete()
       pig_script.delete()
     except:
       None

@@ -24,69 +24,57 @@
 <%namespace name="layout" file="../navigation-bar.mako" />
 <%namespace name="utils" file="../utils.inc.mako" />
 
-${ commonheader(_("Workflow Dashboard"), "oozie", user, "100px") | n,unicode }
-${ layout.menubar(section='dashboard') }
-
+${ commonheader(_("Workflow Dashboard"), "oozie", user) | n,unicode }
+${ layout.menubar(section='workflows', dashboard=True) }
 
 <div class="container-fluid" xmlns="http://www.w3.org/1999/html" xmlns="http://www.w3.org/1999/html">
-
-  ${ layout.dashboard_sub_menubar(section='workflows') }
-
-  <h1>
-    % if oozie_bundle:
-      ${ _('Bundle') } <a href="${ oozie_bundle.get_absolute_url() }">${ oozie_bundle.appName }</a> :
-    % endif
-    % if oozie_coordinator:
-      ${ _('Coordinator') } <a href="${ oozie_coordinator.get_absolute_url(oozie_bundle) }">${ oozie_coordinator.appName }</a> :
-    % endif
-
-    ${ _('Workflow') } ${ oozie_workflow.appName }
-  </h1>
+<div class="card card-small">
+  <div class="card-body">
+  <p>
 
   <div class="row-fluid">
     <div class="span2">
-      <div class="well sidebar-nav">
-        <ul class="nav nav-list">
+      <div class="sidebar-nav">
+        <ul class="nav nav-list" style="border:none">
           <li class="nav-header">${ _('Workflow') }</li>
-          <li>
-              % if hue_workflow is not None:
-                <a title="${ _('Edit workflow') }" href="${ hue_workflow.get_absolute_url() }">${ hue_workflow }</a>
-              % else:
-              ${ oozie_workflow.appName }
-              % endif
-          </li>
+          % if hue_workflow is not None:
+          <li><a title="${ _('Edit workflow') }" href="${ hue_workflow.get_absolute_url() }">${ hue_workflow }</a></li>
+          % else:
+          <li class="white">${ oozie_workflow.appName }</li>
+          % endif
 
           % if hue_coord:
-              <li class="nav-header">${ _('Coordinator') }</li>
-              <li><a href="${ hue_coord.get_absolute_url() }">${ hue_coord.name }</a></li>
+          <li class="nav-header">${ _('Coordinator') }</li>
+          <li><a href="${ hue_coord.get_absolute_url() }">${ hue_coord.name }</a></li>
           % endif
 
           <li class="nav-header">${ _('Submitter') }</li>
-          <li>${ oozie_workflow.user }</li>
+          <li class="white">${ oozie_workflow.user }</li>
 
           <li class="nav-header">${ _('Status') }</li>
-          <li id="status"><span class="label ${ utils.get_status(oozie_workflow.status) }">${ oozie_workflow.status }</span></li>
+          <li class="white" id="status"><span class="label ${ utils.get_status(oozie_workflow.status) }">${ oozie_workflow.status }</span></li>
 
           <li class="nav-header">${ _('Progress') }</li>
-          <li id="progress">
+          <li class="white" id="progress">
             <div class="progress">
               <div class="bar" style="width: 0">${ oozie_workflow.get_progress() }%</div>
             </div>
           </li>
 
           <li class="nav-header">${ _('Id') }</li>
-          <li>${  oozie_workflow.id }</li>
+          <li class="white">${  oozie_workflow.id }</li>
 
           % if parameters and len(parameters) < 10:
               <li class="nav-header">${ _('Variables') }</li>
               % for var, value in parameters.iteritems():
-                % if var not in ParameterForm.NON_PARAMETERS and var != 'oozie.use.system.libpath':
+                % if var not in ParameterForm.NON_PARAMETERS and var != 'oozie.use.system.libpath' or var == 'oozie.wf.application.path':
+                  % if utils.is_linkable(var, str(value)):
                   <li rel="tooltip" title="${ var } : ${ str(value) }">
-                    % if utils.is_linkable(var, str(value)):
-                      <a href="${ utils.hdfs_link_js(str(value)) }"><i class="icon-eye-open"></i> <span class="variable hide">${ var }</span></a>
-                    % else:
-                    <i class="icon-eye-open"></i> <span class="variable">${ var }</span>
-                    % endif
+                    <a href="${ utils.hdfs_link_js(str(value)) }"><i class="fa fa-eye"></i> <span class="variable hide">${ var }</span></a>
+                  % else:
+                  <li rel="tooltip" title="${ var } : ${ str(value) }" class="white">
+                    <i class="fa fa-eye"></i> <span class="variable">${ var }</span>
+                  % endif
                   </li>
                 % endif
               % endfor
@@ -94,7 +82,7 @@ ${ layout.menubar(section='dashboard') }
 
           % if has_job_edition_permission(oozie_workflow, user):
               <li class="nav-header">${ _('Manage') }</li>
-              <li>
+              <li class="white">
                 <button title="${_('Kill %(workflow)s') % dict(workflow=oozie_workflow.id)}"
                    id="kill-btn"
                    class="btn btn-small confirmationModal
@@ -145,7 +133,17 @@ ${ layout.menubar(section='dashboard') }
       </div>
     </div>
 
-    <div class="span9">
+    <div class="span10">
+      <h1 class="card-heading simple card-heading-nopadding card-heading-noborder card-heading-blue" style="margin-bottom: 10px">
+        % if oozie_bundle:
+          ${ _('Bundle') } <a href="${ oozie_bundle.get_absolute_url() }">${ oozie_bundle.appName }</a> :
+        % endif
+        % if oozie_coordinator:
+          ${ _('Coordinator') } <a href="${ oozie_coordinator.get_absolute_url(oozie_bundle) }">${ oozie_coordinator.appName }</a> :
+        % endif
+
+        ${ _('Workflow') } ${ oozie_workflow.appName }
+      </h1>
       <ul class="nav nav-tabs">
         % if workflow_graph:
             <li class="active"><a href="#graph" data-toggle="tab">${ _('Graph') }</a></li>
@@ -157,6 +155,9 @@ ${ layout.menubar(section='dashboard') }
         <li><a href="#configuration" data-toggle="tab">${ _('Configuration') }</a></li>
         <li><a href="#log" data-toggle="tab">${ _('Log') }</a></li>
         <li><a href="#definition" data-toggle="tab">${ _('Definition') }</a></li>
+        % if oozie_workflow.has_sla:
+        <li><a href="#sla" data-toggle="tab">${ _('SLA') }</a></li>
+        % endif
       </ul>
 
       <div id="workflow-tab-content" class="tab-content" style="min-height:200px">
@@ -208,7 +209,7 @@ ${ layout.menubar(section='dashboard') }
         <script id="actionTemplate" type="text/html">
           <tr>
             <td>
-              <a data-bind="visible:externalId !='', attr: { href: log}" data-row-selector-exclude="true"><i class="icon-tasks"></i></a>
+              <a data-bind="visible:externalId !='', attr: { href: log}" data-row-selector-exclude="true"><i class="fa fa-tasks"></i></a>
             </td>
             <td>
               <a data-bind="text: id, attr: { href: url}" data-row-selector="true"></a>
@@ -281,9 +282,44 @@ ${ layout.menubar(section='dashboard') }
           <pre>${ oozie_workflow.log.decode('utf-8', 'replace') }</pre>
         </div>
 
-        <div class="tab-pane" id="definition" style="min-height:400px">
+        <div class="tab-pane" id="definition">
           <textarea id="definitionEditor">${ oozie_workflow.definition.decode('utf-8', 'replace') }</textarea>
         </div>
+
+        % if oozie_workflow.has_sla:
+        <div class="tab-pane" id="sla" style="padding-left: 20px">
+          <div id="yAxisLabel" class="hide">${_('Time since Nominal Time in min')}</div>
+          <div id="slaChart"></div>
+          <table id="slaTable" class="table table-striped table-condensed hide">
+            <thead>
+              <th>${_('Status')}</th>
+              <th>${_('Nominal Time')}</th>
+              <th>${_('Expected Start')}</th>
+              <th>${_('Actual Start')}</th>
+              <th>${_('Expected End')}</th>
+              <th>${_('Actual End')}</th>
+              <th>${_('Expected Duration')}</th>
+              <th>${_('Actual Duration')}</th>
+              <th>${_('SLA')}</th>
+            </thead>
+            <tbody>
+            %for sla in oozie_slas:
+              <tr>
+                <td class="slaStatus">${sla['slaStatus']}</td>
+                <td><span class="nominalTime">${sla['nominalTime']}</span></td>
+                <td><span class="expectedStart">${sla['expectedStart']}</span></td>
+                <td><span class="actualStart">${sla['actualStart']}</span></td>
+                <td><span class="expectedEnd">${sla['expectedEnd']}</span></td>
+                <td><span class="actualEnd">${sla['actualEnd']}</span></td>
+                <td>${sla['expectedDuration']}</td>
+                <td>${sla['actualDuration']}</td>
+                <td><a href="${ url('oozie:list_oozie_sla') }#${ sla['id'] }"></a></td>
+              </tr>
+            %endfor
+            </tbody>
+          </table>
+        </div>
+        % endif
       </div>
 
       <div style="margin-bottom: 16px">
@@ -293,6 +329,10 @@ ${ layout.menubar(section='dashboard') }
 
   </div>
 
+
+  </p>
+  </div>
+  </div>
 </div>
 
 <div id="confirmation" class="modal hide">
@@ -314,13 +354,37 @@ ${ layout.menubar(section='dashboard') }
 <link rel="stylesheet" href="/static/ext/css/codemirror.css">
 <script src="/static/ext/js/codemirror-xml.js"></script>
 
-<style>
-.CodeMirror.cm-s-default {
-   height:500px;
-}
-.sidebar-nav {
-  padding: 9px 0;
-}
+% if oozie_workflow.has_sla:
+<script src="/static/ext/js/moment.min.js" type="text/javascript" charset="utf-8"></script>
+<script src="/oozie/static/js/sla.utils.js" type="text/javascript" charset="utf-8"></script>
+<script src="/static/ext/js/jquery/plugins/jquery.flot.min.js" type="text/javascript" charset="utf-8"></script>
+<script src="/static/ext/js/jquery/plugins/jquery.flot.selection.min.js" type="text/javascript" charset="utf-8"></script>
+<script src="/static/ext/js/jquery/plugins/jquery.flot.time.min.js" type="text/javascript" charset="utf-8"></script>
+<script src="/static/js/jquery.blueprint.js"></script>
+%endif
+
+<style type="text/css">
+  .CodeMirror.cm-s-default {
+    height: 700px;
+  }
+
+  #sla th {
+    vertical-align: middle !important;
+  }
+
+  #yAxisLabel {
+    -webkit-transform: rotate(270deg);
+    -moz-transform: rotate(270deg);
+    -o-transform: rotate(270deg);
+    writing-mode: lr-tb;
+    margin-left: -110px;
+    margin-top: 130px;
+    position: absolute;
+  }
+
+  #slaTable {
+    margin-top: 20px;
+  }
 </style>
 
 <script type="text/javascript">
@@ -358,13 +422,61 @@ ${ layout.menubar(section='dashboard') }
   var viewModel = new RunningWorkflowActionsModel([]);
   ko.applyBindings(viewModel);
 
+  var CHART_LABELS = {
+    NOMINAL_TIME: "${_('Nominal Time')}",
+    EXPECTED_START: "${_('Expected Start')}",
+    ACTUAL_START: "${_('Actual Start')}",
+    EXPECTED_END: "${_('Expected End')}",
+    ACTUAL_END: "${_('Actual End')}",
+    TOOLTIP_ADDON: "${_('click for the SLA dashboard')}"
+  }
+  var slaTable;
+
   $(document).ready(function() {
+    var CURRENT_ZOOM = 1;
+    $(document).keydown(function(e) {
+      if (e.ctrlKey){
+        if (e.which == 173 || e.which == 189) {
+          CURRENT_ZOOM -= 0.1;
+          zoom();
+        }
+        if (e.which == 61 || e.which == 187) {
+          CURRENT_ZOOM += 0.1;
+          zoom();
+        }
+        if (e.which == 48) {
+          CURRENT_ZOOM = 1;
+          zoom();
+        }
+      }
+    });
+
+    function zoom(){
+      $("#graph").css("zoom", CURRENT_ZOOM);
+      $("#graph").css("-moz-transform", "scale(" + CURRENT_ZOOM + ")");
+    }
 
     $("*[rel=tooltip]").tooltip();
 
+    % if oozie_workflow.has_sla:
+    slaTable = $("#slaTable").dataTable({
+      "bPaginate": false,
+      "bLengthChange": false,
+      "bInfo": false,
+      "bAutoWidth": false,
+      "oLanguage": {
+        "sEmptyTable": "${_('No data available')}",
+        "sZeroRecords": "${_('No matching records')}"
+      }
+    });
+
+    $(".dataTables_wrapper").css("min-height", "0");
+    $(".dataTables_filter").hide();
+    % endif
+
     $(".variable").each(function () {
-      if ($(this).text().length > 15) {
-        $(this).html($(this).text().substr(0, 14) + "&hellip;");
+      if ($(this).text().length > 25) {
+        $(this).html($(this).text().substr(0, 24) + "&hellip;");
       }
       $(this).removeClass("hide");
     });
@@ -384,6 +496,13 @@ ${ layout.menubar(section='dashboard') }
       if ($(e.target).attr("href") == "#definition") {
         codeMirror.refresh();
       }
+      % if oozie_workflow.has_sla:
+      if ($(e.target).attr("href") == "#sla") {
+        window.setTimeout(function () {
+          updateSLAChart(slaTable, CHART_LABELS, 30); // limits to 30 results
+        }, 100)
+      }
+      % endif
     });
 
     $(".action-link").click(function(){
@@ -405,7 +524,7 @@ ${ layout.menubar(section='dashboard') }
         { 'notification': $(this).data("message") },
         function(response) {
           if (response['status'] != 0) {
-            $.jHueNotify.error("${ _('Error: ') }" + response['data']);
+            $(document).trigger("error", "${ _('Error: ') }" + response['data']);
           } else {
             window.location.reload();
           }
@@ -420,7 +539,7 @@ ${ layout.menubar(section='dashboard') }
         { 'notification': $(this).data("message") },
         function(response) {
           if (response['status'] != 0) {
-            $.jHueNotify.error("${ _('Error: ') }" + response['data']);
+            $(document).trigger("error", "${ _('Error: ') }" + response['data']);
           } else {
             window.location.reload();
           }
@@ -435,7 +554,7 @@ ${ layout.menubar(section='dashboard') }
         { 'notification': $(this).data("message") },
         function(response) {
           if (response['status'] != 0) {
-            $.jHueNotify.error("${ _('Error: ') }" + response['data']);
+            $(document).trigger("error", "${ _('Error: ') }" + response['data']);
           } else {
             window.location.reload();
           }
@@ -471,6 +590,8 @@ ${ layout.menubar(section='dashboard') }
 
         $("#status span").attr("class", "label").addClass(getStatusClass(data.status)).text(data.status);
 
+        $.jHueTitleUpdater.set(data.progress + "%");
+
         if (data.id && data.status == "SUSPENDED"){
           $("#resume-btn").show();
         } else {
@@ -483,17 +604,20 @@ ${ layout.menubar(section='dashboard') }
           $("#suspend-btn").hide();
         }
 
-        if (data.id && data.status != "RUNNING" && data.status != "SUSPENDED"){
+        if (data.id && data.status != "RUNNING" && data.status != "SUSPENDED" && data.status != "PREP"){
           $("#kill-btn").hide();
           $("#rerun-btn").show();
+          $.jHueTitleUpdater.reset();
         }
 
-        $("#progress .bar").text(data.progress+"%").css("width", data.progress+"%").attr("class", "bar " + getStatusClass(data.status, "bar-"));
+        $("#progress .bar").text(data.progress + "%").css("width", data.progress + "%").attr("class", "bar " + getStatusClass(data.status, "bar-"));
+
         $("#graph").html(data.graph);
 
         var _logsEl = $("#log pre");
-        var newLines = data.log.split("\n").slice(_logsEl.text().split("\n").length);
-        _logsEl.text(_logsEl.text() + newLines.join("\n"));
+
+        _logsEl.text(data.log);
+
         if (logsAtEnd) {
           _logsEl.scrollTop(_logsEl[0].scrollHeight - _logsEl.height());
         }
@@ -523,6 +647,10 @@ ${ layout.menubar(section='dashboard') }
 
     function resizeLogs() {
       $("#log pre").css("overflow", "auto").height($(window).height() - $("#log pre").position().top - 80);
+    }
+
+    if (window.location.hash == "#showSla") {
+      $("a[href='#sla']").click();
     }
 
   });

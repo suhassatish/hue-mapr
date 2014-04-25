@@ -24,6 +24,7 @@ from django.contrib.auth.models import User, Group
 from django.forms.util import ErrorList
 from django.utils.translation import ugettext as _, ugettext_lazy as _t
 
+from desktop import conf as desktop_conf
 from desktop.lib.django_util import get_username_re_rule, get_groupname_re_rule
 
 from useradmin.models import GroupPermission, HuePermission
@@ -32,6 +33,13 @@ from useradmin.models import get_default_user_group
 
 
 LOG = logging.getLogger(__name__)
+
+
+def get_server_choices():
+  if desktop_conf.LDAP.LDAP_SERVERS.get():
+    return [(ldap_server_record_key, ldap_server_record_key) for ldap_server_record_key in desktop_conf.LDAP.LDAP_SERVERS.get()]
+  else:
+    return [('LDAP', 'LDAP')]
 
 
 class UserChangeForm(django.contrib.auth.forms.UserChangeForm):
@@ -52,14 +60,17 @@ class UserChangeForm(django.contrib.auth.forms.UserChangeForm):
                                             initial=True,
                                             required=False)
 
+  class Meta(django.contrib.auth.forms.UserChangeForm.Meta):
+    fields = ["username", "first_name", "last_name", "email", "ensure_home_directory"]
+
   def __init__(self, *args, **kwargs):
     super(UserChangeForm, self).__init__(*args, **kwargs)
 
     if self.instance.id:
       self.fields['username'].widget.attrs['readonly'] = True
 
-  class Meta(django.contrib.auth.forms.UserChangeForm.Meta):
-    fields = ["username", "first_name", "last_name", "email", "ensure_home_directory"]
+  def clean_password(self):
+    return self.cleaned_data["password"]
 
   def clean_password2(self):
     password1 = self.cleaned_data.get("password1", "")
@@ -120,6 +131,10 @@ class AddLdapUsersForm(forms.Form):
                                             help_text=_t("Create home directory for user if one doesn't already exist."),
                                             initial=True,
                                             required=False)
+
+  def __init__(self, *args, **kwargs):
+    super(AddLdapUsersForm, self).__init__(*args, **kwargs)
+    self.fields['server'] = forms.ChoiceField(choices=get_server_choices(), required=False)
 
   def clean(self):
     cleaned_data = super(AddLdapUsersForm, self).clean()
@@ -294,3 +309,6 @@ class SyncLdapUsersGroupsForm(forms.Form):
                                             help_text=_t("Create home directory for every user, if one doesn't already exist."),
                                             initial=True,
                                             required=False)
+  def __init__(self, *args, **kwargs):
+    super(SyncLdapUsersGroupsForm, self).__init__(*args, **kwargs)
+    self.fields['server'] = forms.ChoiceField(choices=get_server_choices(), required=False)

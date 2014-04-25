@@ -22,7 +22,7 @@
 <%namespace name="layout" file="layout.mako" />
 <%namespace name="macros" file="macros.mako" />
 
-${ commonheader(_('Search'), "search", user, "40px") | n,unicode }
+${ commonheader(_('Search'), "search", user, "29px") | n,unicode }
 
 <style type="text/css">
   .CodeMirror {
@@ -122,20 +122,22 @@ ${ commonheader(_('Search'), "search", user, "40px") | n,unicode }
     overflow: inherit;
   }
 
-  .chzn-container, .chzn-select {
+  .chosen-container, .chosen-select {
     float: left;
   }
 
   .plus-btn {
     float: left;
+    height: 25px;
+    line-height: 15px!important;
     margin-left: 4px;
-    height: 30px;
+    min-height: 25px;
   }
 </style>
 
 <%layout:skeleton>
   <%def name="title()">
-    <h4>${ _('Template Editor ') } : ${ hue_collection.name }</h4>
+    <h4>${ _('Snippet editor for') } <strong>${ hue_collection.name }</strong></h4>
   </%def>
 
   <%def name="navigation()">
@@ -149,44 +151,41 @@ ${ commonheader(_('Search'), "search", user, "40px") | n,unicode }
       <li><a href="#source" data-toggle="tab">${_('Source')}</a></li>
       <li><a href="#extra" data-toggle="tab">${_('Advanced')}</a></li>
     </ul>
+    <div class="well">
     <div class="tab-content">
       <div class="tab-pane active" id="visual">
-
         <div class="row-fluid">
           <div class="span9">
             <div id="toolbar"></div>
             <div id="content-editor" class="clear">${ hue_collection.result.get_template() | n,unicode }</div>
+            <div id="cloud-template" class="btn-group">
+              <a title="${_('Cloud Template')}" class="btn toolbar-btn toolbar-cmd">
+                <i class="fa fa-cloud-download" style="margin-top:2px;"></i>
+              </a>
+            </div>
             <div id="load-template" class="btn-group">
-              <a title="Layout" class="btn toolbar-btn toolbar-cmd">
-                <i class="icon-th-large" style="margin-top:2px;"></i>
+              <a title="${_('Layout')}" class="btn toolbar-btn toolbar-cmd">
+                <i class="fa fa-th-large" style="margin-top:2px;"></i>
               </a>
             </div>
           </div>
           <div class="span3">
-            <div class="widget-box">
-              <div class="widget-title">
-                <span class="icon">
-                  <i class="icon-th-list"></i>
-                </span>
-                <h5>${_('Available Fields')}</h5>
-              </div>
-              <div class="widget-content">
-                <select data-bind="options: availableFields, value: selectedVisualField" class="input-large chzn-select"></select>
-                <button title="${ _('Click on this button to add the field') }" class="btn btn-small plus-btn" data-bind="click: $root.addFieldToVisual">
-                  <i class="icon-plus"></i>
-                </button>
-                <div class="clearfix"></div>
+            <div class="card card-home">
+              <h2 class="card-heading simple">${_('Available Fields')}</h2>
+              <div class="card-body">
+                <p>
+                  <select data-bind="options: availableFields, value: selectedVisualField" class="input-large chosen-select"></select>
+                  <button title="${ _('Click on this button to add the field') }" class="btn plus-btn" data-bind="click: $root.addFieldToVisual">
+                    <i class="fa fa-plus"></i>
+                  </button>
+                  <div class="clearfix"></div>
+                </p>
               </div>
             </div>
-            <div class="widget-box">
-              <div class="widget-title">
-                <span class="icon">
-                  <i class="icon-magic"></i>
-                </span>
-                <h5>${_('Available Functions')}</h5>
-              </div>
-              <div class="widget-content">
-                <select id="visualFunctions" data-bind="value: selectedVisualFunction" class="input-large chzn-select">
+            <div class="card card-home">
+              <h2 class="card-heading simple">${_('Available Functions')}</h2>
+              <div class="card-body">
+                <select id="visualFunctions" data-bind="value: selectedVisualFunction" class="input-large chosen-select">
                   <option title="${ _('Formats date or timestamp in DD-MM-YYYY') }" value="{{#date}} {{/date}}">{{#date}}</option>
                   <option title="${ _('Formats date or timestamp in HH:mm:ss') }" value="{{#time}} {{/time}}">{{#time}}</option>
                   <option title="${ _('Formats date or timestamp in DD-MM-YYYY HH:mm:ss') }" value="{{#datetime}} {{/datetime}}">{{#datetime}}</option>
@@ -200,8 +199,8 @@ ${ commonheader(_('Search'), "search", user, "40px") | n,unicode }
                   <option title="${ _('Truncate a value after 250 characters') }" value="{{#truncate250}} {{/truncate250}}">{{#truncate250}}</option>
                   <option title="${ _('Truncate a value after 500 characters') }" value="{{#truncate500}} {{/truncate500}}">{{#truncate500}}</option>
                 </select>
-                <button title="${ _('Click on this button to add the field') }" class="btn btn-small plus-btn" data-bind="click: $root.addFunctionToVisual">
-                  <i class="icon-plus"></i>
+                <button title="${ _('Click on this button to add the field') }" class="btn plus-btn" data-bind="click: $root.addFunctionToVisual">
+                  <i class="fa fa-plus"></i>
                 </button>
                 <div class="clearfix"></div>
                 <p class="muted" style="margin-top: 10px"></p>
@@ -209,39 +208,30 @@ ${ commonheader(_('Search'), "search", user, "40px") | n,unicode }
             </div>
           </div>
         </div>
-
-
       </div>
+
       <div class="tab-pane" id="source">
         <div class="row-fluid">
           <div class="span9" style="padding-top: 10px">
             <textarea id="template-source"></textarea>
           </div>
           <div class="span3">
-            <div class="widget-box">
-              <div class="widget-title">
-                <span class="icon">
-                  <i class="icon-th-list"></i>
-                </span>
-                <h5>${_('Available Fields')}</h5>
-              </div>
-              <div class="widget-content">
-                <select data-bind="options: availableFields, value: selectedSourceField" class="input-medium chzn-select"></select>
-                <button title="${ _('Click on this button to add the field') }" class="btn btn-small plus-btn" data-bind="click: $root.addFieldToSource">
-                  <i class="icon-plus"></i>
-                </button>
-                <div class="clearfix"></div>
+            <div class="card card-home">
+              <h2 class="card-heading simple">${_('Available Fields')}</h2>
+              <div class="card-body">
+                <p>
+                  <select data-bind="options: availableFields, value: selectedSourceField" class="input-medium chosen-select"></select>
+                  <button title="${ _('Click on this button to add the field') }" class="btn plus-btn" data-bind="click: $root.addFieldToSource">
+                    <i class="fa fa-plus"></i>
+                  </button>
+                  <div class="clearfix"></div>
+                </p>
               </div>
             </div>
-            <div class="widget-box">
-              <div class="widget-title">
-                <span class="icon">
-                  <i class="icon-magic"></i>
-                </span>
-                <h5>${_('Available Functions')}</h5>
-              </div>
-              <div class="widget-content">
-                <select id="sourceFunctions" data-bind="value: selectedSourceFunction" class="input-medium chzn-select">
+            <div class="card card-home">
+              <h2 class="card-heading simple">${_('Available Functions')}</h2>
+              <div class="card-body">
+                <select id="sourceFunctions" data-bind="value: selectedSourceFunction" class="input-medium chosen-select">
                   <option title="${ _('Formats a date in the DD-MM-YYYY format') }" value="{{#date}} {{/date}}">{{#date}}</option>
                   <option title="${ _('Formats a date in the HH:mm:ss format') }" value="{{#time}} {{/time}}">{{#time}}</option>
                   <option title="${ _('Formats a date in the DD-MM-YYYY HH:mm:ss format') }" value="{{#datetime}} {{/datetime}}">{{#datetime}}</option>
@@ -255,8 +245,8 @@ ${ commonheader(_('Search'), "search", user, "40px") | n,unicode }
                   <option title="${ _('Truncate a value after 250 characters') }" value="{{#truncate250}} {{/truncate250}}">{{#truncate250}}</option>
                   <option title="${ _('Truncate a value after 500 characters') }" value="{{#truncate500}} {{/truncate500}}">{{#truncate500}}</option>
                 </select>
-                <button title="${ _('Click on this button to add the field') }" class="btn btn-small plus-btn" data-bind="click: $root.addFunctionToSource">
-                  <i class="icon-plus"></i>
+                <button title="${ _('Click on this button to add the field') }" class="btn plus-btn" data-bind="click: $root.addFunctionToSource">
+                  <i class="fa fa-plus"></i>
                 </button>
                 <div class="clearfix"></div>
                 <p class="muted" style="margin-top: 10px"></p>
@@ -403,6 +393,22 @@ ${ commonheader(_('Search'), "search", user, "40px") | n,unicode }
       </div>
     </div>
 
+    <div id="cloud-template-modal" class="modal hide fade">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h3>${_('Load a template')}</h3>
+      </div>
+      <div class="modal-body">
+        <div id="cloud-loader" style="text-align: center">
+          <img src="/static/art/spinner.gif" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <a href="#" class="btn" data-dismiss="modal">${_('Cancel')}</a>
+        <button type="button" id="cloud-template-btn" href="#" class="btn btn-primary" disabled="disabled">${_('Load template')}</button>
+      </div>
+    </div>
+    </div>
   </%def>
 </%layout:skeleton>
 
@@ -528,7 +534,7 @@ ${ commonheader(_('Search'), "search", user, "40px") | n,unicode }
 
     var viewModel = new ViewModel();
     ko.applyBindings(viewModel);
-    $(".chzn-select").chosen();
+    $(".chosen-select").chosen({width: "75%"});
 
     var samples = ${ sample_data | n,unicode };
     var templateSourceEl = $("#template-source")[0];
@@ -599,8 +605,13 @@ ${ commonheader(_('Search'), "search", user, "40px") | n,unicode }
     });
 
     $("#load-template").prependTo($("#toolbar .btn-toolbar")).removeClass("hide");
+    $("#cloud-template").prependTo($("#toolbar .btn-toolbar")).removeClass("hide");
 
     $("#load-template-modal").modal({
+      show: false
+    });
+
+    $("#cloud-template-modal").modal({
       show: false
     });
 
@@ -612,6 +623,37 @@ ${ commonheader(_('Search'), "search", user, "40px") | n,unicode }
       $("#load-template-btn").button("reset");
       $("#load-template").popover("hide");
       $("#load-template-modal").modal("show");
+    });
+
+    $("#cloud-template .btn").click(function () {
+      $("#cloud-loader").show();
+      $(".cloud-tmpl").remove();
+      $("#load-template").popover("hide");
+      $("#cloud-template-modal").modal("show");
+      $.get("/search/static/templates/templates.xml", function (xml) {
+        var $xml = $(xml);
+        $.each($xml.find("template"), function () {
+          var _this = $(this);
+          var _tmpl = $("<div>");
+          _tmpl.addClass("cloud-tmpl").html("<h4>" + _this.find("title").text() + "</h4><img src='" + _this.find("img").text() + "'/>");
+          _tmpl.data("source", _this.find("source").text());
+          _tmpl.data("additional", _this.find("additional").text());
+          _tmpl.appendTo("#cloud-template-modal .modal-body");
+          _tmpl.on("click", function () {
+            $(".cloud-tmpl").removeClass("selected");
+            $(this).addClass("selected");
+            $("#cloud-template-btn").button("reset");
+          });
+        });
+        $("#cloud-loader").hide();
+      });
+    });
+
+    $("#cloud-template-btn").on("click", function () {
+      templateSourceMirror.setValue($(".cloud-tmpl.selected").data("source"));
+      $("#content-editor").html(stripHtmlFromFunctions(templateSourceMirror.getValue()));
+      templateExtraMirror.setValue($(".cloud-tmpl.selected").data("additional"));
+      $("#cloud-template-modal").modal("hide");
     });
 
     if ($("#content-editor").text().trim() == "") {
@@ -644,10 +686,10 @@ ${ commonheader(_('Search'), "search", user, "40px") | n,unicode }
         contentType: 'application/json',
         type: 'POST',
         success: function () {
-          $.jHueNotify.info("${_('Template updated')}");
+          $(document).trigger("info", "${_('Template updated')}");
         },
         error: function (data) {
-          $.jHueNotify.error("${_('Error: ')}" + data);
+          $(document).trigger("error", "${_('Error: ')}" + data);
         },
         complete: function () {
           $("#save-template").button('reset');

@@ -14,24 +14,34 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+var Utils = {
+  SUCCEEDED_ARRAY: ['SUCCEEDED', 'OK', 'DONE'],
+  RUNNING_ARRAY: ['RUNNING', 'ACCEPTED', 'READY',
+    'PREP', 'WAITING', 'SUSPENDED',
+    'PREPSUSPENDED', 'PREPPAUSED', 'PAUSED',
+    'SUBMITTED', 'SUSPENDEDWITHERROR', 'PAUSEDWITHERROR', 'FINISHING', 'STARTED']
+};
+
 function initLogsElement(element) {
   element.data("logsAtEnd", true);
   element.scroll(function () {
     element.data("logsAtEnd", ($(this).scrollTop() + $(this).height() + 20 >= $(this)[0].scrollHeight));
   });
-  element.css("overflow", "auto").height($(window).height() - element.offset().top - 50);
+  element.css("overflow", "auto").height($(window).height() - element.offset().top - 80);
 }
 
 function appendAndScroll(element, logs) {
   var newLines = logs.split("\n").slice(element.text().split("\n").length);
-  element.text(element.text() + newLines.join("\n"));
+  if (newLines.length > 0) {
+    element.text(element.text() + newLines.join("\n") + "\n");
+  }
   if (element.data("logsAtEnd")) {
     element.scrollTop(element[0].scrollHeight - element.height());
   }
 }
 
 function resizeLogs(element) {
-  element.css("overflow", "auto").height($(window).height() - element.offset().top - 50);
+  element.css("overflow", "auto").height($(window).height() - element.offset().top - 80);
 }
 
 var _resizeTimeout = -1;
@@ -60,27 +70,14 @@ function getQueryStringParameter(name) {
 }
 
 function getStatusClass(status, prefix) {
-  if (!Array.prototype.indexOf) {
-    Array.prototype.indexOf = function (needle) {
-      for (var i = 0; i < this.length; i++) {
-        if (this[i] === needle) {
-          return i;
-        }
-      }
-      return -1;
-    };
-  }
   if (prefix == null) {
     prefix = "label-";
   }
   var klass = "";
-  if (['SUCCEEDED', 'OK', 'DONE'].indexOf(status) > -1) {
+  if (Utils.SUCCEEDED_ARRAY.indexOf(status) > -1) {
     klass = prefix + "success";
   }
-  else if (['RUNNING', 'READY', 'PREP', 'WAITING', 'SUSPENDED', 'PREPSUSPENDED', 'PREPPAUSED', 'PAUSED',
-    'SUBMITTED',
-    'SUSPENDEDWITHERROR',
-    'PAUSEDWITHERROR'].indexOf(status) > -1) {
+  else if (Utils.RUNNING_ARRAY.indexOf(status) > -1) {
     klass = prefix + "warning";
   }
   else {
@@ -132,7 +129,7 @@ function hellipsify() {
       })
       $(this).html(_oText.substr(0, MAX_LENGTH - 1) + "&hellip;&nbsp;");
       var _eye = $("<button class='nochrome btn-small'></button>");
-      _eye.html("<i class='icon-eye-open'></i>");
+      _eye.html("<i class='fa fa-eye'></i>");
       _eye.css("cursor", "pointer");
       _eye.on("click", function (e) {
         e.stopImmediatePropagation();

@@ -14,6 +14,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+function format_errors_mapping(model) {
+  var errors = {};
+  for(var key in model) {
+    switch(key) {
+      case 'child_links':
+      case 'node_ptr':
+      case 'initialize':
+      case 'toString':
+      break;
+      default:
+        errors[key] = [];
+      break;
+    }
+  }
+  return errors;
+}
+
 /**
  * Node
  * Displays node in a graph and handles graph manipulation.
@@ -74,54 +91,87 @@ var NodeModule = function($, IdGeneratorTable, NodeFields) {
     self.children = ko.observableArray([]);
     self.model = model;
 
-    var errors = {};
-    for(var key in model) {
-      switch(key) {
-        case 'child_links':
-        case 'node_ptr':
-        case 'initialize':
-        case 'toString':
-        break;
-        default:
-          errors[key] = [];
-        break;
-      }
-    }
-    self.errors = ko.mapping.fromJS(errors);
+    self.errors = ko.mapping.fromJS(format_errors_mapping(model));
 
     self.edit_template = model.node_type + 'EditTemplate';
     switch(model.node_type) {
-    case 'start':
-    case 'end':
-      self.view_template = ko.observable('disabledNodeTemplate');
-    break;
+      case 'start':
+      case 'end':
+        self.view_template = ko.observable('disabledNodeTemplate');
+      break;
 
-    case 'kill':
-      self.view_template = ko.observable('emptyTemplate');
-    break;
+      case 'kill':
+        self.view_template = ko.observable('emptyTemplate');
+      break;
 
-    case 'fork':
-      self.view_template = ko.observable('forkTemplate');
-    break;
+      case 'fork':
+        self.view_template = ko.observable('forkTemplate');
+      break;
 
-    case 'join':
-      self.view_template = ko.observable('joinTemplate');
-    break;
+      case 'join':
+        self.view_template = ko.observable('joinTemplate');
+      break;
 
-    case 'decision':
-      self.view_template = ko.observable('decisionTemplate');
-    break;
+      case 'decision':
+        self.view_template = ko.observable('decisionTemplate');
+      break;
 
-    case 'decisionend':
-      self.view_template = ko.observable('decisionEndTemplate');
-    break;
+      case 'decisionend':
+        self.view_template = ko.observable('decisionEndTemplate');
+      break;
 
-    default:
-      self.view_template = ko.observable('nodeTemplate');
-    break;
+      default:
+        self.view_template = ko.observable('nodeTemplate');
+      break;
     }
 
     // Data manipulation
+    if (self.data && self.data.sla) {
+      self.sla = ko.computed(function() {
+        return self.data.sla();
+      });
+    }
+
+    if (self.data && self.data.credentials) {
+      self.credentials = ko.computed(function() {
+        return self.data.credentials();
+      });
+
+      // A bit complicated but just update the available credentials
+      var new_creds = OOZIE_CREDENTIALS.slice(0);
+      var old_creds = [];
+      var to_remove = [];
+
+      $.each(self.credentials(), function(index, credential) {
+        if (credential != null) {
+          if ($.inArray(credential.name(), OOZIE_CREDENTIALS) != -1) {
+            // A new credential was added to the Oozie server
+            new_creds = jQuery.grep(new_creds, function(value) {
+              return value != credential.name();
+            });
+          } else {
+           // A credential was removed from the Oozie server
+           to_remove.push(credential);
+          }
+        }
+      });
+
+      $.each(new_creds, function(index, name) {
+        var prop = { name: ko.observable(name), value: ko.observable(false) };
+        prop.name.subscribe(function(){
+          self.data.credentials.valueHasMutated();
+        });
+        prop.value.subscribe(function(){
+          self.data.credentials.valueHasMutated();
+        });
+        self.data.credentials.push(prop);
+      });
+
+      $.each(to_remove, function(index, name) {
+        self.data.credentials.remove(name);
+      });
+    }
+
     if ('files' in model) {
       //// WARNING: The following order should be preserved!
 
@@ -172,7 +222,6 @@ var NodeModule = function($, IdGeneratorTable, NodeFields) {
   };
 
   $.extend(true, module.prototype, NodeFields, {
-    // Data.
     children: null,
     model: null,
 
@@ -184,6 +233,18 @@ var NodeModule = function($, IdGeneratorTable, NodeFields) {
 
     toString: function() {
       return '';
+    },
+
+    toJS: function() {
+      var self = this;
+      var data = ko.mapping.toJS(self);
+      if ('files' in data) {
+        data['files'] = ko.toJS(self._files);
+      }
+      if ('sub_workflow' in data && data['sub_workflow']) {
+        data['sub_workflow'] = Number(data['sub_workflow']);
+      }
+      return data;
     },
 
     /**
@@ -201,30 +262,10 @@ var NodeModule = function($, IdGeneratorTable, NodeFields) {
       var self = this;
 
       // @see http://knockoutjs.com/documentation/plugins-mapping.html
-      // MAPPING_OPTIONS comes from /oozie/static/js/models.js
+      // MAPPING_OPTIONS comes from /oozie/static/js/workflow.models.js
       var mapping = ko.mapping.fromJS(model, MAPPING_OPTIONS);
 
       $.extend(self, mapping);
-      $.each(mapping, function(key, value) {
-        var key = key;
-        if (ko.isObservable(self[key])) {
-          self[key].subscribe(function(value) {
-            model[key] = ko.mapping.toJS(value);
-          });
-        }
-      });
-
-      $.each(self.child_links(), function(index, link) {
-        var $index = index;
-        link.comment.subscribe(function(value) {
-          self.model.child_links[$index].comment = value;
-        });
-
-        link.child.subscribe(function(value) {
-          self.model.child_links[$index].child = value;
-        });
-      });
-
     },
 
     validate: function( ) {
@@ -232,13 +273,11 @@ var NodeModule = function($, IdGeneratorTable, NodeFields) {
 
       var options = {};
 
-      data = $.extend(true, {}, self.model);
-
       var success = false;
       var request = $.extend({
         url: '/oozie/workflows/' + self._workflow.id() + '/nodes/' + self.node_type() + '/validate',
         type: 'POST',
-        data: { node: JSON.stringify(data) },
+        data: { node: JSON.stringify(self.toJS()) },
         success: function(data) {
           ko.mapping.fromJS(data.data, self.errors);
           success = data.status == 0;

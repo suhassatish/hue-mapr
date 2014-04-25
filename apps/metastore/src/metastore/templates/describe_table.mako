@@ -28,27 +28,31 @@ from django.utils.translation import ugettext as _
     view_or_table_noun = _("Table")
 %>
 ${ commonheader(_("%s : %s") % (view_or_table_noun, table.name), app_name, user) | n,unicode }
+${ components.menubar() }
 
 <%def name="column_table(cols)">
-    <table class="table table-striped table-condensed datatables">
-      <thead>
+  <table class="table table-striped table-condensed datatables">
+    <thead>
+      <tr>
+        <th>&nbsp;</th>
+        <th>${_('Name')}</th>
+        <th>${_('Type')}</th>
+        <th>${_('Comment')}</th>
+      </tr>
+    </thead>
+    <tbody>
+      % for column in cols:
         <tr>
-          <th>${_('Name')}</th>
-          <th>${_('Type')}</th>
-          <th>${_('Comment')}</th>
+          <td>${ loop.index }</td>
+          <td title="${ _("Scroll to the column") }">
+            <a href="javascript:void(0)" data-row-selector="true" class="column-selector">${ column.name }</a>
+          </td>
+          <td>${ column.type }</td>
+          <td>${ column.comment != 'None' and column.comment or "" }</td>
         </tr>
-      </thead>
-      <tbody>
-        % for column in cols:
-          <tr>
-            <td>${ column.name }</td>
-            <td>${ column.type }</td>
-            <td>${ column.comment or "" }</td>
-          </tr>
-        % endfor
-      </tbody>
-    </table>
-
+      % endfor
+    </tbody>
+  </table>
 </%def>
 
 <div class="container-fluid">
@@ -77,114 +81,145 @@ ${ commonheader(_("%s : %s") % (view_or_table_noun, table.name), app_name, user)
         </div>
         <div class="span10">
             % if table.comment:
-                <div class="alert alert-info">${ _('Comment:') } ${ table.comment }</div>
+            <div class="alert alert-info">${ _('Comment:') } ${ table.comment }</div>
             % endif
 
             <ul class="nav nav-tabs">
-                <li class="active"><a href="#columns" data-toggle="tab">${_('Columns')}</a></li>
-                % if table.partition_keys:
-                    <li><a href="#partitionColumns" data-toggle="tab">${_('Partition Columns')}</a></li>
-                % endif
-                % if sample is not None:
-                    <li><a href="#sample" data-toggle="tab">${_('Sample')}</a></li>
-                % endif
+              <li class="active"><a href="#columns" data-toggle="tab">${_('Columns')}</a></li>
+              % if table.partition_keys:
+              <li><a href="#partitionColumns" data-toggle="tab">${_('Partition Columns')}</a></li>
+              % endif
+              % if sample is not None:
+              <li><a href="#sample" data-toggle="tab">${_('Sample')}</a></li>
+              % endif
+              <li><a href="#properties" data-toggle="tab">${ _('Properties') }</a></li>
             </ul>
 
             <div class="tab-content">
-                <div class="active tab-pane" id="columns">
-                    ${column_table(table.cols)}
+              <div class="active tab-pane" id="columns">
+                ${column_table(table.cols)}
+              </div>
+
+              % if table.partition_keys:
+              <div class="tab-pane" id="partitionColumns">
+                ${column_table(table.partition_keys)}
+              </div>
+              % endif
+
+              % if sample is not None:
+              <div class="tab-pane" id="sample">
+              % if error_message:
+                <div class="alert alert-error">
+                  <h3>${_('Error!')}</h3>
+                  <pre>${error_message | h}</pre>
                 </div>
+              % else:
+                <table id="sampleTable" class="table table-striped table-condensed sampleTable">
+                  <thead>
+                    <tr>
+                    % for col in table.cols:
+                      <th>${col.name}</th>
+                    % endfor
+                    </tr>
+                  </thead>
+                  <tbody>
+                  % for i, row in enumerate(sample):
+                    <tr>
+                    % for item in row:
+                      <td>
+                        % if item is None:
+                          NULL
+                        % else:
+                          ${ smart_unicode(item, errors='ignore') }
+                        % endif
+                      </td>
+                    % endfor
+                    </tr>
+                  % endfor
+                  </tbody>
+                </table>
+              % endif
+              </div>
+              % endif
 
-                % if table.partition_keys:
-                  <div class="tab-pane" id="partitionColumns">
-                    ${column_table(table.partition_keys)}
-                  </div>
-                % endif
-
-                % if sample is not None:
-                    <div class="tab-pane" id="sample">
-                      % if error_message:
-                        <div class="alert alert-error">
-                          <h3>${_('Error!')}</h3>
-                          <pre>${error_message | h}</pre>
-                        </div>
-                      % else:
-                        <table class="table table-striped table-condensed sampleTable">
-                          <thead>
-                            <tr>
-                              % for col in table.cols:
-                                <th>${col.name}</th>
-                              % endfor
-                            </tr>
-                          </thead>
-                          <tbody>
-                            % for i, row in enumerate(sample):
-                              <tr>
-                                % for item in row:
-                                  <td>${ smart_unicode(item, errors='ignore') }</td>
-                                % endfor
-                              </tr>
-                            % endfor
-                          </tbody>
-                        </table>
-                      % endif
-                    </div>
-                % endif
+              <div class="tab-pane" id="properties">
+                <table class="table table-striped table-condensed">
+                  <thead>
+                    <tr>
+                      <th>${ _('Name') }</th>
+                      <th>${ _('Value') }</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    % for name, value in table.properties:
+                      <tr>
+                        <td>${ name }</td>
+                        <td>${ value }</td>
+                      </tr>
+                     % endfor
+                  </tbody>
+                </table>
+              </div>
             </div>
+          </p>
         </div>
+      </div>
     </div>
+  </div>
 </div>
 
-
-
-
 <div id="dropTable" class="modal hide fade">
-    <form id="dropTableForm" method="POST" action="${ url('metastore:drop_table', database=database) }">
+  <form id="dropTableForm" method="POST" action="${ url('metastore:drop_table', database=database) }">
     <div class="modal-header">
-        <a href="#" class="close" data-dismiss="modal">&times;</a>
-        <h3>${_('Drop Table')}</h3>
+      <a href="#" class="close" data-dismiss="modal">&times;</a>
+
+      <h3>${_('Drop Table')}</h3>
     </div>
     <div class="modal-body">
       <div id="dropTableMessage">
       </div>
     </div>
     <div class="modal-footer">
-        <input type="button" class="btn" data-dismiss="modal" value="${_('Cancel')}" />
-        <input type="submit" class="btn btn-danger" value="${_('Yes, drop this table')}"/>
+      <input type="button" class="btn" data-dismiss="modal" value="${_('Cancel')}"/>
+      <input type="submit" class="btn btn-danger" value="${_('Yes, drop this table')}"/>
     </div>
     <div class="hide">
       <select name="table_selection">
         <option value="${ table.name }" selected>${ table.name }</option>
       </select>
     </div>
-    </form>
+  </form>
 </div>
-
 
 <div id="import-data-modal" class="modal hide fade"></div>
-
 </div>
 
-<style>
-   .sampleTable td, .sampleTable th {
-     white-space: nowrap;
-   }
+<style type="text/css">
+  .sampleTable td, .sampleTable th {
+    white-space: nowrap;
+  }
 </style>
 
 <link rel="stylesheet" href="/metastore/static/css/metastore.css" type="text/css">
 
 <script type="text/javascript" charset="utf-8">
-   $(document).ready(function () {
-     $(".datatables").dataTable({
-       "bPaginate": false,
-       "bLengthChange": false,
-       "bInfo": false,
-       "bFilter": false,
-       "oLanguage": {
-            "sEmptyTable": "${_('No data available')}",
-           "sZeroRecords": "${_('No matching records')}",
-       }
-     });
+  $(document).ready(function () {
+    $(".datatables").dataTable({
+      "bPaginate": false,
+      "bLengthChange": false,
+      "bInfo": false,
+      "bFilter": false,
+      "oLanguage": {
+        "sEmptyTable": "${_('No data available')}",
+        "sZeroRecords": "${_('No matching records')}",
+      },
+      "aoColumns": [
+        { "sWidth" : "10px" },
+        null,
+        null,
+        { "bSortable": false }
+      ],
+    });
 
      % if has_write_access:
      $.getJSON("${ url('metastore:drop_table', database=database) }", function(data) {
@@ -192,25 +227,31 @@ ${ commonheader(_("%s : %s") % (view_or_table_noun, table.name), app_name, user)
      });
      % endif
 
-     $('a[data-toggle="tab"]').on('shown', function() {
-       $(".sampleTable").not('.initialized').addClass('initialized').dataTable({
-         "bPaginate": false,
-         "bLengthChange": false,
-         "bInfo": false,
-         "bFilter": false,
-         "fnInitComplete": function () {
-           $(".sampleTable").parent().jHueTableScroller();
-           $(".sampleTable").jHueTableExtender({
-             hintElement: "#jumpToColumnAlert",
-             fixedHeader: true
-           });
-         },
-         "oLanguage": {
-            "sEmptyTable": "${_('No data available')}",
-            "sZeroRecords": "${_('No matching records')}",
-         }
-       });
-     })
+    % if has_write_access:
+        $.getJSON("${ url('metastore:drop_table', database=database) }", function (data) {
+          $("#dropTableMessage").text(data.title);
+        });
+    % endif
+
+    $('a[data-toggle="tab"]').on('shown', function () {
+      $(".sampleTable").not('.initialized').addClass('initialized').dataTable({
+        "bPaginate": false,
+        "bLengthChange": false,
+        "bInfo": false,
+        "bFilter": false,
+        "fnInitComplete": function () {
+          $(".sampleTable").parent().jHueTableScroller();
+          $(".sampleTable").jHueTableExtender({
+            hintElement: "#jumpToColumnAlert",
+            fixedHeader: true
+          });
+        },
+        "oLanguage": {
+          "sEmptyTable": "${_('No data available')}",
+          "sZeroRecords": "${_('No matching records')}",
+        }
+      });
+    });
 
     $("#import-data-btn").click(function () {
       $.get("${ url('metastore:load_table', database=database, table=table.name) }", function (response) {
@@ -219,8 +260,7 @@ ${ commonheader(_("%s : %s") % (view_or_table_noun, table.name), app_name, user)
         }
       );
     });
-
-   });
+  });
 </script>
 
 ${ commonfooter(messages) | n,unicode }

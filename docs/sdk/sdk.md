@@ -245,7 +245,7 @@ to include a simple form:
     <%!from desktop.views import commonheader, commonfooter %>
     <%namespace name="shared" file="shared_components.mako" />
 
-    ${commonheader("Calculator", "calculator", user, "100px")}
+    ${commonheader("Calculator", "calculator", user, "100px") | n,unicode}
 
     ## Main body
 
@@ -263,7 +263,7 @@ to include a simple form:
         <input type="submit" value="Calculate">
       </form>
     </div>
-    ${commonfooter(messages)}
+    ${commonfooter(messages) | n,unicode}
 
 The template language here is <a href="http://www.makotemplates.org/docs/">Mako</a>,
 which is flexible and powerful.  If you use the "`.html`" extension, Hue
@@ -316,8 +316,14 @@ page. You can click on any stack frame to get a debugging console:
 Great! Now that we've added a single application, we're going to
 delve further into the back-end.
 
+
+Integrate external Web applications in any language
+===================================================
+Use the [create_proxy_app command](http://gethue.tumblr.com/post/66367939672/integrate-external-web-applications-in-any-language)
+
+
 A Look at Three Existing Apps
-===========================
+=============================
 
 ![Arch](arch_examples.png)
 
@@ -539,11 +545,8 @@ The next time Hue restarts, your `my_daemon` will start automatically.
 If your daemon program dies (exits with a non-zero exit code), Hue will
 restart it.
 
-"Under the covers:" Threading.  Hue, by default, runs a Spawning web server. It
-can also be configured to run under a CherryPy WSGI server.
-This server is multi-threaded, so you can use python
-threading support (such as it is).  The "runserver_plus" version
-is single-threaded.  If Hue is configured (and it may be, in the future)
+"Under the covers:" Threading.  Hue, by default, runs CherryPy web server.
+If Hue is configured (and it may be, in the future)
 to use mod_wsgi under Apache httpd, then there would be multiple python
 processes serving the backend.  This means that your Django application
 code should avoid depending on shared process state.  Instead, place

@@ -22,11 +22,11 @@
 <%namespace name="layout" file="layout.mako" />
 <%namespace name="macros" file="macros.mako" />
 
-${ commonheader(_('Search'), "search", user, "40px") | n,unicode }
+${ commonheader(_('Search'), "search", user, "29px") | n,unicode }
 
 <%layout:skeleton>
   <%def name="title()">
-    <h4>${_('Search Admin - ')}${hue_collection.label}</h4>
+    <h4>${ _('Sorting for') } <strong>${ hue_collection.name }</strong></h4>
   </%def>
 
   <%def name="navigation()">
@@ -40,6 +40,7 @@ ${ commonheader(_('Search'), "search", user, "40px") | n,unicode }
     <script src="/static/ext/js/knockout.x-editable.js"></script>
 
     <form method="POST" class="form-horizontal" data-bind="submit: submit">
+      <div class="well">
       <div class="section">
         <div class="alert alert-info">
           <div class="pull-right" style="margin-top: 10px">
@@ -49,7 +50,7 @@ ${ commonheader(_('Search'), "search", user, "40px") | n,unicode }
           </div>
           <h3>${_('Sorting')}</h3>
           ${_('Specify on which fields and order the results are sorted by default.')}
-          ${_('The sorting is a combination of the fields, from left to right.')}
+          ${_('The sorting is a combination of the "Default sorting" fields, from left to right.')}
           <span data-bind="visible: ! isEnabled()"><strong>${_('Sorting is currently disabled.')}</strong></span>
         </div>
       </div>
@@ -58,13 +59,14 @@ ${ commonheader(_('Search'), "search", user, "40px") | n,unicode }
         <div data-bind="visible: sortingFields().length == 0" style="padding-left: 10px;margin-bottom: 20px">
           <em>${_('There are currently no fields defined.')}</em>
         </div>
-        <div data-bind="foreach: sortingFields">
-          <div class="bubble">
+        <div data-bind="sortable: sortingFields">
+          <div class="bubble" style="cursor: move">
+            <i class="fa fa-arrows"></i>
             <strong><span data-bind="editable: label"></span></strong>
             <span style="color:#666;font-size: 12px">
-              (<span data-bind="text: field"></span> <i class="icon-arrow-up" data-bind="visible: asc() == true"></i><i class="icon-arrow-down" data-bind="visible: asc() == false"></i> <span data-bind="editable: order"></span> )
+              (<span data-bind="text: field"></span> <i class="fa fa-arrow-up" data-bind="visible: asc() == true"></i><i class="fa fa-arrow-down" data-bind="visible: asc() == false"></i> <span data-bind="editable: order"></span>, <input type="checkbox" data-bind="checked: include" style="margin-top:0" /> ${_('Default sorting')} )
             </span>
-            <a class="btn btn-small" data-bind="click: $root.removeSortingField"><i class="icon-trash"></i></a>
+            <a class="btn btn-small" data-bind="click: $root.removeSortingField"><i class="fa fa-trash-o"></i></a>
           </div>
         </div>
         <div class="clearfix"></div>
@@ -75,17 +77,21 @@ ${ commonheader(_('Search'), "search", user, "40px") | n,unicode }
           <input id="newFieldLabel" type="text" data-bind="value: newFieldLabel" class="input" />
           &nbsp;${_('Sorting')}
           <div class="btn-group" style="display: inline">
-            <button id="newFieldAsc" type="button" data-bind="css: {'active': newFieldAscDesc() == 'asc', 'btn': true}"><i class="icon-arrow-up"></i></button>
-            <button id="newFieldDesc" type="button" data-bind="css: {'active': newFieldAscDesc() == 'desc', 'btn': true}"><i class="icon-arrow-down"></i></button>
+            <button id="newFieldAsc" type="button" data-bind="css: {'active': newFieldAscDesc() == 'asc', 'btn': true}"><i class="fa fa-arrow-up"></i></button>
+            <button id="newFieldDesc" type="button" data-bind="css: {'active': newFieldAscDesc() == 'desc', 'btn': true}"><i class="fa fa-arrow-down"></i></button>
           </div>
+          <label class="checkbox" style="display: inline">
+            <input id="newFieldInclude" type="checkbox" style="float:none;margin-left:0;margin-top: -2px;margin-right: 4px"  data-bind="checked: newFieldIncludeInSorting" /> ${_('Include in default sorting')}
+          </label>
           <br/>
           <br/>
-          <a class="btn" data-bind="click: $root.addSortingField"><i class="icon-plus-sign"></i> ${_('Add to Sorting')}</a>
+          <a class="btn" data-bind="click: $root.addSortingField"><i class="fa fa-plus-circle"></i> ${_('Add to Sorting')}</a>
         </div>
       </div>
 
       <div class="form-actions" style="margin-top: 80px">
         <button type="submit" class="btn btn-primary" id="save-sorting">${_('Save')}</button>
+      </div>
       </div>
     </form>
   </%def>
@@ -113,20 +119,21 @@ ${ commonheader(_('Search'), "search", user, "40px") | n,unicode }
   }
 </style>
 
-
+<script src="/search/static/js/knockout-sortable.min.js" type="text/javascript" charset="utf-8"></script>
 <script src="/static/ext/js/jquery/plugins/jquery-ui-draggable-droppable-sortable-1.8.23.min.js"></script>
 
 <script type="text/javascript">
 
-  var SortingField = function (field, label, asc) {
+  var SortingField = function (field, label, asc, include) {
     var _field = {
       field: field,
       label: ko.observable(label),
       asc: ko.observable(asc),
-      order: ko.observable(asc ? "ASC" : "DESC")
+      order: ko.observable(asc ? "ASC" : "DESC"),
+      include: ko.observable(include)
     };
     _field.label.subscribe(function (newValue) {
-      if ($().trim(newValue) == "") {
+      if ($.trim(newValue) == "") {
         _field.label(f.field);
       }
     });
@@ -138,6 +145,7 @@ ${ commonheader(_('Search'), "search", user, "40px") | n,unicode }
         _field.asc(true);
       }
     });
+
     return _field;
   }
 
@@ -148,7 +156,7 @@ ${ commonheader(_('Search'), "search", user, "40px") | n,unicode }
     self.isEnabled = ko.observable(${ hue_collection.sorting.data | n,unicode }.properties.is_enabled);
 
     self.sortingFields = ko.observableArray(ko.utils.arrayMap(${ hue_collection.sorting.data | n,unicode }.fields, function (obj) {
-      return new SortingField(obj.field, obj.label, obj.asc);
+      return new SortingField(obj.field, obj.label, obj.asc, obj.include);
     }));
 
     self.sortingFieldsList = ko.observableArray(${ hue_collection.fields(user) | n,unicode });
@@ -160,6 +168,8 @@ ${ commonheader(_('Search'), "search", user, "40px") | n,unicode }
 
     self.newFieldLabel = ko.observable("");
     self.newFieldAscDesc = ko.observable("asc");
+
+    self.newFieldIncludeInSorting = ko.observable(true);
 
     self.removeSortingField = function (field) {
       self.sortingFields.remove(field);
@@ -176,6 +186,7 @@ ${ commonheader(_('Search'), "search", user, "40px") | n,unicode }
       self.sortingFields.push(new SortingField(self.newFieldSelect(), self.newFieldLabel(), self.newFieldAscDesc() == "asc"));
       self.newFieldLabel("");
       self.newFieldAscDesc("asc");
+      self.newFieldIncludeInSorting(true);
       self.isEnabled(true);
     };
 
@@ -188,10 +199,10 @@ ${ commonheader(_('Search'), "search", user, "40px") | n,unicode }
         contentType: 'application/json',
         type: 'POST',
         success: function () {
-          $.jHueNotify.info("${_('Sorting updated')}");
+          $(document).trigger("info", "${_('Sorting updated')}");
         },
         error: function (data) {
-          $.jHueNotify.error("${_('Error: ')}" + data);
+          $(document).trigger("error", "${_('Error: ')}" + data);
         },
         complete: function() {
           $("#save-sorting").button('reset');

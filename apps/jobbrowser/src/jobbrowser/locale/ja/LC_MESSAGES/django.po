@@ -43,8 +43,8 @@ msgstr "'%s' からのログの取得中に Hue でエラーが発生しまし�
 
 #: src/jobbrowser/views.py:58
 #, python-format
-msgid "Could not find job %s. The job might not be running yet."
-msgstr "ジョブ %s が見つかりませんでした。このジョブはまだ実行されていない可能性があります。"
+msgid "Could not find job %s."
+msgstr "ジョブ %s が見つかりませんでした。"
 
 #: src/jobbrowser/views.py:61
 #, fuzzy, python-format
@@ -116,8 +116,8 @@ msgstr "タスクの試行：%(attemptId)s"
 #: src/jobbrowser/templates/attempt.mako:27
 #: src/jobbrowser/templates/attempt_logs.mako:24
 #, python-format
-msgid "Task Attempt: %(attemptId)s - Job Browser"
-msgstr "タスクの試行：%(attemptId)s - Job Browser"
+msgid "Task Attempt: %(attemptId)s"
+msgstr "タスク試行：%(attemptId)s"
 
 #: src/jobbrowser/templates/attempt.mako:32
 #: src/jobbrowser/templates/attempt.mako:74
@@ -240,7 +240,7 @@ msgstr "進行状況"
 #: src/jobbrowser/templates/attempt.mako:106
 #: src/jobbrowser/templates/task.mako:65
 msgid "Task Tracker"
-msgstr "Task Tracker"
+msgstr "TaskTracker"
 
 #: src/jobbrowser/templates/attempt.mako:116
 #: src/jobbrowser/templates/task.mako:69
@@ -282,22 +282,22 @@ msgstr "利用可能なデータがありません"
 msgid "No matching records"
 msgstr "一致するレコードがありません"
 
-#: src/jobbrowser/templates/attempt_logs.mako:76
+#: src/jobbrowser/templates/attempt_logs.mako:80
 msgid "task diagnostic log"
 msgstr "タスク診断ログ"
 
-#: src/jobbrowser/templates/attempt_logs.mako:77
-#: src/jobbrowser/templates/job_attempt_logs.mako:44
+#: src/jobbrowser/templates/attempt_logs.mako:81
+#: src/jobbrowser/templates/job_attempt_logs.mako:46
 msgid "stdout"
 msgstr "stdout"
 
-#: src/jobbrowser/templates/attempt_logs.mako:78
-#: src/jobbrowser/templates/job_attempt_logs.mako:45
+#: src/jobbrowser/templates/attempt_logs.mako:82
+#: src/jobbrowser/templates/job_attempt_logs.mako:47
 msgid "stderr"
 msgstr "stderr"
 
-#: src/jobbrowser/templates/attempt_logs.mako:79
-#: src/jobbrowser/templates/job_attempt_logs.mako:46
+#: src/jobbrowser/templates/attempt_logs.mako:83
+#: src/jobbrowser/templates/job_attempt_logs.mako:48
 msgid "syslog"
 msgstr "syslog"
 
@@ -389,7 +389,7 @@ msgstr "失敗したタスク"
 
 #: src/jobbrowser/templates/job.mako:221
 msgid "View All Tasks"
-msgstr "すべてのタスクの表示"
+msgstr "すべてのタスクを表示"
 
 #: src/jobbrowser/templates/job.mako:223
 msgid "Recent Tasks"
@@ -406,11 +406,11 @@ msgstr "ID"
 
 #: src/jobbrowser/templates/job.mako:253 src/jobbrowser/templates/jobs.mako:66
 msgid "Maps"
-msgstr "Map"
+msgstr "マップ"
 
 #: src/jobbrowser/templates/job.mako:257 src/jobbrowser/templates/jobs.mako:67
 msgid "Reduces"
-msgstr "Reduce"
+msgstr "Reduces"
 
 #: src/jobbrowser/templates/job.mako:262
 msgid "Started"
@@ -479,11 +479,20 @@ msgstr "Job Browser"
 msgid "Attempt: %(attempt_index)s"
 msgstr "試行：%(attempt_index)s"
 
-#: src/jobbrowser/templates/job_attempt_logs.mako:52
-#: src/jobbrowser/templates/job_attempt_logs.mako:58
-#: src/jobbrowser/templates/job_attempt_logs.mako:64
+#: src/jobbrowser/templates/job_attempt_logs.mako:54
+#: src/jobbrowser/templates/job_attempt_logs.mako:60
+#: src/jobbrowser/templates/job_attempt_logs.mako:66
+#: src/jobbrowser/templates/job_not_assigned.mako:43
 msgid "Loading..."
 msgstr "読み込み中..."
+
+#: src/jobbrowser/templates/job_not_assigned.mako:47
+msgid "The application might not be running yet or there is no Node Manager or Container available."
+msgstr "アプリケーションがまだ実行されていないか、使用可能な Node Manager またはコンテナがありません。"
+
+#: src/jobbrowser/templates/job_not_assigned.mako:48
+msgid "This page will be automatically refreshed."
+msgstr "このページは自動的に更新されます。"
 
 #: src/jobbrowser/templates/jobbrowser_components.mako:29
 #: src/jobbrowser/templates/jobbrowser_components.mako:55
@@ -538,7 +547,7 @@ msgstr "実行中"
 
 #: src/jobbrowser/templates/jobs.mako:50
 msgid "Failed"
-msgstr "失敗"
+msgstr "失敗しました"
 
 #: src/jobbrowser/templates/jobs.mako:51
 msgid "Killed"
@@ -573,8 +582,8 @@ msgstr "ジョブタスク：%(taskId)s"
 
 #: src/jobbrowser/templates/task.mako:27
 #, python-format
-msgid "Job Task: %(taskId)s - Job Browser"
-msgstr "ジョブタスク：%(taskId)s - Job Browser"
+msgid "Job Task: %(taskId)s"
+msgstr "ジョブタスク：%(taskId)s"
 
 #: src/jobbrowser/templates/task.mako:67 src/jobbrowser/templates/tasks.mako:78
 msgid "End Time"
@@ -614,67 +623,67 @@ msgstr "実行終了時間"
 msgid "Task View: Job: %(jobId)s"
 msgstr "タスク表示：ジョブ：%(jobId)s"
 
-#: src/jobbrowser/templates/tasks.mako:36
+#: src/jobbrowser/templates/tasks.mako:39
 msgid "Filter tasks:"
 msgstr "タスクのフィル処理："
 
-#: src/jobbrowser/templates/tasks.mako:39
+#: src/jobbrowser/templates/tasks.mako:41
 msgid "All states"
 msgstr "すべての状態"
 
-#: src/jobbrowser/templates/tasks.mako:40
+#: src/jobbrowser/templates/tasks.mako:42
 msgid "succeeded"
 msgstr "成功"
 
-#: src/jobbrowser/templates/tasks.mako:41
+#: src/jobbrowser/templates/tasks.mako:43
 msgid "running"
 msgstr "実行中"
 
-#: src/jobbrowser/templates/tasks.mako:42
+#: src/jobbrowser/templates/tasks.mako:44
 msgid "failed"
 msgstr "失敗しました"
 
-#: src/jobbrowser/templates/tasks.mako:43
+#: src/jobbrowser/templates/tasks.mako:45
 msgid "killed"
 msgstr "強制終了"
 
-#: src/jobbrowser/templates/tasks.mako:44
+#: src/jobbrowser/templates/tasks.mako:46
 msgid "pending"
 msgstr "保留中"
 
-#: src/jobbrowser/templates/tasks.mako:48
+#: src/jobbrowser/templates/tasks.mako:50
 msgid "All types"
 msgstr "すべてのタイプ"
 
-#: src/jobbrowser/templates/tasks.mako:49
+#: src/jobbrowser/templates/tasks.mako:51
 msgid "maps"
 msgstr "Map"
 
-#: src/jobbrowser/templates/tasks.mako:50
+#: src/jobbrowser/templates/tasks.mako:52
 msgid "reduces"
 msgstr "Reduce"
 
-#: src/jobbrowser/templates/tasks.mako:51
+#: src/jobbrowser/templates/tasks.mako:53
 msgid "cleanups"
 msgstr "クリーンアップ"
 
-#: src/jobbrowser/templates/tasks.mako:52
+#: src/jobbrowser/templates/tasks.mako:54
 msgid "setups"
 msgstr "セットアップ"
 
-#: src/jobbrowser/templates/tasks.mako:56
+#: src/jobbrowser/templates/tasks.mako:57
 msgid "Text filter"
 msgstr "テキストフィルタ"
 
-#: src/jobbrowser/templates/tasks.mako:66
+#: src/jobbrowser/templates/tasks.mako:67
 msgid "There were no tasks that match your search criteria."
 msgstr "指定された検索条件に一致するタスクがありませんでした。"
 
-#: src/jobbrowser/templates/tasks.mako:79
+#: src/jobbrowser/templates/tasks.mako:80
 msgid "View Attempts"
 msgstr "試行の表示"
 
-#: src/jobbrowser/templates/tasks.mako:97
+#: src/jobbrowser/templates/tasks.mako:98
 #, python-format
 msgid "Show only %(state)s tasks"
 msgstr "%(state)s のタスクのみを表示"
@@ -684,65 +693,44 @@ msgstr "%(state)s のタスクのみを表示"
 msgid "Tracker: %(trackerId)s"
 msgstr "Tracker：%(trackerId)s"
 
-#: src/jobbrowser/templates/tasktracker.mako:26
+#: src/jobbrowser/templates/tasktracker.mako:33
 #, python-format
 msgid "Tracker at %(trackerHost)s on port %(trackerPort)s"
 msgstr "ポート %(trackerPort)s 上の  %(trackerHost)s での Tracker"
 
-#: src/jobbrowser/templates/tasktracker.mako:32
+#: src/jobbrowser/templates/tasktracker.mako:38
 msgid "Last heard from at"
 msgstr "この位置での前回取得："
 
-#: src/jobbrowser/templates/tasktracker.mako:39
-#: src/jobbrowser/templates/tasktracker.mako:57
-msgid "Memory Metrics"
-msgstr "メモリ測定値"
-
-#: src/jobbrowser/templates/tasktracker.mako:42
-msgid "Node Id"
-msgstr "ノード ID"
-
-#: src/jobbrowser/templates/tasktracker.mako:48
-msgid "Diagnostics"
-msgstr "診断"
-
-#: src/jobbrowser/templates/tasktracker.mako:50
-msgid "Total Memory Needed in MB"
-msgstr "必要な合計メモリ (MB)"
-
-#: src/jobbrowser/templates/tasktracker.mako:52
-msgid "Exit Code"
-msgstr "終了コード"
-
-#: src/jobbrowser/templates/tasktracker.mako:60
+#: src/jobbrowser/templates/tasktracker.mako:46
 msgid "Total virtual memory:"
 msgstr "合計仮想メモリ："
 
-#: src/jobbrowser/templates/tasktracker.mako:62
+#: src/jobbrowser/templates/tasktracker.mako:48
 msgid "Total physical memory:"
 msgstr "合計物理メモリ："
 
-#: src/jobbrowser/templates/tasktracker.mako:64
+#: src/jobbrowser/templates/tasktracker.mako:50
 msgid "Available space:"
 msgstr "空き容量："
 
-#: src/jobbrowser/templates/tasktracker.mako:69
+#: src/jobbrowser/templates/tasktracker.mako:55
 msgid "Map and Reduce"
 msgstr "Map および Reduce"
 
-#: src/jobbrowser/templates/tasktracker.mako:72
+#: src/jobbrowser/templates/tasktracker.mako:58
 msgid "Map count:"
 msgstr "Map カウント："
 
-#: src/jobbrowser/templates/tasktracker.mako:74
+#: src/jobbrowser/templates/tasktracker.mako:60
 msgid "Reduce count:"
 msgstr "Reduce カウント："
 
-#: src/jobbrowser/templates/tasktracker.mako:76
+#: src/jobbrowser/templates/tasktracker.mako:62
 msgid "Max map tasks:"
 msgstr "最大 Map タスク："
 
-#: src/jobbrowser/templates/tasktracker.mako:78
+#: src/jobbrowser/templates/tasktracker.mako:64
 msgid "Max reduce tasks:"
 msgstr "最大 Reduce タスク："
 
@@ -751,39 +739,39 @@ msgstr "最大 Reduce タスク："
 msgid "Task Trackers"
 msgstr "Task Tracker"
 
-#: src/jobbrowser/templates/tasktrackers.mako:30
+#: src/jobbrowser/templates/tasktrackers.mako:36
 msgid "Host"
 msgstr "ホスト"
 
-#: src/jobbrowser/templates/tasktrackers.mako:31
+#: src/jobbrowser/templates/tasktrackers.mako:37
 msgid "Port"
 msgstr "ポート"
 
-#: src/jobbrowser/templates/tasktrackers.mako:32
+#: src/jobbrowser/templates/tasktrackers.mako:38
 msgid "Last Seen"
 msgstr "前回確認"
 
-#: src/jobbrowser/templates/tasktrackers.mako:33
+#: src/jobbrowser/templates/tasktrackers.mako:39
 msgid "Available Space"
 msgstr "空き容量"
 
-#: src/jobbrowser/templates/tasktrackers.mako:34
+#: src/jobbrowser/templates/tasktrackers.mako:40
 msgid "Failure Count"
 msgstr "失敗カウント"
 
-#: src/jobbrowser/templates/tasktrackers.mako:35
+#: src/jobbrowser/templates/tasktrackers.mako:41
 msgid "Map Count"
 msgstr "Map カウント"
 
-#: src/jobbrowser/templates/tasktrackers.mako:36
+#: src/jobbrowser/templates/tasktrackers.mako:42
 msgid "Reduce Count"
 msgstr "Reduce カウント"
 
-#: src/jobbrowser/templates/tasktrackers.mako:37
+#: src/jobbrowser/templates/tasktrackers.mako:43
 msgid "Max Map Tasks"
 msgstr "最大 Map タスク"
 
-#: src/jobbrowser/templates/tasktrackers.mako:38
+#: src/jobbrowser/templates/tasktrackers.mako:44
 msgid "Max Reduce Tasks"
 msgstr "最大 Reduce タスク"
 

@@ -15,17 +15,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 import re
 import time
 import logging
 import string
+import urlparse
 from urllib import quote_plus
 from lxml import html
-
-try:
-  import json
-except ImportError:
-  import simplejson as json
 
 from django.http import HttpResponseRedirect, HttpResponse
 from django.utils.functional import wraps
@@ -34,34 +31,59 @@ from django.core.urlresolvers import reverse
 
 from desktop.log.access import access_warn, access_log_level
 from desktop.lib.rest.http_client import RestException
+from desktop.lib.rest.resource import Resource
 from desktop.lib.django_util import render_json, render, copy_query_dict, encode_json_for_js
 from desktop.lib.exceptions import MessageException
 from desktop.lib.exceptions_renderable import PopupException
 from desktop.views import register_status_bar_view
+from hadoop import cluster
 from hadoop.api.jobtracker.ttypes import ThriftJobPriority, TaskTrackerNotFoundException, ThriftJobState
+from hadoop.yarn.clients import get_log_client
 
 from jobbrowser import conf
-from jobbrowser.api import get_api
+from jobbrowser.api import get_api, ApplicationNotRunning
 from jobbrowser.models import Job, JobLinkage, Tracker, Cluster
+
+import urllib2
 
 
 def check_job_permission(view_func):
   """
   Ensure that the user has access to the job.
-  Assumes that the wrapped function takes a 'jobid' param.
+  Assumes that the wrapped function takes a 'jobid' param named 'job'.
   """
   def decorate(request, *args, **kwargs):
     jobid = kwargs['job']
     try:
       job = get_api(request.user, request.jt).get_job(jobid=jobid)
+    except ApplicationNotRunning, e:
+      # reverse() seems broken, using request.path but beware, it discards GET and POST info
+      return job_not_assigned(request, jobid, request.path)
     except Exception, e:
-      raise PopupException(_('Could not find job %s. The job might not be running yet.') % jobid, detail=e)
+      raise PopupException(_('Could not find job %s.') % jobid, detail=e)
     if not conf.SHARE_JOBS.get() and not request.user.is_superuser \
       and job.user != request.user.username:
       raise PopupException(_("You don't have permission to access job %(id)s.") % {'id': jobid})
     kwargs['job'] = job
     return view_func(request, *args, **kwargs)
   return wraps(view_func)(decorate)
+
+
+def job_not_assigned(request, jobid, path):
+  if request.GET.get('format') == 'json':
+    result = {'status': -1, 'message': ''}
+
+    try:
+      get_api(request.user, request.jt).get_job(jobid=jobid)
+      result['status'] = 0
+    except ApplicationNotRunning, e:
+      result['status'] = 1
+    except Exception, e:
+      result['message'] = _('Error polling job %s: %s') % (jobid, e)
+
+    return HttpResponse(encode_json_for_js(result), mimetype="application/json")
+  else:
+    return render('job_not_assigned.mako', request, {'jobid': jobid, 'path': path})
 
 
 def jobs(request):
@@ -81,7 +103,8 @@ def jobs(request):
     'user_filter': user,
     'text_filter': text,
     'retired': retired,
-    'filtered': not (state == 'all' and user == '' and text == '')
+    'filtered': not (state == 'all' and user == '' and text == ''),
+    'is_yarn': cluster.is_yarn()
   })
 
 def massage_job_for_json(job, request):
@@ -215,11 +238,15 @@ def job_attempt_logs_json(request, job, attempt_index=0, name='syslog', offset=0
     raise KeyError(_("Cannot find job attempt '%(id)s'.") % {'id': job.jobId}, e)
 
   link = '/%s/' % name
+  params = {}
   if offset and int(offset) >= 0:
-    link += '?start=%s' % offset
+    params['start'] = offset
+
+  root = Resource(get_log_client(log_link), urlparse.urlsplit(log_link)[2], urlencode=False)
 
   try:
-    log = html.parse(log_link + link).xpath('/html/body/table/tbody/tr/td[2]')[0].text_content()
+    response = root.get(link, params=params)
+    log = html.fromstring(response).xpath('/html/body/table/tbody/tr/td[2]')[0].text_content()
   except Exception, e:
     log = _('Failed to retrieve log: %s') % e
 
@@ -244,7 +271,10 @@ def job_single_logs(request, job):
   if failed_tasks:
     task = failed_tasks[0]
   else:
-    recent_tasks = job.filter_tasks(task_states=('running', 'succeeded',), task_types=('map', 'reduce',))
+    task_states = ['running', 'succeeded']
+    if job.is_mr2:
+      task_states.append('scheduled')
+    recent_tasks = job.filter_tasks(task_states=task_states, task_types=('map', 'reduce',))
     recent_tasks.sort(cmp_exec_time, reverse=True)
     if recent_tasks:
       task = recent_tasks[0]
@@ -357,6 +387,8 @@ def single_task_attempt_logs(request, job, taskid, attemptid):
     # Four entries,
     # for diagnostic, stdout, stderr and syslog
     logs = [_("Failed to retrieve log. TaskTracker not found.")] * 4
+  except urllib2.URLError:
+    logs = [_("Failed to retrieve log. TaskTracker not ready.")] * 4
 
   context = {
       "attempt": attempt,
@@ -415,8 +447,19 @@ def single_tracker(request, trackerid):
   try:
     tracker = jt.get_tracker(trackerid)
   except Exception, e:
-    raise PopupException(_('The container disappears as soon as the job finishes.'), detail=e)
+    raise PopupException(_('The tracker could not be contacted.'), detail=e)
   return render("tasktracker.mako", request, {'tracker':tracker})
+
+def container(request, node_manager_http_address, containerid):
+  jt = get_api(request.user, request.jt)
+
+  try:
+    tracker = jt.get_tracker(node_manager_http_address, containerid)
+  except Exception, e:
+    # TODO: add a redirect of some kind
+    raise PopupException(_('The container disappears as soon as the job finishes.'), detail=e)
+  return render("container.mako", request, {'tracker':tracker})
+
 
 def clusterstatus(request):
   """
@@ -517,7 +560,7 @@ def dock_jobs(request):
   username = request.user.username
   matching_jobs = get_job_count_by_state(request, username)
   return render("jobs_dock_info.mako", request, {
-    'jobs':matching_jobs
+    'jobs': matching_jobs
   }, force_template=True)
 register_status_bar_view(dock_jobs)
 

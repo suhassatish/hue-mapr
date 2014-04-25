@@ -16,6 +16,7 @@
 <%!
 from desktop.lib.i18n import smart_unicode
 from desktop.views import commonheader, commonfooter
+from django.utils.encoding import force_unicode
 from django.utils.translation import ugettext as _
 %>
 
@@ -23,13 +24,12 @@ from django.utils.translation import ugettext as _
 <%namespace name="util" file="util.mako" />
 <%namespace name="comps" file="beeswax_components.mako" />
 
-${ commonheader(_('Query Results'), app_name, user, '100px') | n,unicode }
+${ commonheader(_('Query Results'), app_name, user) | n,unicode }
 ${layout.menubar(section='query')}
 
-<style>
+<style type="text/css">
   #collapse {
-    float: right;
-    cursor: pointer;
+    padding: 4px 0 0;
   }
 
   #expand {
@@ -61,37 +61,37 @@ ${layout.menubar(section='query')}
     margin-left: 0!important;
   }
 </style>
+<link href="/static/ext/css/leaflet.css" rel="stylesheet">
 
 <div class="container-fluid">
-  <h1>${_('Query Results:')} ${ util.render_query_context(query_context) }</h1>
-  <div id="expand"><i class="icon-chevron-right icon-white"></i></div>
+  <div id="expand"><i class="fa fa-chevron-right" style="color: #FFFFFF"></i></div>
     <div class="row-fluid">
         <div class="span3">
-            <div class="well sidebar-nav">
-        <a id="collapse" class="btn btn-small"><i class="icon-chevron-left" rel="tooltip" title="${_('Collapse this panel')}"></i></a>
+            <div class="sidebar-nav">
                 <ul class="nav nav-list">
-                    % if download_urls:
-                    <li class="nav-header">${_('Downloads')}</li>
-                    <li><a target="_blank" href="${download_urls["csv"]}">${_('Download as CSV')}</a></li>
-                    <li><a target="_blank" href="${download_urls["xls"]}">${_('Download as XLS')}</a></li>
+                    <li><a id="collapse" class="btn btn-small"><i class="fa fa-chevron-left" rel="tooltip" title="${_('Collapse this panel')}"></i></a></li>
+                    % if download_urls and download:
+                      <li class="nav-header">${_('Results')}</li>
+                      <li><a target="_blank" href="${download_urls["csv"]}"><i class="fa fa-arrow-circle-o-down"></i> ${_('Download as CSV')}</a></li>
+                      <li><a target="_blank" href="${download_urls["xls"]}"><i class="fa fa-arrow-circle-o-down"></i> ${_('Download as XLS')}</a></li>
                     % endif
-                    %if can_save:
-                    <li><a data-toggle="modal" href="#saveAs">${_('Save')}</a></li>
+                    % if can_save and download:
+                      <li><a data-toggle="modal" href="#saveAs"><i class="fa fa-floppy-o"></i> ${_('Save')}</a></li>
                     % endif
                     % if app_name != 'impala':
-                    <%
-                      n_jobs = hadoop_jobs and len(hadoop_jobs) or 0
-                      mr_jobs = (n_jobs == 1) and _('MR Job') or _('MR Jobs')
-                    %>
-                     % if n_jobs > 0:
+                      <%
+                        n_jobs = hadoop_jobs and len(hadoop_jobs) or 0
+                        mr_jobs = (n_jobs == 1) and _('MapReduce Job') or _('MapReduce Jobs')
+                      %>
+                      % if n_jobs > 0:
                         <li class="nav-header">${mr_jobs} (${n_jobs})</li>
                         % for jobid in hadoop_jobs:
-                            <li><a href="${url("jobbrowser.views.single_job", job=jobid.replace('application', 'job'))}">${ jobid.replace("application_", "") }</a></li>
+                          <li><a href="${url("jobbrowser.views.single_job", job=jobid.replace('application', 'job'))}">${ jobid.replace("application_", "") }</a></li>
                         % endfor
-                    % else:
+                      % else:
                         <li class="nav-header">${mr_jobs}</li>
-                        <li>${_('No Hadoop jobs were launched in running this query.')}</li>
-                    % endif
+                        <li class="white">${_('No Hadoop jobs were launched in running this query.')}</li>
+                      % endif
                     % endif
                 </ul>
             </div>
@@ -102,14 +102,14 @@ ${layout.menubar(section='query')}
               <strong>${_('Multi-statement query')}</strong></br>
               ${_('Hue stopped as one of your query contains some results.') }
               ${_('Click on') }
-              <form action="${ url(app_name + ':watch_query', query.id) }?context=${ query.design.get_query_context() }" method="POST">
+              <form action="${ url(app_name + ':watch_query_history', query.id) }?context=${ query.design.get_query_context() }" method="POST">
                 <input type="submit" value="${ _("next") }"/ class="btn btn-primary">
               </form>
               ${_('to continue execution of the remaining statements.') }
             </div>
           % endif
 
-          <div id="jumpToColumnAlert" class="alert hide">
+          <div id="jumpToColumnAlert" class="alert hide" style="margin-top: 12px;">
             <button type="button" class="close" data-dismiss="alert">&times;</button>
             <strong>${_('Did you know?')}</strong>
             <ul>
@@ -120,22 +120,27 @@ ${layout.menubar(section='query')}
         </div>
 
         <div class="span9">
-      <ul class="nav nav-tabs">
-        <li class="active"><a href="#results" data-toggle="tab">
-            %if error:
-                  ${_('Error')}
-            %else:
-                  ${_('Results')}
-            %endif
-        </a></li>
-        <li><a href="#query" data-toggle="tab">${_('Query')}</a></li>
-        <li><a href="#log" data-toggle="tab">${_('Log')}</a></li>
-        % if not error:
-        <li><a href="#columns" data-toggle="tab">${_('Columns')}</a></li>
-        % endif
-      </ul>
+          <div class="card card-small">
+            <h1 class="card-heading simple">${_('Query Results:')} ${ util.render_query_context(query_context) }</h1>
+            <div class="card-body">
+            <p>
+            <ul class="nav nav-tabs">
+              <li class="active"><a href="#results" data-toggle="tab">
+                  % if error:
+                        ${_('Error')}
+                  % else:
+                        ${_('Results')}
+                  % endif
+              </a></li>
+              <li><a href="#query" data-toggle="tab">${_('Query')}</a></li>
+              <li><a href="#log" data-toggle="tab">${_('Log')}</a></li>
+              % if not error:
+              <li><a href="#columns" data-toggle="tab">${_('Columns')}</a></li>
+              <li><a href="#chart" data-toggle="tab">${_('Chart')}</a></li>
+              % endif
+            </ul>
 
-      <div class="tab-content">
+            <div class="tab-content">
         <div class="active tab-pane" id="results">
             % if error:
               <div class="alert alert-error">
@@ -152,12 +157,12 @@ ${layout.menubar(section='query')}
             % if expected_first_row != start_row:
                 <div class="alert"><strong>${_('Warning:')}</strong> ${_('Page offset may have incremented since last view.')}</div>
             % endif
-            <table class="table table-striped table-condensed resultTable" cellpadding="0" cellspacing="0" data-tablescroller-min-height-disable="true" data-tablescroller-enforce-height="true">
+            <table id="resultTable" class="table table-striped table-condensed resultTable" cellpadding="0" cellspacing="0" data-tablescroller-min-height-disable="true" data-tablescroller-enforce-height="true">
             <thead>
             <tr>
               <th>&nbsp;</th>
               % for col in columns:
-                <th>${ col }</th>
+                <th>${ col.name }</th>
               % endfor
             </tr>
             </thead>
@@ -188,7 +193,7 @@ ${layout.menubar(section='query')}
         </div>
 
         <div class="tab-pane" id="log">
-          <pre>${ log }</pre>
+          <pre>${ force_unicode(log) }</pre>
         </div>
 
         % if not error:
@@ -199,19 +204,78 @@ ${layout.menubar(section='query')}
             </thead>
             <tbody>
               % for col in columns:
-                <tr><td>${col}</td></tr>
+                <tr><td><a href="javascript:void(0)" class="column-selector" data-column="${ col.name }">${ col.name }</a></td></tr>
               % endfor
             </tbody>
           </table>
         </div>
+        <div class="tab-pane" id="chart">
+          <div style="text-align: center">
+          <form class="form-inline">
+            ${_('Chart type')}&nbsp;
+            <div class="btn-group" data-toggle="buttons-radio">
+              <a rel="tooltip" data-placement="top" title="${_('Bars')}" id="blueprintBars" href="javascript:void(0)" class="btn"><i class="fa fa-bar-chart-o"></i></a>
+              <a rel="tooltip" data-placement="top" title="${_('Lines')}" id="blueprintLines" href="javascript:void(0)" class="btn"><i class="fa fa-signal"></i></a>
+              <a rel="tooltip" data-placement="top" title="${_('Map')}" id="blueprintMap" href="javascript:void(0)" class="btn"><i class="fa fa-map-marker"></i></a>
+            </div>&nbsp;&nbsp;
+            <span id="blueprintAxis" class="hide">
+              <label>${_('X-Axis')}
+                <select id="blueprintX" class="blueprintSelect">
+                  <option value="-1">${ _("Please select a column")}</option>
+                  % for col in columns:
+                    <option value="${loop.index+2}">${ col.name }</option>
+                  % endfor
+                </select>
+              </label>&nbsp;&nbsp;
+              <label>${_('Y-Axis')}
+              <select id="blueprintY" class="blueprintSelect">
+                  <option value="-1">${ _("Please select a column")}</option>
+                  % for col in columns:
+                    <option value="${loop.index+2}">${ col.name }</option>
+                  % endfor
+                </select>
+              </label>
+            </span>
+            <span id="blueprintLatLng" class="hide">
+              <label>${_('Latitude')}
+                <select id="blueprintLat" class="blueprintSelect">
+                  <option value="-1">${ _("Please select a column")}</option>
+                  % for col in columns:
+                    <option value="${loop.index+2}">${ col.name }</option>
+                  % endfor
+                </select>
+              </label>&nbsp;&nbsp;
+              <label>${_('Longitude')}
+              <select id="blueprintLng" class="blueprintSelect">
+                  <option value="-1">${ _("Please select a column")}</option>
+                  % for col in columns:
+                    <option value="${loop.index+2}">${ col.name }</option>
+                  % endfor
+                </select>
+              </label>&nbsp;&nbsp;
+              <label>${_('Label')}
+              <select id="blueprintDesc" class="blueprintSelect">
+                  <option value="-1">${ _("Please select a column")}</option>
+                  % for col in columns:
+                    <option value="${loop.index+2}">${ col.name }</option>
+                  % endfor
+                </select>
+              </label>
+            </span>
+          </form>
+          </div>
+          <div id="blueprint" class="empty">${_("Please select a chart type.")}</div>
+        </div>
         % endif
       </div>
-
+            </p>
+            </div>
+          </div>
         </div>
     </div>
 </div>
 
-%if can_save:
+% if can_save:
 ## duplication from save_results.mako
 <div id="saveAs" class="modal hide fade">
   <form id="saveForm" action="${url(app_name + ':save_results', query.id) }" method="POST"
@@ -254,8 +318,12 @@ ${layout.menubar(section='query')}
     </div>
   </form>
 </div>
-%endif.resultTable
+% endif.resultTable
 
+<script src="/static/ext/js/jquery/plugins/jquery.flot.min.js" type="text/javascript" charset="utf-8"></script>
+<script src="/static/ext/js/jquery/plugins/jquery.flot.categories.min.js" type="text/javascript" charset="utf-8"></script>
+<script src="/static/ext/js/leaflet/leaflet.js" type="text/javascript" charset="utf-8"></script>
+<script src="/static/js/jquery.blueprint.js" type="text/javascript" charset="utf-8"></script>
 
 <script type="text/javascript" charset="utf-8">
 $(document).ready(function () {
@@ -268,12 +336,34 @@ $(document).ready(function () {
         "sEmptyTable": "${_('No data available')}",
         "sZeroRecords": "${_('No matching records')}",
     },
+    "aoColumns":[
+        {"sSortDataType":"dom-text", "sType":"numeric", "sWidth":"1%" },
+        % for col in columns:
+          <%
+          sType = "string"
+          if col.type in ["TINYINT_TYPE", "SMALLINT_TYPE", "INT_TYPE", "BIGINT_TYPE", "FLOAT_TYPE", "DOUBLE_TYPE", "DECIMAL_TYPE"]:
+            sType = "numeric"
+          elif col.type in ["TIMESTAMP_TYPE", "DATE_TYPE"]:
+            sType = "date"
+          %>
+        { "sSortDataType":"dom-text", "sType":"${ sType }"},
+        % endfor
+    ],
     "fnDrawCallback": function( oSettings ) {
       $(".resultTable").jHueTableExtender({
         hintElement: "#jumpToColumnAlert",
         fixedHeader: true,
         firstColumnTooltip: true
       });
+    },
+    "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
+      // Make sure null values are seen as NULL.
+      for(var j = 0; j < aData.length; ++j) {
+        if (aData[j] == null) {
+          $(nRow).find('td:eq('+j+')').html("NULL");
+        }
+      }
+      return nRow;
     }
   });
 
@@ -341,11 +431,33 @@ $(document).ready(function () {
     $(".sidebar-nav").parent().css("margin-left", "-31%");
     $("#expand").show().css("top", $(".sidebar-nav i").position().top + "px");
     $(".sidebar-nav").parent().next().removeClass("span9").addClass("span12").addClass("noLeftMargin");
+    generateGraph(getGraphType());
   });
   $("#expand").click(function () {
     $(this).hide();
     $(".sidebar-nav").parent().next().removeClass("span12").addClass("span9").removeClass("noLeftMargin");
     $(".sidebar-nav").parent().css("margin-left", "0");
+    generateGraph(getGraphType());
+  });
+
+  $(document).on("click", ".column-selector", function () {
+    var _t = $(".resultTable");
+    var _col = _t.find("th:econtains(" + $(this).data("column") + ")");
+    _t.find(".columnSelected").removeClass("columnSelected");
+    _t.find("tr td:nth-child(" + (_col.index() + 1) + ")").addClass("columnSelected");
+    $("a[href='#results']").click();
+  });
+
+  $("a[data-toggle='tab']").on("shown", function (e) {
+    if ($(e.target).attr("href") == "#results" && $(e.relatedTarget).attr("href") == "#columns") {
+      if ($(".resultTable .columnSelected").length > 0) {
+        var _t = $(".resultTable");
+        var _col = _t.find("th:nth-child(" + ($(".resultTable .columnSelected").index() + 1) + ")");
+        _t.parent().animate({
+          scrollLeft: _col.position().left + _t.parent().scrollLeft() - _t.parent().offset().left - 30
+        }, 300);
+      }
+    }
   });
 
   resizeLogs();
@@ -362,7 +474,7 @@ $(document).ready(function () {
     $("#log pre").css("overflow", "auto").height($(window).height() - $("#log pre").position().top - 40);
   }
 
-  % if app_name == 'impala':
+  % if app_name == 'impala' and query.is_finished():
     % if not download:
       $("#collapse").click();
       $(".sidebar-nav, #expand").hide();

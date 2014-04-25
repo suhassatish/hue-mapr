@@ -85,23 +85,23 @@ msgstr "이 애플리케이션은 Beeswax/HiveServer2 서버 및/또는 Hive Met
 msgid "ctrl-As"
 msgstr "ctrl-As"
 
-#: src/beeswax/create_table.py:92
+#: src/beeswax/create_table.py:99
 msgid "ctrl-Bs"
 msgstr "ctrl-Bs"
 
-#: src/beeswax/create_table.py:93
+#: src/beeswax/create_table.py:100
 msgid "ctrl-Cs"
 msgstr "ctrl-Cs"
 
-#: src/beeswax/create_table.py:94
+#: src/beeswax/create_table.py:101
 msgid "tabs"
 msgstr "탭"
 
-#: src/beeswax/create_table.py:95
+#: src/beeswax/create_table.py:102
 msgid "commas"
 msgstr "쉼표"
 
-#: src/beeswax/create_table.py:96
+#: src/beeswax/create_table.py:103
 msgid "spaces"
 msgstr "공백"
 
@@ -138,7 +138,12 @@ msgstr "파일 '%(path)s' 열기 실패함: %(error)s"
 msgid "Internal error: Missing needed parameter to load data into table."
 msgstr "내부 오류: 테이블로 데이터를 로드하는 데 필요한 매개변수가 없습니다."
 
-#: src/beeswax/forms.py:46
+#: src/beeswax/data_export.py:60
+#, python-format
+msgid "%s already exists."
+msgstr "%s이(가) 이미 존재합니다."
+
+#: src/beeswax/forms.py:45
 msgid "Change the name to save as a new design."
 msgstr "새 디자인으로 저장할 이름을 변경합니다."
 
@@ -158,7 +163,7 @@ msgstr "설명"
 msgid "Save"
 msgstr "저장"
 
-#: src/beeswax/forms.py:55 src/beeswax/forms.py:56
+#: src/beeswax/forms.py:54 src/beeswax/forms.py:55
 msgid "Save As"
 msgstr "다른 이름으로 저장"
 
@@ -172,13 +177,13 @@ msgstr "이름을 입력하십시오."
 msgid "Table Name"
 msgstr "테이블 이름"
 
-#: src/beeswax/forms.py:92
+#: src/beeswax/forms.py:122
 msgid "Name of the new table"
 msgstr "새 테이블의 이름"
 
-#: src/beeswax/forms.py:93
-msgid "Results Location"
-msgstr "결과 위치"
+#: src/beeswax/forms.py:142
+msgid "Invalid table prefix name"
+msgstr "올바르지 않은 테이블 접두사 이름"
 
 #: src/beeswax/forms.py:95
 #, fuzzy
@@ -225,7 +230,7 @@ msgstr "필드 터미네이터"
 
 #: src/beeswax/forms.py:198
 msgid "Collection terminator"
-msgstr "수집 터미네이터"
+msgstr "컬렉션 터미네이터"
 
 #: src/beeswax/forms.py:200
 msgid "Map key terminator"
@@ -335,19 +340,19 @@ msgstr "기본 위치 사용"
 msgid "Path to HDFS directory or file of database data."
 msgstr "데이터베이스 데이터의 HDFS 디렉토리 또는 파일의 경로입니다."
 
-#: src/beeswax/models.py:69
+#: src/beeswax/models.py:75
 msgid "Host of the query server."
 msgstr "쿼리 서버의 호스트입니다."
 
-#: src/beeswax/models.py:70
+#: src/beeswax/models.py:76
 msgid "Port of the query server."
 msgstr "쿼리 서버의 포트입니다."
 
-#: src/beeswax/models.py:71
+#: src/beeswax/models.py:77
 msgid "Name of the query server."
 msgstr "쿼리 서버의 이름입니다."
 
-#: src/beeswax/models.py:72
+#: src/beeswax/models.py:78
 msgid "Type of the query server."
 msgstr "쿼리 서버의 유형입니다."
 
@@ -510,12 +515,12 @@ msgstr "쿼리 상태를 확인하기 위해 서버에 연결하지 못했습니
 msgid "Cannot find table data in \"%(file)s\"."
 msgstr "\"%(file)s\"에서 테이블 데이터를 찾을 수 없습니다."
 
-#: src/beeswax/management/commands/beeswax_install_examples.py:146
+#: src/beeswax/management/commands/beeswax_install_examples.py:130
 #, python-format
 msgid "Table \"%(table)s\" already exists."
 msgstr "테이블 \"%(table)s\"이(가) 이미 존재합니다."
 
-#: src/beeswax/management/commands/beeswax_install_examples.py:153
+#: src/beeswax/management/commands/beeswax_install_examples.py:137
 #, python-format
 msgid "Error creating table %(table)s: Operation timeout."
 msgstr "테이블 %(table)s 생성 중 오류 발생: 작업이 시간 초과되었습니다."
@@ -525,20 +530,20 @@ msgstr "테이블 %(table)s 생성 중 오류 발생: 작업이 시간 초과되
 msgid "Error creating table %(table)s: %(error)s."
 msgstr "테이블 %(table)s 생성 중 오류 발생: %(error)s"
 
-#: src/beeswax/management/commands/beeswax_install_examples.py:177
+#: src/beeswax/management/commands/beeswax_install_examples.py:179
 #, python-format
 msgid "Error loading table %(table)s: Operation timeout."
-msgstr "테이블 %(table)s 로드 중 오류 발생: 작업이 시간 초과되었습니다."
+msgstr "테이블 %(table)s 로드 중 오류 발생: 작업 시간이 초과되었습니다."
 
 #: src/beeswax/management/commands/beeswax_install_examples.py:181
 #, fuzzy, python-format
 msgid "Error loading table %(table)s: %(error)s."
 msgstr "테이블 %(table)s 로드 중 오류 발생: %(error)s"
 
-#: src/beeswax/management/commands/beeswax_install_examples.py:202
+#: src/beeswax/server/dbms.py:140
 #, python-format
-msgid "Sample design %(name)s already exists."
-msgstr "샘플 디자인 %(name)s이(가) 이미 존재합니다."
+msgid "%s interface does not support close_operation. %s interface does."
+msgstr "%s 인터페이스가 close_operation을 지원하지 않습니다. %s 인터페이스가 지원합니다."
 
 #: src/beeswax/server/beeswax_lib.py:165
 msgid "Query cancelation is not supported by the Beeswax interface. Please use the Hive Server 2 interface instead."
@@ -582,23 +587,23 @@ msgstr "%s 서버 인증이 지원되지 않습니다. %s이(가) 유효합니�
 msgid "Beginning of List"
 msgstr "목록 시작"
 
-#: src/beeswax/templates/beeswax_components.mako:207
+#: src/beeswax/templates/beeswax_components.mako:212
 msgid "Previous Page"
 msgstr "이전 페이지"
 
-#: src/beeswax/templates/beeswax_components.mako:208
+#: src/beeswax/templates/beeswax_components.mako:213
 msgid "Next page"
 msgstr "다음 페이지"
 
-#: src/beeswax/templates/beeswax_components.mako:208
+#: src/beeswax/templates/beeswax_components.mako:213
 msgid "Next Page"
 msgstr "다음 페이지"
 
-#: src/beeswax/templates/beeswax_components.mako:209
+#: src/beeswax/templates/beeswax_components.mako:214
 msgid "End of List"
 msgstr "목록 끝"
 
-#: src/beeswax/templates/beeswax_components.mako:211
+#: src/beeswax/templates/beeswax_components.mako:216
 #, python-format
 msgid "Showing %(start)s to %(end)s of %(count)s items, page %(page)s of %(pages)s"
 msgstr "%(page)s / %(pages)s 페이지, %(count)s 항목 중 %(start)s ~ %(end)s을(를) 표시합니다."
@@ -702,7 +707,7 @@ msgstr "테이블 이름 입력 및 파일 선택"
 #: src/beeswax/templates/choose_file.mako:50
 #: src/beeswax/templates/create_table_manually.mako:58
 msgid "table_name"
-msgstr "테이블_이름"
+msgstr "table_name"
 
 #: src/beeswax/templates/choose_file.mako:53
 #: src/beeswax/templates/create_table_manually.mako:63
@@ -748,8 +753,8 @@ msgid "Choose a file"
 msgstr "파일 선택"
 
 #: src/beeswax/templates/configuration.mako:24
-#: src/beeswax/templates/configuration.mako:28
-#: src/beeswax/templates/layout.mako:38
+#: src/beeswax/templates/configuration.mako:29
+#: src/beeswax/templates/execute.mako:37
 msgid "Settings"
 msgstr "설정"
 
@@ -759,14 +764,20 @@ msgid "Search for key, value, etc."
 msgstr "키, 값 등을 검색합니다."
 
 #: src/beeswax/templates/configuration.mako:33
+msgid "Search for key, value, etc."
+msgstr "키, 값 등을 검색합니다."
+
+#: src/beeswax/templates/configuration.mako:34
 msgid "Clear"
 msgstr "지우기"
 
-#: src/beeswax/templates/configuration.mako:40
+#: src/beeswax/templates/configuration.mako:39
+#: src/beeswax/templates/execute.mako:74
 msgid "Key"
 msgstr "키"
 
-#: src/beeswax/templates/configuration.mako:41
+#: src/beeswax/templates/configuration.mako:40
+#: src/beeswax/templates/execute.mako:79
 msgid "Value"
 msgstr "값"
 
@@ -1034,7 +1045,7 @@ msgstr "데이터가 원래 파티션되어 있을 경우(예: 날짜별), 파�
 
 #: src/beeswax/templates/create_table_manually.mako:290
 msgid "The query server establishes a mapping between directories on disk"
-msgstr "쿼리 서버는 해당일의 데이터 및 디스크의 디렉토리"
+msgstr "쿼리 서버는 해당 일의 데이터와 디스크의 디렉토리"
 
 #: src/beeswax/templates/create_table_manually.mako:292
 msgid "and the data for that day.  Partitions are virtual columns; they are not represented in the data itself, but are determined by the data location. The query server implements query optimizations such that queries that are specific to a single partition need not read the data in other partitions."
@@ -1096,15 +1107,15 @@ msgstr "Map 값의 유형입니다."
 
 #: src/beeswax/templates/create_table_manually.mako:502
 msgid "Type your field terminator here"
-msgstr "여기에 필드 터미네이터를 입력하십시오."
+msgstr "여기에 필드 터미네이터 입력"
 
 #: src/beeswax/templates/create_table_manually.mako:511
 msgid "Type your collection terminator here"
-msgstr "여기에 수집 터미네이터를 입력하십시오."
+msgstr "여기에 수집 터미네이터 입력"
 
 #: src/beeswax/templates/create_table_manually.mako:520
 msgid "Type your map key terminator here"
-msgstr "여기에 Map 키 터미네이터를 입력하십시오."
+msgstr "여기에 Map 키 터미네이터 입력"
 
 #: src/beeswax/templates/define_columns.mako:55
 msgid "Define your columns"
@@ -1353,27 +1364,44 @@ msgstr "일부 테이블이 누락되었습니까? Impala에서 보는 테이블
 msgid "Did you know?"
 msgstr "유용한 정보"
 
-#: src/beeswax/templates/explain.mako:25
-msgid "Query Explanation"
-msgstr "쿼리 설명"
+#: src/beeswax/templates/execute.mako:2256
+#: src/beeswax/templates/execute.mako:2263
+msgid "Missing some tables? In order to update the list of tables/metadata seen by Impala, execute one of these queries:"
+msgstr "일부 테이블이 없습니까? Impala에 표시된 테이블/메타데이터 목록을 업데이트하려면 다음 쿼리 중 하나를 실행하십시오."
 
-#: src/beeswax/templates/explain.mako:29
-msgid "Query Explanation:"
-msgstr "쿼리 설명:"
+#: src/beeswax/templates/layout.mako:41
+msgid "Spark Igniter"
+msgstr "Spark Igniter"
 
-#: src/beeswax/templates/explain.mako:32
-msgid "Explanation"
-msgstr "설명"
+#: src/beeswax/templates/layout.mako:44
+msgid "Editor"
+msgstr "편집기"
 
-#: src/beeswax/templates/layout.mako:35
+#: src/beeswax/templates/layout.mako:46
+msgid "Applications"
+msgstr "애플리케이션"
+
+#: src/beeswax/templates/layout.mako:48
+msgid "Dashboard"
+msgstr "대시보드"
+
+#: src/beeswax/templates/layout.mako:49
+msgid "Contexts"
+msgstr "콘텐츠"
+
+#: src/beeswax/templates/layout.mako:50
+msgid "Uploads"
+msgstr "업로드"
+
+#: src/beeswax/templates/layout.mako:77
 #: src/beeswax/templates/my_queries.mako:29
-#: src/beeswax/templates/my_queries.mako:39
+#: src/beeswax/templates/my_queries.mako:40
 msgid "My Queries"
 msgstr "내 쿼리"
 
-#: src/beeswax/templates/layout.mako:36
-#: src/beeswax/templates/list_designs.mako:27
-#: src/beeswax/templates/list_designs.mako:32
+#: src/beeswax/templates/layout.mako:78
+#: src/beeswax/templates/list_designs.mako:29
+#: src/beeswax/templates/list_designs.mako:38
 #: src/beeswax/templates/list_trashed_designs.mako:27
 msgid "Saved Queries"
 msgstr "저장된 쿼리"
@@ -1625,9 +1653,9 @@ msgstr "내 쿼리 모두 보기"
 msgid "View my entire query history"
 msgstr "내 전체 쿼리 기록 보기"
 
-#: src/beeswax/templates/parameterization.mako:24
-msgid "Parameterize Query"
-msgstr "쿼리 매개변수화"
+#: src/beeswax/templates/my_queries.mako:330
+msgid "Move the selected queries to the trash?"
+msgstr "선택한 쿼리를 휴지통으로 이동하시겠습니까?"
 
 #: src/beeswax/templates/parameterization.mako:32
 msgid "Explain query"
@@ -1663,10 +1691,10 @@ msgstr "결과 위치"
 
 #: src/beeswax/templates/util.mako:66
 msgid "Unsaved Query"
-msgstr "저장 안 된 쿼리"
+msgstr "저장되지 않은 쿼리"
 
 #: src/beeswax/templates/util.mako:71
-#: src/beeswax/templates/watch_results.mako:26
+#: src/beeswax/templates/watch_results.mako:27
 msgid "Query Results"
 msgstr "쿼리 결과"
 

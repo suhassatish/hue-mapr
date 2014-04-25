@@ -16,11 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-try:
-  import json
-except ImportError:
-  import simplejson as json
-
+import json
 import logging
 
 from desktop.lib.exceptions_renderable import PopupException
@@ -29,6 +25,7 @@ from search.api import SolrApi
 from search.conf import SOLR_URL
 from search.models import Collection
 from django.utils.translation import ugettext as _
+
 
 LOG = logging.getLogger(__name__)
 
@@ -76,7 +73,7 @@ class SearchController(object):
       hue_collection, created = Collection.objects.get_or_create(name=attrs['name'], solr_properties=core, is_enabled=True, is_core_only=True, user=self.user)
       return hue_collection
     else:
-      raise PopupException(_('Collection type does not exit: %s') % attrs)
+      raise PopupException(_('Collection type does not exist: %s') % attrs)
 
   def delete_collection(self, collection_id):
     id = collection_id

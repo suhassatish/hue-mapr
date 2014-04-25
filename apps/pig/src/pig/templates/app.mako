@@ -20,31 +20,41 @@
 
 <%namespace name="actionbar" file="actionbar.mako" />
 
-${ commonheader(None, "pig", user, "100px") | n,unicode }
+${ commonheader(None, "pig", user) | n,unicode }
 
-<div class="subnav subnav-fixed">
-  <div class="container-fluid">
-    <ul class="nav nav nav-pills">
-      <li class="active"><a href="#editor" data-bind="css: { unsaved: isDirty }">${ _('Editor') }</a></li>
-      <li><a href="#scripts">${ _('Scripts') }</a></li>
-      <li><a href="#dashboard">${ _('Dashboard') }</a></li>
-    </ul>
-  </div>
+<div class="navbar navbar-inverse navbar-fixed-top">
+    <div class="navbar-inner">
+      <div class="container-fluid">
+        <div class="nav-collapse">
+          <ul class="nav">
+            <li class="currentApp">
+              <a href="/${app_name}">
+                <img src="/pig/static/art/icon_pig_24.png" />
+                ${ _('Pig Editor') }
+              </a>
+            </li>
+            <li class="active"><a href="#editor" data-bind="css: { unsaved: isDirty }">${ _('Editor') }</a></li>
+            <li><a href="#scripts">${ _('Scripts') }</a></li>
+            <li><a href="#dashboard">${ _('Dashboard') }</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
 </div>
-
 
 <div class="container-fluid">
   <div id="scripts" class="row-fluid mainSection hide">
-    <%actionbar:render>
-      <%def name="search()">
-          <input id="filter" type="text" class="input-xlarge search-query" placeholder="${_('Search for script name or content')}">
-      </%def>
+    <div class="card card-small">
+      <%actionbar:render>
+        <%def name="search()">
+            <input id="filter" type="text" class="input-xlarge search-query" placeholder="${_('Search for script name or content')}">
+        </%def>
 
-      <%def name="actions()">
-          <button class="btn fileToolbarBtn" title="${_('Run this script')}" data-bind="enable: selectedScripts().length == 1, click: listRunScript, visible: scripts().length > 0"><i class="icon-play"></i> ${_('Run')}</button>
-          <button class="btn fileToolbarBtn" title="${_('Copy this script')}" data-bind="enable: selectedScripts().length == 1, click: listCopyScript, visible: scripts().length > 0"><i class="icon-copy"></i> ${_('Copy')}</button>
-          <button class="btn fileToolbarBtn" title="${_('Delete this script')}" data-bind="enable: selectedScripts().length > 0, click: listConfirmDeleteScripts, visible: scripts().length > 0"><i class="icon-trash"></i> ${_('Delete')}</button>
-      </%def>
+        <%def name="actions()">
+            <button class="btn fileToolbarBtn" title="${_('Run this script')}" data-bind="enable: selectedScripts().length == 1, click: listRunScript, visible: scripts().length > 0"><i class="fa fa-play"></i> ${_('Run')}</button>
+            <button class="btn fileToolbarBtn" title="${_('Copy this script')}" data-bind="enable: selectedScripts().length == 1, click: listCopyScript, visible: scripts().length > 0"><i class="fa fa-files-o"></i> ${_('Copy')}</button>
+            <button class="btn fileToolbarBtn" title="${_('Delete this script')}" data-bind="enable: selectedScripts().length > 0, click: listConfirmDeleteScripts, visible: scripts().length > 0"><i class="fa fa-trash-o"></i> ${_('Delete')}</button>
+        </%def>
 
       <%def name="creation()">
           <button class="btn fileToolbarBtn" title="${_('Create a new script')}" data-bind="click: confirmNewScript"><i class="icon-plus-sign"></i> ${_('New Script')}</button>
@@ -53,63 +63,22 @@ ${ commonheader(None, "pig", user, "100px") | n,unicode }
     <div class="alert alert-info" data-bind="visible: scripts().length == 0">
       ${_('There are currently no scripts defined. Please add a new script clicking on "New script"')}
     </div>
-
-    <table class="table table-striped table-condensed tablescroller-disable" data-bind="visible: scripts().length > 0">
-      <thead>
-      <tr>
-        <th width="1%"><div data-bind="click: selectAll, css: {hueCheckbox: true, 'icon-ok': allSelected}"></div></th>
-        <th width="20%">${_('Name')}</th>
-        <th width="79%">${_('Script')}</th>
-      </tr>
-      </thead>
-      <tbody id="scriptTable" data-bind="template: {name: 'scriptTemplate', foreach: filteredScripts}">
-
-      </tbody>
-      <tfoot>
-      <tr data-bind="visible: isLoading()">
-        <td colspan="3" class="left">
-          <img src="/static/art/spinner.gif" />
-        </td>
-      </tr>
-      <tr data-bind="visible: filteredScripts().length == 0 && !isLoading()">
-        <td colspan="3">
-          <div class="alert">
-              ${_('There are no scripts matching the search criteria.')}
-          </div>
-        </td>
-      </tr>
-      </tfoot>
-    </table>
-
-    <script id="scriptTemplate" type="text/html">
-      <tr style="cursor: pointer" data-bind="event: { mouseover: toggleHover, mouseout: toggleHover}">
-        <td class="center" data-bind="click: handleSelect" style="cursor: default">
-          <div data-bind="css: {hueCheckbox: true, 'icon-ok': selected}"></div>
-        </td>
-        <td data-bind="click: $root.confirmViewScript">
-          <strong><a href="#" data-bind="click: $root.confirmViewScript, text: name"></a></strong>
-        </td>
-        <td data-bind="click: $root.confirmViewScript">
-          <span data-bind="text: scriptSumup"></span>
-        </td>
-      </tr>
-    </script>
   </div>
 
   <div id="editor" class="row-fluid mainSection hide">
     <div class="span2">
-      <div class="well sidebar-nav">
+      <div class="sidebar-nav" style="padding-top: 0">
           <ul class="nav nav-list">
             <li class="nav-header">${_('Editor')}</li>
             <li data-bind="click: editScript" class="active" data-section="edit">
               <a href="#"><i class="icon-edit"></i> ${ _('Pig') }</a>
             </li>
             <li data-bind="click: editScriptProperties" data-section="properties">
-              <a href="#"><i class="icon-reorder"></i> ${ _('Properties') }</a>
+              <a href="#"><i class="fa fa-bars"></i> ${ _('Properties') }</a>
             </li>
-            <li data-bind="click: saveScript">
+            <li data-bind="click: saveScript, visible: currentScript().can_write()">
               <a href="#" title="${ _('Save the script') }" rel="tooltip" data-placement="right">
-                <i class="icon-save"></i> ${ _('Save') }
+                <i class="fa fa-floppy-o"></i> ${ _('Save') }
               </a>
             </li>
             ##<li class="nav-header">${_('UDF')}</li>
@@ -123,7 +92,12 @@ ${ commonheader(None, "pig", user, "100px") | n,unicode }
             </li>
             <li data-bind="click: showStopModal, visible: currentScript().isRunning()">
               <a href="#" title="${ _('Stop the script') }" rel="tooltip" data-placement="right" class="disabled">
-                <i class="icon-ban-circle"></i> ${ _('Stop') }
+                <i class="fa fa-ban"></i> ${ _('Stop') }
+              </a>
+            </li>
+            <li data-bind="click: showScriptLogs" data-section="logs">
+              <a href="#" title="${ _('Show Logs') }" rel="tooltip" data-placement="right">
+                <i class="fa fa-tasks"></i> ${ _('Logs') }
               </a>
             </li>
             <li data-bind="click: showScriptLogs" data-section="logs">
@@ -134,7 +108,7 @@ ${ commonheader(None, "pig", user, "100px") | n,unicode }
             <li class="nav-header">${_('File')}</li>
             <li data-bind="visible: currentScript().id() != -1, click: copyScript">
               <a href="#" title="${ _('Copy the script') }" rel="tooltip" data-placement="right">
-                <i class="icon-copy"></i> ${ _('Copy') }
+                <i class="fa fa-files-o"></i> ${ _('Copy') }
               </a>
             </li>
             <li data-bind="visible: currentScript().id() != -1, click: confirmDeleteScript">
@@ -148,8 +122,9 @@ ${ commonheader(None, "pig", user, "100px") | n,unicode }
               </a>
             </li>
             <li>
-            <br/>
-            <i class="icon-question-sign" id="help"></i>
+            <a href="#" id="help">
+              <i class="fa fa-question-circle"></i>
+            </a>
             <div id="help-content" class="hide">
               <ul style="text-align: left;">
                 <li>${ _("Press CTRL + Space to autocomplete") }</li>
@@ -166,21 +141,169 @@ ${ commonheader(None, "pig", user, "100px") | n,unicode }
         <div class="ribbon">${ _('Unsaved') }</div>
       </div>
 
+      <div class="card card-small">
+
       <div id="edit" class="section">
         <div class="alert alert-info">
-          <a class="mainAction" href="#" title="${ _('Run this script') }" data-bind="click: runOrShowSubmissionModal, visible: !currentScript().isRunning()"><i class="icon-play"></i></a>
-          <a class="mainAction" href="#" title="${ _('Stop this script') }" data-bind="click: showStopModal, visible: currentScript().isRunning()"><i class="icon-stop"></i></a>
+          <a class="mainAction" href="#" title="${ _('Run this script') }" data-bind="click: runOrShowSubmissionModal, visible: !currentScript().isRunning()"><i class="fa fa-play"></i></a>
+          <a class="mainAction" href="#" title="${ _('Stop this script') }" data-bind="click: showStopModal, visible: currentScript().isRunning()"><i class="fa fa-stop"></i></a>
           <h3><span data-bind="text: currentScript().name"></span></h3>
         </div>
-        <form id="queryForm">
-          <textarea id="scriptEditor" data-bind="text:currentScript().script"></textarea>
-        </form>
+        <div class="row-fluid">
+          <div id="queryColumn" class="span9">
+            <a id="navigatorShow" href="#" title="${_('Show the function navigator')}" style="position:absolute;z-index: 10000; margin-top:10px;display:none;right:30px" rel="tooltip" data-placement="left"><i class="fa fa-compass"></i></a>
+            <form id="queryForm">
+              <textarea id="scriptEditor" data-bind="text:currentScript().script"></textarea>
+            </form>
+          </div>
+          <div id="navigatorColumn" class="span3">
+            <a id="navigatorHide" href="#" title="${_('Hide the function navigator')}" rel="tooltip" data-placement="left" class="pull-right" style="margin:10px;margin-left: 0"><i class="fa fa-chevron-right"></i></a>
+            <a href="#" title="${_('Double click on function to insert it in the editor')}" rel="tooltip" data-placement="left" class="pull-right" style="margin:10px;margin-left: 0"><i class="fa fa-question-circle"></i></a>
+            <h1 class="card-heading simple"><i class="fa fa-compass"></i> ${_('Navigator')}</h1>
+            <div class="card-body">
+              <p>
+                <input id="navigatorSearch" type="text" class="input-medium" placeholder="${ _('Function name...') }"/>
+                <ul id="navigatorFunctions" class="unstyled">
+                  <li>
+                    <a class="navigatorFunctionCategory" href="javascript:void(0)">Eval Functions</a>
+                    <ul class="navigatorFunctionCategoryContent unstyled hide">
+                      <li><a href="#">AVG(%VAR%)</a></li>
+                      <li><a href="#">CONCAT(%VAR1%, %VAR2%)</a></li>
+                      <li><a href="#">COUNT(%VAR%)</a></li>
+                      <li><a href="#">COUNT_START(%VAR%)</a></li>
+                      <li><a href="#">IsEmpty(%VAR%)</a></li>
+                      <li><a href="#">DIFF(%VAR1%, %VAR2%)</a></li>
+                      <li><a href="#">MAX(%VAR%)</a></li>
+                      <li><a href="#">MIN(%VAR%)</a></li>
+                      <li><a href="#">SIZE(%VAR%)</a></li>
+                      <li><a href="#">SUM(%VAR%)</a></li>
+                      <li><a href="#">TOKENIZE(%VAR%, %DELIM%)</a></li>
+                    </ul>
+                  </li>
+                  <li>
+                      <a class="navigatorFunctionCategory" href="javascript:void(0)">Relational Operators</a>
+                      <ul class="navigatorFunctionCategoryContent unstyled hide">
+                        <li><a href="#">COGROUP %VAR% BY %VAR%</a></li>
+                        <li><a href="#">CROSS %VAR1%, %VAR2%;</a></li>
+                        <li><a href="#">DISTINCT %VAR%;</a></li>
+                        <li><a href="#">FILTER %VAR% BY %COND%</a></li>
+                        <li><a href="#">FLATTEN(%VAR%)</a></li>
+                        <li><a href="#">FOREACH %DATA% GENERATE %NEW_DATA%;</a></li>
+                        <li><a href="#">FOREACH %DATA% {%NESTED_BLOCK%};</a></li>
+                        <li><a href="#">GROUP %VAR% BY %VAR%</a></li>
+                        <li><a href="#">GROUP %VAR% ALL</a></li>
+                        <li><a href="#">JOIN %VAR% BY </a></li>
+                        <li><a href="#">LIMIT %VAR% %N%</a></li>
+                        <li><a href="#">ORDER %VAR% BY %FIELD%</a></li>
+                        <li><a href="#">SAMPLE %VAR% %SIZE%</a></li>
+                        <li><a href="#">SPLIT %VAR1% INTO %VAR2% IF %EXPRESSIONS%</a></li>
+                        <li><a href="#">UNION %VAR1%, %VAR2%</a></li>
+                      </ul>
+                    </li>
+
+                    <li>
+                      <a class="navigatorFunctionCategory" href="javascript:void(0)">Input/Output</a>
+                      <ul class="navigatorFunctionCategoryContent unstyled hide">
+                        <li><a href="#">LOAD '%FILE%';</a></li>
+                        <li><a href="#">DUMP %VAR%;</a></li>
+                        <li><a href="#">STORE %VAR% INTO %PATH%;</a></li>
+                      </ul>
+                    </li>
+                    <li>
+                      <a class="navigatorFunctionCategory" href="javascript:void(0)">Debug</a>
+                      <ul class="navigatorFunctionCategoryContent unstyled hide">
+                        <li><a href="#">EXPLAIN %VAR%;</a></li>
+                        <li><a href="#">ILLUSTRATE %VAR%;</a></li>
+                        <li><a href="#">DESCRIBE %VAR%;</a></li>
+                      </ul>
+                    </li>
+                    <li>
+                      <a class="navigatorFunctionCategory" href="javascript:void(0)">HCatalog</a>
+                      <ul class="navigatorFunctionCategoryContent unstyled hide">
+                        <li><a href="#">LOAD '%TABLE%' USING org.apache.hcatalog.pig.HCatLoader();</a></li>
+                      </ul>
+                    </li>
+                    <li>
+                      <a class="navigatorFunctionCategory" href="javascript:void(0)">Math</a>
+                      <ul class="navigatorFunctionCategoryContent unstyled hide">
+                        <li><a href="#">ABS(%VAR%)</a></li>
+                        <li><a href="#">ACOS(%VAR%)</a></li>
+                        <li><a href="#">ASIN(%VAR%)</a></li>
+                        <li><a href="#">ATAN(%VAR%)</a></li>
+                        <li><a href="#">CBRT(%VAR%)</a></li>
+                        <li><a href="#">CEIL(%VAR%)</a></li>
+                        <li><a href="#">COS(%VAR%)</a></li>
+                        <li><a href="#">COSH(%VAR%)</a></li>
+                        <li><a href="#">EXP(%VAR%)</a></li>
+                        <li><a href="#">FLOOR(%VAR%)</a></li>
+                        <li><a href="#">LOG(%VAR%)</a></li>
+                        <li><a href="#">LOG10(%VAR%)</a></li>
+                        <li><a href="#">RANDOM(%VAR%)</a></li>
+                        <li><a href="#">ROUND(%VAR%)</a></li>
+                        <li><a href="#">SIN(%VAR%)</a></li>
+                        <li><a href="#">SINH(%VAR%)</a></li>
+                        <li><a href="#">SQRT(%VAR%)</a></li>
+                        <li><a href="#">TAN(%VAR%)</a></li>
+                        <li><a href="#">TANH(%VAR%)</a></li>
+                      </ul>
+                    </li>
+                    <li>
+                      <a class="navigatorFunctionCategory" href="javascript:void(0)">Tuple, Bag, Map Functions</a>
+                      <ul class="navigatorFunctionCategoryContent unstyled hide">
+                        <li><a href="#">TOTUPLE(%VAR%)</a></li>
+                        <li><a href="#">TOBAG(%VAR%)</a></li>
+                        <li><a href="#">TOMAP(%KEY%, %VALUE%)</a></li>
+                        <li><a href="#">TOP(%topN%, %COLUMN%, %RELATION%)</a></li>
+                      </ul>
+                    </li>
+                    <li>
+                      <a class="navigatorFunctionCategory" href="javascript:void(0)">String Functions</a>
+                      <ul class="navigatorFunctionCategoryContent unstyled hide">
+                        <li><a href="#">INDEXOF(%STRING%, '%CHARACTER%', %STARTINDEX%)</a></li>
+                        <li><a href="#">LAST_INDEX_OF(%STRING%, '%CHARACTER%', %STARTINDEX%)</a></li>
+                        <li><a href="#">LOWER(%STRING%)</a></li>
+                        <li><a href="#">REGEX_EXTRACT(%STRING%, %REGEX%, %INDEX%)</a></li>
+                        <li><a href="#">REGEX_EXTRACT_ALL(%STRING%, %REGEX%)</a></li>
+                        <li><a href="#">REPLACE(%STRING%, '%oldChar%', '%newChar%')</a></li>
+                        <li><a href="#">STRSPLIT(%STRING%, %REGEX%, %LIMIT%)</a></li>
+                        <li><a href="#">SUBSTRING(%STRING%, %STARTINDEX%, %STOPINDEX%)</a></li>
+                        <li><a href="#">TRIM(%STRING%)</a></li>
+                        <li><a href="#">UCFIRST(%STRING%)</a></li>
+                        <li><a href="#">UPPER(%STRING%)</a></li>
+                      </ul>
+                    </li>
+                    <li>
+                      <a class="navigatorFunctionCategory" href="javascript:void(0)">Macros</a>
+                      <ul class="navigatorFunctionCategoryContent unstyled hide">
+                        <li><a href="#">IMPORT '%PATH_TO_MACRO%';</a></li>
+                      </ul>
+                    </li>
+                    <li>
+                      <a class="navigatorFunctionCategory" href="javascript:void(0)">HBase</a>
+                      <ul class="navigatorFunctionCategoryContent unstyled hide">
+                        <li><a href="#">LOAD 'hbase://%TABLE%' USING org.apache.pig.backend.hadoop.hbase.HBaseStorage('%columnList%')</a></li>
+                        <li><a href="#">STORE %VAR% INTO 'hbase://%TABLE%' USING org.apache.pig.backend.hadoop.hbase.HBaseStorage('%columnList%')</a></li>
+                      </ul>
+                    </li>
+                    <li>
+                      <a class="navigatorFunctionCategory" href="javascript:void(0)">Python UDF</a>
+                      <ul class="navigatorFunctionCategoryContent unstyled hide">
+                        <li>
+                          <a data-python="true" href="#">REGISTER 'python_udf.py' USING jython AS myfuncs;</a>
+                        </li>
+                      </ul>
+                    </li>
+                </ul>
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div id="properties" class="section hide">
         <div class="alert alert-info">
-          <a class="mainAction" href="#" title="${ _('Run this script') }" data-bind="click: runOrShowSubmissionModal, visible: !currentScript().isRunning()"><i class="icon-play"></i></a>
-          <a class="mainAction" href="#" title="${ _('Stop this script') }" data-bind="click: showStopModal, visible: currentScript().isRunning()"><i class="icon-stop"></i></a>
+          <a class="mainAction" href="#" title="${ _('Run this script') }" data-bind="click: runOrShowSubmissionModal, visible: !currentScript().isRunning()"><i class="fa fa-play"></i></a>
+          <a class="mainAction" href="#" title="${ _('Stop this script') }" data-bind="click: showStopModal, visible: currentScript().isRunning()"><i class="fa fa-stop"></i></a>
           <h3><span data-bind="text: currentScript().name"></span></h3>
         </div>
         <form class="form-inline" style="padding-left: 10px">
@@ -192,7 +315,7 @@ ${ commonheader(None, "pig", user, "100px") | n,unicode }
           <br/>
           <br/>
 
-          <h4>${ _('Parameters') } &nbsp; <i id="parameters-dyk" class="icon-question-sign"></i></h4>
+          <h4>${ _('Pig parameters') } &nbsp; <i id="parameters-dyk" class="fa fa-question-circle"></i></h4>
           <div id="parameters-dyk-content" class="hide">
             <ul style="text-align: left;">
               <li>input /user/data</li>
@@ -207,7 +330,7 @@ ${ commonheader(None, "pig", user, "100px") | n,unicode }
                 <td>
                   ${ _('There are currently no defined parameters.') }
                   <button class="btn" data-bind="click: currentScript().addParameter" style="margin-left: 4px">
-                    <i class="icon-plus"></i> ${ _('Add') }
+                    <i class="fa fa-plus"></i> ${ _('Add') }
                   </button>
                 </td>
               </tr>
@@ -229,13 +352,13 @@ ${ commonheader(None, "pig", user, "100px") | n,unicode }
                       <button class="btn fileChooserBtn" data-bind="click: $root.showFileChooser">..</button>
                     </div>
                   </td>
-                  <td><button data-bind="click: viewModel.currentScript().removeParameter" class="btn"><i class="icon-trash"></i> ${ _('Remove') }</button></td>
+                  <td><button data-bind="click: viewModel.currentScript().removeParameter" class="btn"><i class="fa fa-trash-o"></i> ${ _('Remove') }</button></td>
                 </tr>
               </tbody>
               <tfoot data-bind="visible: currentScript().parameters().length > 0">
                 <tr>
                   <td colspan="3">
-                    <button class="btn" data-bind="click: currentScript().addParameter"><i class="icon-plus"></i> ${ _('Add') }</button>
+                    <button class="btn" data-bind="click: currentScript().addParameter"><i class="fa fa-plus"></i> ${ _('Add') }</button>
                   </td>
                 </tr>
               </tfoot>
@@ -243,7 +366,7 @@ ${ commonheader(None, "pig", user, "100px") | n,unicode }
           </div>
 
           <br/>
-          <h4>${ _('Hadoop properties') } &nbsp; <i id="properties-dyk" class="icon-question-sign"></i></h4>
+          <h4>${ _('Hadoop properties') } &nbsp; <i id="properties-dyk" class="fa fa-question-circle"></i></h4>
           <div id="properties-dyk-content" class="hide">
             <ul style="text-align: left; word-wrap:break-word">
               <li>mapred.job.queue.name production</li>
@@ -256,7 +379,7 @@ ${ commonheader(None, "pig", user, "100px") | n,unicode }
                 <td>
                   ${ _('There are currently no defined Hadoop properties.') }
                   <button class="btn" data-bind="click: currentScript().addHadoopProperties" style="margin-left: 4px">
-                    <i class="icon-plus"></i> ${ _('Add') }
+                    <i class="fa fa-plus"></i> ${ _('Add') }
                   </button>
                 </td>
               </tr>
@@ -278,13 +401,13 @@ ${ commonheader(None, "pig", user, "100px") | n,unicode }
                       <button class="btn fileChooserBtn" data-bind="click: $root.showFileChooser">..</button>
                     </div>
                   </td>
-                  <td><button data-bind="click: viewModel.currentScript().removeHadoopProperties" class="btn"><i class="icon-trash"></i> ${ _('Remove') }</button></td>
+                  <td><button data-bind="click: viewModel.currentScript().removeHadoopProperties" class="btn"><i class="fa fa-trash-o"></i> ${ _('Remove') }</button></td>
                 </tr>
               </tbody>
               <tfoot data-bind="visible: currentScript().hadoopProperties().length > 0">
                 <tr>
                   <td colspan="3">
-                    <button class="btn" data-bind="click: currentScript().addHadoopProperties"><i class="icon-plus"></i> ${ _('Add') }</button>
+                    <button class="btn" data-bind="click: currentScript().addHadoopProperties"><i class="fa fa-plus"></i> ${ _('Add') }</button>
                   </td>
                 </tr>
               </tfoot>
@@ -293,7 +416,7 @@ ${ commonheader(None, "pig", user, "100px") | n,unicode }
 
           <br/>
 
-          <h4>${ _('Resources') } &nbsp; <i id="resources-dyk" class="icon-question-sign"></i></h4>
+          <h4>${ _('Resources') } &nbsp; <i id="resources-dyk" class="fa fa-question-circle"></i></h4>
           <div id="resources-dyk-content" class="hide">
             <ul style="text-align: left;">
               <li>${ _("Path to a HDFS file or zip file to add to the workspace of the running script") }</li>
@@ -305,7 +428,7 @@ ${ commonheader(None, "pig", user, "100px") | n,unicode }
                 <td>
                   ${ _('There are currently no defined resources.') }
                   <button class="btn" data-bind="click: currentScript().addResource" style="margin-left: 4px">
-                    <i class="icon-plus"></i> ${ _('Add') }
+                    <i class="fa fa-plus"></i> ${ _('Add') }
                   </button>
                 </td>
               </tr>
@@ -335,14 +458,14 @@ ${ commonheader(None, "pig", user, "100px") | n,unicode }
                   </td>
                   <td>
                     <button data-bind="click: viewModel.currentScript().removeResource" class="btn">
-                    <i class="icon-trash"></i> ${ _('Remove') }</button>
+                    <i class="fa fa-trash-o"></i> ${ _('Remove') }</button>
                   </td>
                 </tr>
               </tbody>
               <tfoot data-bind="visible: currentScript().resources().length > 0">
                 <tr>
                   <td colspan="3">
-                    <button class="btn" data-bind="click: currentScript().addResource"><i class="icon-plus"></i> ${ _('Add') }</button>
+                    <button class="btn" data-bind="click: currentScript().addResource"><i class="fa fa-plus"></i> ${ _('Add') }</button>
                   </td>
                 </tr>
               </tfoot>
@@ -360,7 +483,7 @@ ${ commonheader(None, "pig", user, "100px") | n,unicode }
           <script id="logTemplate" type="text/html">
             <div data-bind="css:{'alert-modified': name != '', 'alert': name != '', 'alert-success': status == 'SUCCEEDED' || status == 'OK', 'alert-error': status != 'RUNNING' && status != 'SUCCEEDED' && status != 'OK' && status != 'PREP' && status != 'SUSPENDED'}">
               <div class="pull-right">
-                  ${ _('Status:') } <a data-bind="text: status, visible: absoluteUrl != '', attr: {'href': absoluteUrl}" target="_blank"/> <i class="icon-share-alt"></i>
+                  ${ _('Status:') } <a data-bind="text: status, visible: absoluteUrl != '', attr: {'href': absoluteUrl}" target="_blank"/> <i class="fa fa-share"></i>
               </div>
               <h4>${ _('Progress:') } <span data-bind="text: progress"></span>${ _('%') }</h4>
               <div data-bind="css: {'progress': name != '', 'progress-striped': name != '', 'active': status == 'RUNNING'}" style="margin-top:10px">
@@ -368,23 +491,19 @@ ${ commonheader(None, "pig", user, "100px") | n,unicode }
               </div>
             </div>
           </script>
-          <pre id="withoutLogs">${ _('No available logs.') } <img src="/static/art/spinner.gif"/></pre>
+          <pre id="withoutLogs">${ _('No available logs.') } <img src="/static/art/spinner.gif" data-bind="visible: currentScript().isRunning()"/></pre>
           <pre id="withLogs" class="hide scroll"></pre>
         </div>
-
+      </div>
       </div>
   </div>
 
   <div id="dashboard" class="row-fluid mainSection hide">
 
-    <div class="widget-box">
-      <div class="widget-title">
-        <span class="icon">
-          <i class="icon-cogs"></i>
-        </span>
-        <h5>${ _('Running') }</h5>
-      </div>
-      <div class="widget-content">
+    <div class="card card-small">
+      <h2 class="card-heading simple">${ _('Running') }</h2>
+      <div class="card-body">
+        <p>
         <div class="alert alert-info" data-bind="visible: runningScripts().length == 0" style="margin-bottom:0">
           ${_('There are currently no running scripts.')}
         </div>
@@ -401,17 +520,14 @@ ${ commonheader(None, "pig", user, "100px") | n,unicode }
 
           </tbody>
         </table>
+        </p>
       </div>
     </div>
 
-    <div class="widget-box">
-      <div class="widget-title">
-        <span class="icon">
-          <i class="icon-th-list"></i>
-        </span>
-        <h5>${ _('Completed') }</h5>
-      </div>
-      <div class="widget-content">
+    <div class="card card-small">
+      <h2 class="card-heading simple">${ _('Completed') }</h2>
+      <div class="card-body">
+        <p>
         <div class="alert alert-info" data-bind="visible: completedScripts().length == 0">
           ${_('There are currently no completed scripts.')}
         </div>
@@ -427,6 +543,7 @@ ${ commonheader(None, "pig", user, "100px") | n,unicode }
 
           </tbody>
         </table>
+        </p>
       </div>
     </div>
 
@@ -441,7 +558,7 @@ ${ commonheader(None, "pig", user, "100px") | n,unicode }
           </div>
         </td>
         <td data-bind="text: created"></td>
-        <td data-bind="click: $root.showLogs"><i class="icon-tasks"></i></td>
+        <td data-bind="click: $root.showLogs"><i class="fa fa-tasks"></i></td>
       </tr>
     </script>
 
@@ -586,7 +703,7 @@ ${ commonheader(None, "pig", user, "100px") | n,unicode }
 <link rel="stylesheet" href="/static/ext/css/codemirror.css">
 <link rel="stylesheet" href="/static/ext/css/codemirror-show-hint.css">
 
-<style>
+<style type="text/css">
   .fileChooserBtn {
     border-radius: 0 3px 3px 0;
   }
@@ -623,6 +740,69 @@ ${ commonheader(None, "pig", user, "100px") | n,unicode }
   var codeMirror;
 
   $(document).ready(function () {
+    // initialize navigator
+    function showNavigator() {
+      $("#queryColumn").removeClass("span12").addClass("span9");
+      $("#navigatorColumn").show();
+      $("#navigatorShow").hide();
+    }
+
+    function hideNavigator() {
+      $("#queryColumn").removeClass("span9").addClass("span12");
+      $("#navigatorColumn").hide();
+      $("#navigatorShow").show();
+    }
+
+    $("#navigatorHide").on("click", function () {
+      hideNavigator();
+      $.totalStorage("huePigNavigatorHidden", true);
+    });
+
+    $("#navigatorShow").on("click", function () {
+      showNavigator();
+      $.totalStorage("huePigNavigatorHidden", null);
+    });
+
+    if ($.totalStorage("huePigNavigatorHidden") != null && $.totalStorage("huePigNavigatorHidden")) {
+      hideNavigator();
+    }
+
+    $(".navigatorFunctionCategory").on("click", function () {
+      var _submenu = $(this).next(".navigatorFunctionCategoryContent");
+      _submenu.find("li").removeClass("hide");
+      $("#navigatorSearch").val("");
+      _submenu.removeClass("hide");
+    });
+
+    $(".navigatorFunctionCategoryContent li a").on("click", function (e) {
+      e.preventDefault();
+      var _toInsert = $.trim($(this).text());
+      var _startChar = codeMirror.getCursor().ch;
+      codeMirror.replaceSelection(_toInsert);
+      codeMirror.setSelection({
+          line: codeMirror.getCursor().line,
+          ch: _startChar + _toInsert.indexOf("%")
+        }, {
+          line: codeMirror.getCursor().line,
+          ch: _startChar + _toInsert.indexOf("%") + _toInsert.substr(_toInsert.indexOf("%") + 1).indexOf("%") + 2
+        }
+      );
+      codeMirror.focus();
+      logGA('navigator/click');
+    });
+
+    $("#navigatorSearch").jHueDelayedInput(function(){
+      $(".navigatorFunctionCategoryContent").removeClass("hide");
+      $(".navigatorFunctionCategoryContent li").removeClass("hide");
+      $(".navigatorFunctionCategoryContent li").each(function () {
+        if ($(this).text().toLowerCase().indexOf($("#navigatorSearch").val().toLowerCase()) == -1) {
+          $(this).addClass("hide");
+        }
+      });
+    });
+
+    $("#navigatorFunctions").css("max-height", ($(window).height() - 370) + "px").css("overflow-y", "auto");
+
     viewModel.updateScripts();
 
     var USER_HOME = "/user/${ user }/";
@@ -767,17 +947,14 @@ ${ commonheader(None, "pig", user, "100px") | n,unicode }
     function showHdfsAutocomplete(path, showHCatHint) {
       $.getJSON(path, function (data) {
         CodeMirror.currentFiles = [];
-        if (data.error != null) {
-          $.jHueNotify.error(data.error);
-        }
-        else {
+        if (data.error == null) {
           $(data.files).each(function (cnt, item) {
             if (item.name != ".") {
-              var _ico = "icon-file-alt";
+              var _ico = "fa-file-o";
               if (item.type == "dir") {
-                _ico = "icon-folder-close";
+                _ico = "fa-folder";
               }
-              CodeMirror.currentFiles.push('<i class="' + _ico + '"></i> ' + item.name);
+              CodeMirror.currentFiles.push('<i class="fa ' + _ico + '"></i> ' + item.name);
             }
           });
           CodeMirror.isPath = true;
@@ -870,15 +1047,11 @@ ${ commonheader(None, "pig", user, "100px") | n,unicode }
       $("#runScriptBtn").button("loading");
       $("#withoutLogs").removeClass("hide");
       $("#withLogs").addClass("hide").text("");
-      showAlert("${_('Running')} <b>" + viewModel.currentScript().name() + "</b>...", "info");
+      showAlert("${_('Running')} <b>" + viewModel.currentScript().name() + "</b>...");
     });
 
     $(document).on("saved", function () {
-      showAlert("<b>" + viewModel.currentScript().name() + "</b> ${_('has been saved correctly.')}", "success");
-    });
-
-    $(document).on("error", function () {
-      showAlert("<b>${_('There was an error with your request!')}</b>", "error");
+      showAlert("<b>" + viewModel.currentScript().name() + "</b> ${_('has been saved correctly.')}");
     });
 
     $(document).on("refreshDashboard", function () {
@@ -887,10 +1060,12 @@ ${ commonheader(None, "pig", user, "100px") | n,unicode }
 
     $(document).on("showDashboard", function () {
       routie("dashboard");
+      $.jHueTitleUpdater.reset();
     });
 
     $(document).on("showScripts", function () {
       routie("scripts");
+      $.jHueTitleUpdater.reset();
     });
 
     $(document).on("scriptsRefreshed", function () {
@@ -905,11 +1080,12 @@ ${ commonheader(None, "pig", user, "100px") | n,unicode }
       refreshLogs();
       logsRefreshInterval = window.setInterval(function () {
         refreshLogs();
-      }, 1000);
+      }, 500);
     });
 
     $(document).on("stopLogsRefresh", function () {
       window.clearInterval(logsRefreshInterval);
+      $.jHueTitleUpdater.reset();
     });
 
     $(document).on("clearLogs", function () {
@@ -919,21 +1095,23 @@ ${ commonheader(None, "pig", user, "100px") | n,unicode }
       forceLogsAtEnd = true;
     });
 
+    $(document).on("stopError", function () {
+      $.jHueNotify.error(LABELS.KILL_ERROR);
+      logGA('stop');
+    });
+
     var _resizeTimeout = -1;
     $(window).on("resize", function () {
       window.clearTimeout(_resizeTimeout);
       _resizeTimeout = window.setTimeout(function () {
-        codeMirror.setSize("100%", $(window).height() - 190);
+        codeMirror.setSize("100%", $(window).height() - RESIZE_CORRECTION);
+        $("#navigatorFunctions").css("max-height", ($(window).height() - 370) + "px").css("overflow-y", "auto");
       }, 100);
     });
 
-    var _filterTimeout = -1;
-    $("#filter").on("keyup", function () {
-      window.clearTimeout(_filterTimeout);
-      _filterTimeout = window.setTimeout(function () {
-        viewModel.filterScripts($("#filter").val());
-      }, 350);
-    });
+    $("#filter").jHueDelayedInput(function(){
+      viewModel.filterScripts($("#filter").val());
+    }, 350);
 
     viewModel.filterScripts("");
 
@@ -992,16 +1170,21 @@ ${ commonheader(None, "pig", user, "100px") | n,unicode }
           }
           if (data.workflow && data.workflow.isRunning) {
             viewModel.currentScript().actions(data.workflow.actions);
+            if (data.workflow.actions != null && data.workflow.actions.length > 0) {
+              $.jHueTitleUpdater.set(data.workflow.actions[data.workflow.actions.length-1].progress + "%");
+            }
           }
           else {
             viewModel.currentScript().actions(data.workflow.actions);
             viewModel.currentScript().isRunning(false);
             $(document).trigger("stopLogsRefresh");
+            $.jHueTitleUpdater.reset();
           }
         });
       }
       else {
         $(document).trigger("stopLogsRefresh");
+        $.jHueTitleUpdater.reset();
       }
     }
 
@@ -1017,10 +1200,12 @@ ${ commonheader(None, "pig", user, "100px") | n,unicode }
       resizeLogs();
     });
 
+    var RESIZE_CORRECTION = 246;
+
     function showMainSection(mainSection, includeGA) {
       window.setTimeout(function () {
         codeMirror.refresh();
-        codeMirror.setSize("100%", $(window).height() - 190);
+        codeMirror.setSize("100%", $(window).height() - RESIZE_CORRECTION);
       }, 100);
 
       if ($("#" + mainSection).is(":hidden")) {
@@ -1028,8 +1213,8 @@ ${ commonheader(None, "pig", user, "100px") | n,unicode }
         $("#" + mainSection).show();
         highlightMainMenu(mainSection);
       }
-      if (typeof trackOnGA == 'function' && includeGA == undefined){
-        trackOnGA(mainSection);
+      if (includeGA == undefined){
+        logGA(mainSection);
       }
     }
 
@@ -1041,13 +1226,11 @@ ${ commonheader(None, "pig", user, "100px") | n,unicode }
         highlightMenu(section);
       }
 
-      if (typeof trackOnGA == 'function'){
-        trackOnGA(mainSection + "/" + section);
-      }
+      logGA(mainSection + "/" + section);
     }
 
     function highlightMainMenu(mainSection) {
-      $(".nav-pills li").removeClass("active");
+      $(".navbar-fixed-top .nav li").removeClass("active");
       $("a[href='#" + mainSection + "']").parent().addClass("active");
     }
 
@@ -1068,7 +1251,6 @@ ${ commonheader(None, "pig", user, "100px") | n,unicode }
       "dashboard": function () {
         showMainSection("dashboard");
       },
-
       "edit": function () {
         showSection("editor", "edit");
       },
@@ -1182,17 +1364,14 @@ ${ commonheader(None, "pig", user, "100px") | n,unicode }
     }
   };
 
-  var _bottomAlertFade = -1;
-  function showAlert(msg, extraClass) {
-    var klass = "alert ";
-    if (extraClass != null && extraClass != undefined) {
-      klass += "alert-" + extraClass;
+  function showAlert(msg) {
+    $(document).trigger("info", msg);
+  }
+
+  function logGA(page) {
+    if (typeof trackOnGA == 'function'){
+      trackOnGA('pig/' + page);
     }
-    $(".bottomAlert").attr("class", "bottomAlert " + klass).html(msg).show();
-    window.clearTimeout(_bottomAlertFade);
-    _bottomAlertFade = window.setTimeout(function () {
-      $(".bottomAlert").fadeOut();
-    }, 3000);
   }
 </script>
 

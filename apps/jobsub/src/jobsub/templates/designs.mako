@@ -23,7 +23,7 @@ from django.utils.translation import ugettext as _
 
 <%namespace name="actionbar" file="actionbar.mako" />
 
-${ commonheader(None, "jobsub", user, "60px") | n,unicode }
+${ commonheader(None, "jobsub", user) | n,unicode }
 
 <link rel="stylesheet" href="/jobsub/static/css/jobsub.css">
 
@@ -39,8 +39,28 @@ ${ commonheader(None, "jobsub", user, "60px") | n,unicode }
 <script src="/jobsub/static/js/jobsub.ko.js" type="text/javascript" charset="utf-8"></script>
 <script src="/jobsub/static/js/jobsub.js" type="text/javascript" charset="utf-8"></script>
 
+
+<div class="navbar navbar-inverse navbar-fixed-top nokids">
+    <div class="navbar-inner">
+      <div class="container-fluid">
+        <div class="nav-collapse">
+          <ul class="nav">
+            <li class="currentApp">
+              <a href="/${app_name}">
+                <img src="/jobsub/static/art/icon_jobsub_24.png" />
+                ${ _('Job Designer') }
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+</div>
+
+
 <div class="container-fluid">
-  <h1>${_('Job Designs')}</h1>
+  <div class="card card-small">
+  <h1 class="card-heading simple">${_('Designs')}</h1>
 
   <%actionbar:render>
     <%def name="search()">
@@ -50,77 +70,77 @@ ${ commonheader(None, "jobsub", user, "60px") | n,unicode }
     <%def name="actions()">
       <div class="btn-toolbar" style="display: inline; vertical-align: middle">
       <!-- ko ifnot: inTrash -->
-        <button id="submit-design" class="btn" title="${_('Submit')}" data-bind="enable: selectedDesignObjects().length == 1"><i class="icon-play"></i> ${_('Submit')}</button>
-        <button id="edit-design" class="btn" title="${_('Edit')}" data-bind="enable: selectedDesignObjects().length == 1"><i class="icon-pencil"></i> ${_('Edit')}</button>
-        <button id="copy-designs" class="btn" title="${_('Copy')}" data-bind="enable: selectedDesignObjects().length > 0"><i class="icon-copy"></i> ${_('Copy')}</button>
+        <button id="submit-design" class="btn" title="${_('Submit')}" data-bind="enable: selectedDesignObjects().length == 1"><i class="fa fa-play"></i> ${_('Submit')}</button>
+        <button id="edit-design" class="btn" title="${_('Edit')}" data-bind="enable: selectedDesignObjects().length == 1"><i class="fa fa-pencil"></i> ${_('Edit')}</button>
+        <button id="copy-designs" class="btn" title="${_('Copy')}" data-bind="enable: selectedDesignObjects().length > 0"><i class="fa fa-files-o"></i> ${_('Copy')}</button>
         <div id="delete-dropdown" class="btn-group" style="vertical-align: middle">
-          <button id="trash-designs" class="btn" data-bind="enable: selectedDesignObjects().length > 0"><i class="icon-remove"></i> ${_('Move to trash')}</button>
+          <button id="trash-designs" class="btn" data-bind="enable: selectedDesignObjects().length > 0"><i class="fa fa-times"></i> ${_('Move to trash')}</button>
           <button class="btn dropdown-toggle" data-toggle="dropdown" data-bind="enable: selectedDesignObjects().length > 0">
             <span class="caret"></span>
           </button>
           <ul class="dropdown-menu">
-            <li><a href="javascript:void(0);" id="destroy-designs" title="${_('Delete forever')}"><i class="icon-bolt"></i> ${_('Delete forever')}</a></li>
+            <li><a href="javascript:void(0);" id="destroy-designs" title="${_('Delete forever')}"><i class="fa fa-bolt"></i> ${_('Delete forever')}</a></li>
           </ul>
         </div>
       <!-- /ko -->
       <!-- ko if: inTrash -->
-        <button id="restore-designs" class="btn" title="${_('Restore')}" data-bind="enable: selectedDesignObjects().length > 0"><i class="icon-cloud-upload"></i> ${_('Restore')}</button>
-        <button id="destroy-designs" class="btn" title="${_('Delete forever')}" data-bind="enable: selectedDesignObjects().length > 0"><i class="icon-bolt"></i> ${_('Delete forever')}</button>
+        <button id="restore-designs" disabled="disabled" class="btn" title="${_('Restore')}" data-bind="enable: selectedDesignObjects().length > 0"><i class="fa fa-cloud-upload"></i> ${_('Restore')}</button>
+        <button id="destroy-designs" disabled="disabled" class="btn" title="${_('Delete forever')}" data-bind="enable: selectedDesignObjects().length > 0"><i class="fa fa-bolt"></i> ${_('Delete forever')}</button>
       <!-- /ko -->
       </div>
     </%def>
 
     <%def name="creation()">
       <div class="btn-toolbar" style="display: inline; vertical-align: middle">
-        <button id="home" class="btn" title="${_('Home')}" data-bind="visible: isEditing"><i class="icon-home"></i> ${_('View designs')}</button>
       <!-- ko if: inTrash -->
+        <button disabled="disabled" type="button" id="purge-trashed-designs" class="btn" title="${ _('Delete all the designs') }"><i class="fa fa-fire"></i> ${ _('Empty trash') }</button>
         &nbsp;&nbsp;
-        <button type="button" id="purge-trashed-designs" class="btn" title="${ _('Delete all the designs') }"><i class="icon-fire"></i> ${ _('Empty trash') }</button>
       <!-- /ko -->
+      <button id="home" class="btn" title="${_('Home')}" data-bind="visible: isEditing"><i class="fa fa-home"></i> ${_('View designs')}</button>
       <!-- ko ifnot: inTrash -->
-        <a href="#trashed-designs" class="btn"><i class="icon-trash"></i> ${ _('View trash') }</a>
-        &nbsp;&nbsp;
         <div id="new-action-dropdown" class="btn-group" style="vertical-align: middle">
           <a href="#" class="btn new-action-link dropdown-toggle" title="${_('New action')}" data-toggle="dropdown">
-            <i class="icon-plus-sign"></i> ${_('New action')}
+            <i class="fa fa-plus-circle"></i> ${_('New action')}
             <span class="caret"></span>
           </a>
           <ul class="dropdown-menu" style="top: auto">
             <li>
-              <a href="#new-design/mapreduce" class="new-node-link" title="${_('Create MapReduce design')}" rel="tooltip"><i class="icon-plus-sign"></i> MapReduce</a>
+              <a href="#new-design/mapreduce" class="new-node-link" title="${_('Create MapReduce design')}" rel="tooltip"><i class="fa fa-plus-circle"></i> MapReduce</a>
             </li>
             <li>
-              <a href="#new-design/java" class="new-node-link" title="${_('Create Java design')}" rel="tooltip"><i class="icon-plus-sign"></i> Java</a>
+              <a href="#new-design/java" class="new-node-link" title="${_('Create Java design')}" rel="tooltip"><i class="fa fa-plus-circle"></i> Java</a>
             </li>
             <li>
-              <a href="#new-design/streaming" class="new-node-link" title="${_('Create Streaming design')}" rel="tooltip"><i class="icon-plus-sign"></i> Streaming</a>
+              <a href="#new-design/streaming" class="new-node-link" title="${_('Create Streaming design')}" rel="tooltip"><i class="fa fa-plus-circle"></i> Streaming</a>
             </li>
             <li>
-              <a href="#new-design/hive" class="new-node-link" title="${_('Create Hive design')}" rel="tooltip"><i class="icon-plus-sign"></i> Hive</a>
+              <a href="#new-design/hive" class="new-node-link" title="${_('Create Hive design')}" rel="tooltip"><i class="fa fa-plus-circle"></i> Hive</a>
             </li>
             <li>
-              <a href="#new-design/pig" class="new-node-link" title="${_('Create Pig design')}" rel="tooltip"><i class="icon-plus-sign"></i> Pig</a>
+              <a href="#new-design/pig" class="new-node-link" title="${_('Create Pig design')}" rel="tooltip"><i class="fa fa-plus-circle"></i> Pig</a>
             </li>
             <li>
-              <a href="#new-design/sqoop" class="new-node-link" title="${_('Create Sqoop design')}" rel="tooltip"><i class="icon-plus-sign"></i> Sqoop</a>
+              <a href="#new-design/sqoop" class="new-node-link" title="${_('Create Sqoop design')}" rel="tooltip"><i class="fa fa-plus-circle"></i> Sqoop</a>
             </li>
             <li>
-              <a href="#new-design/fs" class="new-node-link" title="${_('Create Fs design')}" rel="tooltip"><i class="icon-plus-sign"></i> Fs</a>
+              <a href="#new-design/fs" class="new-node-link" title="${_('Create Fs design')}" rel="tooltip"><i class="fa fa-plus-circle"></i> Fs</a>
             </li>
             <li>
               <a href="#new-design/ssh" class="new-node-link" title="${_('Create SSH design')}" rel="tooltip"><i class="icon-plus-sign"></i> Ssh</a>
             </li>
             <li>
-              <a href="#new-design/shell" class="new-node-link" title="${_('Create Shell design')}" rel="tooltip"><i class="icon-plus-sign"></i> Shell</a>
+              <a href="#new-design/shell" class="new-node-link" title="${_('Create Shell design')}" rel="tooltip"><i class="fa fa-plus-circle"></i> Shell</a>
             </li>
             <li>
-              <a href="#new-design/email" class="new-node-link" title="${_('Create Email design')}" rel="tooltip"><i class="icon-plus-sign"></i> Email</a>
+              <a href="#new-design/email" class="new-node-link" title="${_('Create Email design')}" rel="tooltip"><i class="fa fa-plus-circle"></i> Email</a>
             </li>
             <li>
-              <a href="#new-design/distcp" class="new-node-link" title="${_('Create DistCp design')}" rel="tooltip"><i class="icon-plus-sign"></i> DistCp</a>
+              <a href="#new-design/distcp" class="new-node-link" title="${_('Create DistCp design')}" rel="tooltip"><i class="fa fa-plus-circle"></i> DistCp</a>
             </li>
           </ul>
         </div>
+        &nbsp;&nbsp;
+        <a href="#trashed-designs" class="btn"><i class="fa fa-trash-o"></i> ${ _('View trash') }</a>
       <!-- /ko -->
 
       </div>
@@ -134,7 +154,7 @@ ${ commonheader(None, "jobsub", user, "60px") | n,unicode }
       <thead>
         <tr>
           <th width="1%">
-            <div id="selectAll" data-bind="click: toggleSelectAll, css: {'hueCheckbox': true, 'icon-ok': allSelected}"></div>
+            <div id="selectAll" data-bind="click: toggleSelectAll, css: {'hueCheckbox': true, 'fa': true, 'fa-check': allSelected}"></div>
           </th>
           <th>${_('Name')}</th>
           <th>${_('Description')}</th>
@@ -151,18 +171,29 @@ ${ commonheader(None, "jobsub", user, "60px") | n,unicode }
     </table>
   </div>
 
+  </div>
+
+</div>
+
+<div class="hueOverlay" data-bind="visible: isLoading">
+  <!--[if lte IE 9]>
+    <img src="/static/art/spinner-big.gif" />
+  <![endif]-->
+  <!--[if !IE]> -->
+    <i class="fa fa-spinner fa-spin"></i>
+  <!-- <![endif]-->
 </div>
 
 <script id="designTemplate" type="text/html">
   <tr style="cursor: pointer" data-bind="with: design">
     <td data-row-selector-exclude="true" data-bind="click: function(data, event) {$root.toggleSelect.call($root, $index());}" class="center" style="cursor: default">
-      <div class="hueCheckbox savedCheck" data-row-selector-exclude="true" data-bind="css: {'hueCheckbox': name != '..', 'icon-ok': $parent.selected()}"></div>
+      <div class="hueCheckbox savedCheck" data-row-selector-exclude="true" data-bind="css: {'hueCheckbox': name != '..', 'fa': name != '..', 'fa-check': $parent.selected()}"></div>
     </td>
-    <td data-bind="click: function(data, event) { window.location = '#edit-design/' + $index() }, text: name"></td>
-    <td data-bind="click: function(data, event) { window.location = '#edit-design/' + $index() }, text: description"></td>
-    <td data-bind="click: function(data, event) { window.location = '#edit-design/' + $index() }, text: owner"></td>
-    <td data-bind="click: function(data, event) { window.location = '#edit-design/' + $index() }, text: node_type"></td>
-    <td data-bind="click: function(data, event) { window.location = '#edit-design/' + $index() }">
+    <td data-bind="click: function(data, event) { window.location = '#edit-design/' + id() }, text: name"></td>
+    <td data-bind="click: function(data, event) { window.location = '#edit-design/' + id() }, text: description"></td>
+    <td data-bind="click: function(data, event) { window.location = '#edit-design/' + id() }, text: owner"></td>
+    <td data-bind="click: function(data, event) { window.location = '#edit-design/' + id() }, text: node_type"></td>
+    <td data-bind="click: function(data, event) { window.location = '#edit-design/' + id() }">
       <!-- ko if: is_shared -->
         <span class="label label-info">shared</span>
       <!-- /ko -->
@@ -170,7 +201,7 @@ ${ commonheader(None, "jobsub", user, "60px") | n,unicode }
         <span class="label label-info">personal</span>
       <!-- /ko -->
     </td>
-    <td data-bind="click: function(data, event) { window.location = '#edit-design/' + $index() }, text: new Date(last_modified() * 1000).format('%B %d, %Y %I:%M %p'), attr: { 'data-sort-value': last_modified() }"></td>
+    <td data-bind="click: function(data, event) { window.location = '#edit-design/' + id() }, text: new Date(last_modified() * 1000).format('%B %d, %Y %I:%M %p'), attr: { 'data-sort-value': last_modified() }"></td>
     <td data-bind="text: is_trashed"></td>
   </tr>
 </script>
@@ -705,9 +736,10 @@ ko.applyBindings(designs);
 
 // Design table and other variables.
 var designTableOptions = {
+  "bAutoWidth": false,
   "sPaginationType": "bootstrap",
   "bLengthChange": false,
-  "sDom": "<'row'r>t<'row'<'span8'i><''p>>",
+  "sDom": "<'row'r>t<'row-fluid'<'dt-pages'p><'dt-records'i>>",
   "bDestroy": true,
   "aoColumnDefs": [
     { "bSortable": false, "aTargets": [ 0 ] },
@@ -740,27 +772,35 @@ var designTable = $('#designTable').dataTable( designTableOptions );
 /**
  * Redraw a table after the table has been dynamically updated.
  * This is necessary because KO and datatables don't play well together.
+ * This is useful when datatables doesn't automatically update and no extra rows have been added.
  */
 function redraw() {
+  designs.isLoading(true);
   designTable.fnDestroy();
   designTable = $('#designTable').dataTable( designTableOptions );
   designTable.fnFilter(designs.inTrash().toString(), 7);
+  designs.isLoading(false);
 }
 
 /**
  * Reload with datatables.
  * Remove datatables, reload, then reinitialize datatables.
  * Knockout doesn't work without this.
+ * Clearing the table is necessary so multiple rows will not be added.
  */
 function reload() {
+  designs.isLoading(true);
   $(document).one('load.designs', function() {
+    designTable.fnClearTable();
     designTable.fnDestroy();
   });
-  designs.load();
   $(document).one('initialized.designs', function() {
     designTable = $('#designTable').dataTable( designTableOptions );
     designTable.fnFilter(designs.inTrash().toString(), 7);
+    designs.isLoading(false);
+    routie('list-designs');
   });
+  designs.load();
 }
 
 $(document).bind('loaded.designs', function() {
@@ -809,14 +849,14 @@ var setupRoutes = (function() {
           templates.getActionTemplate(node_type, context);
           designs.newDesign(node_type);
         },
-        'edit-design/:index': function(index) {
+        'edit-design/:design_id': function(design_id) {
           /**
            * Update context with correct title.
            * Design is selected through 'list-designs'.
            */
           designs.closeDesign();
 
-          var designObject = designs.designs()[index];
+          var designObject = designs.getDesignObjectById(design_id);
           if (!designObject) {
             routie('list-designs');
             return;
@@ -842,7 +882,7 @@ var setupRoutes = (function() {
           var context = $.extend(true, {}, global_action_context, contexts[node_type]);
           templates.getActionTemplate(node_type, context);
           designs.deselectAll();
-          designs.select(index);
+          designObject.selected(true);
           designs.editDesign();
         },
         'trashed-designs': function() {
@@ -861,7 +901,6 @@ var setupRoutes = (function() {
         }
       });
     }
-    routie('list-designs');
   }
 })();
 
@@ -880,7 +919,7 @@ $(document).ready(function(e) {
     );
   });
   $('body').on('click', '#edit-design', function() {
-    routie('edit-design/' + designs.selectedIndex());
+    routie('edit-design/' + designs.selectedDesign().id());
   });
   $('body').on('click', '#trash-designs', function() {
     $('#trashWf').modal('show');
@@ -895,6 +934,7 @@ $(document).ready(function(e) {
     $('#restoreWf').modal('show');
   });
   $('body').on('click', '#copy-designs', function() {
+    designs.isLoading(true);
     designs.cloneDesigns();
   });
   $('#home').click(function() {

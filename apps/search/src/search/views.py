@@ -15,15 +15,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-try:
-  import json
-except ImportError:
-  import simplejson as json
-
+import json
 import logging
+import math
 
 from django.core.urlresolvers import reverse
 from django.http import HttpResponse
+from django.utils.encoding import smart_str
 from django.utils.translation import ugettext as _
 from django.shortcuts import redirect
 
@@ -32,16 +30,25 @@ from desktop.lib.exceptions_renderable import PopupException
 
 from search.api import SolrApi
 from search.conf import SOLR_URL
+from search.data_export import download as export_download
 from search.decorators import allow_admin_only
-from search.forms import QueryForm, CollectionForm, HighlightingForm
+from search.forms import QueryForm, CollectionForm
+from search.management.commands import search_setup
 from search.models import Collection, augment_solr_response
 from search.search_controller import SearchController
+
+from django.utils.encoding import force_unicode
+
 
 LOG = logging.getLogger(__name__)
 
 
+def initial_collection(request, hue_collections):
+  return hue_collections[0].id
+
+
 def index(request):
-  hue_collections = Collection.objects.filter(enabled=True)
+  hue_collections = SearchController(request.user).get_search_collections()
 
   if not hue_collections:
     if request.user.is_superuser:
@@ -49,12 +56,12 @@ def index(request):
     else:
       return no_collections(request)
 
-  initial_collection = request.COOKIES.get('hueSearchLastCollection', 0)
-  search_form = QueryForm(request.GET, initial_collection=initial_collection)
+  init_collection = initial_collection(request, hue_collections)
+
+  search_form = QueryForm(request.GET, initial_collection=init_collection)
   response = {}
   error = {}
   solr_query = {}
-  hue_collection = None
 
   if search_form.is_valid():
     collection_id = search_form.cleaned_data['collection']
@@ -67,11 +74,13 @@ def index(request):
     solr_query['facets'] = search_form.cleaned_data['facets'] or 1
 
     try:
+      collection_id = search_form.cleaned_data['collection']
       hue_collection = Collection.objects.get(id=collection_id)
       solr_query['collection'] = hue_collection.name
       response = SolrApi(SOLR_URL.get(), request.user).query(solr_query, hue_collection)
     except Exception, e:
-      error['message'] = unicode(str(e), "utf8")
+      error['title'] = force_unicode(e.title) if hasattr(e, 'title') else ''
+      error['message'] = force_unicode(str(e))
   else:
     error['message'] = _('There is no collection to search.')
 
@@ -87,10 +96,36 @@ def index(request):
     'error': error,
     'solr_query': solr_query,
     'hue_collection': hue_collection,
-    'hue_collections': hue_collections,
     'current_collection': collection_id,
     'json': json,
   })
+
+
+def download(request, format):
+  hue_collections = SearchController(request.user).get_search_collections()
+
+  if not hue_collections:
+    raise PopupException(_("No collection to download."))
+
+  init_collection = initial_collection(request, hue_collections)
+
+  search_form = QueryForm(request.GET, initial_collection=init_collection)
+
+  if search_form.is_valid():
+    try:
+      collection_id = search_form.cleaned_data['collection']
+      hue_collection = Collection.objects.get(id=collection_id)
+
+      solr_query = search_form.solr_query_dict
+      response = SolrApi(SOLR_URL.get(), request.user).query(solr_query, hue_collection)
+
+      LOG.debug('Download results for query %s' % smart_str(solr_query))
+
+      return export_download(response, format)
+    except Exception, e:
+      raise PopupException(_("Could not download search results: %s") % e)
+  else:
+    raise PopupException(_("Could not download search results: %s") % search_form.errors)
 
 
 def no_collections(request):
@@ -134,7 +169,7 @@ def admin_collections_import(request):
     for imp in importables:
       try:
         searcher.add_new_collection(imp)
-        status += 1
+        imported.append(imp['name'])
       except Exception, e:
         err_message += unicode(str(e), "utf8") + "\n"
       if status == len(importables):
@@ -206,6 +241,7 @@ def admin_collection_properties(request, collection_id):
       searcher = SearchController(request.user)
       hue_collection = collection_form.save(commit=False)
       hue_collection.is_core_only = not searcher.is_collection(hue_collection.name)
+      hue_collection.autocomplete = json.loads(request.POST.get('autocomplete'))
       hue_collection.save()
       return redirect(reverse('search:admin_collection_properties', kwargs={'collection_id': hue_collection.id}))
     else:
@@ -217,6 +253,7 @@ def admin_collection_properties(request, collection_id):
     'solr_collection': solr_collection,
     'hue_collection': hue_collection,
     'collection_form': collection_form,
+    'collection_properties': json.dumps(hue_collection.properties_dict)
   })
 
 
@@ -243,7 +280,7 @@ def admin_collection_template(request, collection_id):
   return render('admin_collection_template.mako', request, {
     'solr_collection': solr_collection,
     'hue_collection': hue_collection,
-    'sample_data': json.dumps(response["response"]["docs"]),
+    'sample_data': sample_data,
   })
 
 
@@ -327,7 +364,7 @@ def query_suggest(request, collection_id, query=""):
   result = {'status': -1, 'message': 'Error'}
 
   solr_query = {}
-  solr_query['collection'] = collection
+  solr_query['collection'] = hue_collection.name
   solr_query['q'] = query
 
   try:
@@ -336,5 +373,21 @@ def query_suggest(request, collection_id, query=""):
     result['status'] = 0
   except Exception, e:
     result['message'] = unicode(str(e), "utf8")
+
+  return HttpResponse(json.dumps(result), mimetype="application/json")
+
+
+def install_examples(request):
+  result = {'status': -1, 'message': ''}
+
+  if request.method != 'POST':
+    result['message'] = _('A POST request is required.')
+  else:
+    try:
+      search_setup.Command().handle_noargs()
+      result['status'] = 0
+    except Exception, e:
+      LOG.exception(e)
+      result['message'] = str(e)
 
   return HttpResponse(json.dumps(result), mimetype="application/json")

@@ -22,11 +22,11 @@ msgstr ""
 msgid "Path"
 msgstr "Caminho"
 
-#: src/metastore/forms.py:49
+#: src/metastore/forms.py:47
 msgid "Overwrite?"
 msgstr "Sobrescrever?"
 
-#: src/metastore/forms.py:62
+#: src/metastore/forms.py:60
 #, python-format
 msgid "%(column_name)s (partition key with type %(column_type)s)"
 msgstr "%(column_name)s (partição principal com o tipo %(column_type)s)"
@@ -74,9 +74,20 @@ msgstr "Não é possível carregar os dados: "
 msgid "Table '%(table)s' is not partitioned."
 msgstr "A tabela '%(table)s' não está particionada."
 
-#: src/metastore/templates/components.mako:24
+#: src/metastore/views.py:305
+msgid "Column analysis not supportet yet"
+msgstr "Análise de colunas ainda sem suporte"
+
+#: src/metastore/views.py:307
+msgid "A POST request is required"
+msgstr "É necessária uma solicitação POST"
+
+#: src/metastore/templates/components.mako:30
+msgid "Metastore Manager"
+msgstr "Metastore Manager"
+
+#: src/metastore/templates/components.mako:44
 #: src/metastore/templates/databases.mako:23
-#: src/metastore/templates/databases.mako:26
 msgid "Databases"
 msgstr "Bancos de dados"
 
@@ -162,7 +173,6 @@ msgid "View"
 msgstr "Exibir"
 
 #: src/metastore/templates/describe_table.mako:28
-#: src/metastore/templates/describe_table.mako:55
 msgid "Table"
 msgstr "Tabela"
 
@@ -171,15 +181,16 @@ msgstr "Tabela"
 msgid "%s : %s"
 msgstr "%s : %s"
 
-#: src/metastore/templates/describe_table.mako:36
+#: src/metastore/templates/describe_table.mako:37
+#: src/metastore/templates/describe_table.mako:145
 msgid "Name"
 msgstr "Nome"
 
-#: src/metastore/templates/describe_table.mako:37
+#: src/metastore/templates/describe_table.mako:38
 msgid "Type"
 msgstr "Tipo"
 
-#: src/metastore/templates/describe_table.mako:38
+#: src/metastore/templates/describe_table.mako:39
 msgid "Comment"
 msgstr "Comentário"
 
@@ -243,7 +254,7 @@ msgstr "banco de dados"
 
 #: src/metastore/templates/tables.mako:43
 msgid "Create a new table from a file"
-msgstr "Criar nova tabela usando um arquivo"
+msgstr "Criar nova tabela a partir de um arquivo"
 
 #: src/metastore/templates/tables.mako:44
 msgid "Create a new table manually"
@@ -265,6 +276,10 @@ msgstr "Excluir as tabelas selecionadas"
 #: src/metastore/templates/tables.mako:67
 msgid "Table Name"
 msgstr "Nome da tabela"
+
+#: src/metastore/templates/tables.mako:149
+msgid "Oops, no database found!"
+msgstr "Oops, nenhum banco de dados encontrado!"
 
 #: src/metastore/templates/util.mako:66
 msgid "Unsaved Query"

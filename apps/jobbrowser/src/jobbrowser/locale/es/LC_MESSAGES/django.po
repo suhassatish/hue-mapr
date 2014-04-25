@@ -43,8 +43,8 @@ msgstr "Hue ha encontrado un error al recuperar los registros de '%s'."
 
 #: src/jobbrowser/views.py:58
 #, python-format
-msgid "Could not find job %s. The job might not be running yet."
-msgstr "No se ha encontrado el trabajo %s. Puede que ya no se esté ejecutando."
+msgid "Could not find job %s."
+msgstr "No se ha podido encontrar el job %s."
 
 #: src/jobbrowser/views.py:61
 #, fuzzy, python-format
@@ -116,8 +116,8 @@ msgstr "Intento de tarea: %(attemptId)s"
 #: src/jobbrowser/templates/attempt.mako:27
 #: src/jobbrowser/templates/attempt_logs.mako:24
 #, python-format
-msgid "Task Attempt: %(attemptId)s - Job Browser"
-msgstr "Intento de tarea: %(attemptId)s: Job Browser"
+msgid "Task Attempt: %(attemptId)s"
+msgstr "Intento de tarea: %(attemptId)s"
 
 #: src/jobbrowser/templates/attempt.mako:32
 #: src/jobbrowser/templates/attempt.mako:74
@@ -224,6 +224,12 @@ msgstr "Estado"
 #: src/jobbrowser/templates/attempt.mako:94
 #: src/jobbrowser/templates/task.mako:66 src/jobbrowser/templates/task.mako:130
 #: src/jobbrowser/templates/tasks.mako:77
+msgid "State"
+msgstr "Estado"
+
+#: src/jobbrowser/templates/attempt.mako:105
+#: src/jobbrowser/templates/task.mako:70 src/jobbrowser/templates/task.mako:135
+#: src/jobbrowser/templates/tasks.mako:78
 msgid "Start Time"
 msgstr "Hora de inicio"
 
@@ -282,22 +288,22 @@ msgstr "No hay datos disponibles"
 msgid "No matching records"
 msgstr "No hay registros coincidentes"
 
-#: src/jobbrowser/templates/attempt_logs.mako:76
+#: src/jobbrowser/templates/attempt_logs.mako:80
 msgid "task diagnostic log"
 msgstr "registro de diagnóstico de tareas"
 
-#: src/jobbrowser/templates/attempt_logs.mako:77
-#: src/jobbrowser/templates/job_attempt_logs.mako:44
+#: src/jobbrowser/templates/attempt_logs.mako:81
+#: src/jobbrowser/templates/job_attempt_logs.mako:46
 msgid "stdout"
 msgstr "stdout"
 
-#: src/jobbrowser/templates/attempt_logs.mako:78
-#: src/jobbrowser/templates/job_attempt_logs.mako:45
+#: src/jobbrowser/templates/attempt_logs.mako:82
+#: src/jobbrowser/templates/job_attempt_logs.mako:47
 msgid "stderr"
 msgstr "stderr"
 
-#: src/jobbrowser/templates/attempt_logs.mako:79
-#: src/jobbrowser/templates/job_attempt_logs.mako:46
+#: src/jobbrowser/templates/attempt_logs.mako:83
+#: src/jobbrowser/templates/job_attempt_logs.mako:48
 msgid "syslog"
 msgstr "syslog"
 
@@ -318,8 +324,8 @@ msgstr "Trabajo: %(jobId)s"
 
 #: src/jobbrowser/templates/job.mako:109
 #, python-format
-msgid "Job: %(jobId)s - Job Browser"
-msgstr "Trabajo: %(jobId)s: Job Browser"
+msgid "Job: %(jobId)s"
+msgstr "Job: %(jobId)s"
 
 #: src/jobbrowser/templates/job.mako:114
 msgid "Job ID"
@@ -479,11 +485,20 @@ msgstr "Job Browser"
 msgid "Attempt: %(attempt_index)s"
 msgstr "Intento: %(attempt_index)s"
 
-#: src/jobbrowser/templates/job_attempt_logs.mako:52
-#: src/jobbrowser/templates/job_attempt_logs.mako:58
-#: src/jobbrowser/templates/job_attempt_logs.mako:64
+#: src/jobbrowser/templates/job_attempt_logs.mako:54
+#: src/jobbrowser/templates/job_attempt_logs.mako:60
+#: src/jobbrowser/templates/job_attempt_logs.mako:66
+#: src/jobbrowser/templates/job_not_assigned.mako:43
 msgid "Loading..."
 msgstr "Cargando..."
+
+#: src/jobbrowser/templates/job_not_assigned.mako:47
+msgid "The application might not be running yet or there is no Node Manager or Container available."
+msgstr "Puede que la aplicación no se esté ejecutando todavía o que no haya Node Manager o Contenedor disponible."
+
+#: src/jobbrowser/templates/job_not_assigned.mako:48
+msgid "This page will be automatically refreshed."
+msgstr "Esta página se actualizará automáticamente."
 
 #: src/jobbrowser/templates/jobbrowser_components.mako:29
 #: src/jobbrowser/templates/jobbrowser_components.mako:55
@@ -573,8 +588,8 @@ msgstr "Tarea del trabajo: %(taskId)s"
 
 #: src/jobbrowser/templates/task.mako:27
 #, python-format
-msgid "Job Task: %(taskId)s - Job Browser"
-msgstr "Tarea del trabajo: %(taskId)s: Job Browser"
+msgid "Job Task: %(taskId)s"
+msgstr "Tarea del job: %(taskId)s"
 
 #: src/jobbrowser/templates/task.mako:67 src/jobbrowser/templates/tasks.mako:78
 msgid "End Time"
@@ -614,67 +629,67 @@ msgstr "Hora de finalización de ejecución"
 msgid "Task View: Job: %(jobId)s"
 msgstr "Vista de tarea: trabajo: %(jobId)s"
 
-#: src/jobbrowser/templates/tasks.mako:36
+#: src/jobbrowser/templates/tasks.mako:39
 msgid "Filter tasks:"
 msgstr "Filtrar tareas:"
 
-#: src/jobbrowser/templates/tasks.mako:39
+#: src/jobbrowser/templates/tasks.mako:41
 msgid "All states"
 msgstr "Todos los estados"
 
-#: src/jobbrowser/templates/tasks.mako:40
+#: src/jobbrowser/templates/tasks.mako:42
 msgid "succeeded"
 msgstr "satisfactorias"
 
-#: src/jobbrowser/templates/tasks.mako:41
+#: src/jobbrowser/templates/tasks.mako:43
 msgid "running"
 msgstr "en ejecución"
 
-#: src/jobbrowser/templates/tasks.mako:42
+#: src/jobbrowser/templates/tasks.mako:44
 msgid "failed"
 msgstr "error"
 
-#: src/jobbrowser/templates/tasks.mako:43
+#: src/jobbrowser/templates/tasks.mako:45
 msgid "killed"
 msgstr "eliminadas"
 
-#: src/jobbrowser/templates/tasks.mako:44
+#: src/jobbrowser/templates/tasks.mako:46
 msgid "pending"
 msgstr "pendientes"
 
-#: src/jobbrowser/templates/tasks.mako:48
+#: src/jobbrowser/templates/tasks.mako:50
 msgid "All types"
 msgstr "Todos los tipos"
 
-#: src/jobbrowser/templates/tasks.mako:49
+#: src/jobbrowser/templates/tasks.mako:51
 msgid "maps"
 msgstr "maps"
 
-#: src/jobbrowser/templates/tasks.mako:50
+#: src/jobbrowser/templates/tasks.mako:52
 msgid "reduces"
 msgstr "reduces"
 
-#: src/jobbrowser/templates/tasks.mako:51
+#: src/jobbrowser/templates/tasks.mako:53
 msgid "cleanups"
 msgstr "limpiezas"
 
-#: src/jobbrowser/templates/tasks.mako:52
+#: src/jobbrowser/templates/tasks.mako:54
 msgid "setups"
 msgstr "configuraciones"
 
-#: src/jobbrowser/templates/tasks.mako:56
+#: src/jobbrowser/templates/tasks.mako:57
 msgid "Text filter"
 msgstr "Filtro de texto"
 
-#: src/jobbrowser/templates/tasks.mako:66
+#: src/jobbrowser/templates/tasks.mako:67
 msgid "There were no tasks that match your search criteria."
 msgstr "No hay ninguna tarea que coincida con los criterios de búsqueda."
 
-#: src/jobbrowser/templates/tasks.mako:79
+#: src/jobbrowser/templates/tasks.mako:80
 msgid "View Attempts"
 msgstr "Ver intentos"
 
-#: src/jobbrowser/templates/tasks.mako:97
+#: src/jobbrowser/templates/tasks.mako:98
 #, python-format
 msgid "Show only %(state)s tasks"
 msgstr "Mostrar solo tareas %(state)s"
@@ -684,65 +699,44 @@ msgstr "Mostrar solo tareas %(state)s"
 msgid "Tracker: %(trackerId)s"
 msgstr "Seguidor: %(trackerId)s"
 
-#: src/jobbrowser/templates/tasktracker.mako:26
+#: src/jobbrowser/templates/tasktracker.mako:33
 #, python-format
 msgid "Tracker at %(trackerHost)s on port %(trackerPort)s"
 msgstr "Herramienta de seguimiento en %(trackerHost)s en el puerto %(trackerPort)s"
 
-#: src/jobbrowser/templates/tasktracker.mako:32
+#: src/jobbrowser/templates/tasktracker.mako:38
 msgid "Last heard from at"
 msgstr "Último oído en"
 
-#: src/jobbrowser/templates/tasktracker.mako:39
-#: src/jobbrowser/templates/tasktracker.mako:57
-msgid "Memory Metrics"
-msgstr "Métricas de memoria"
-
-#: src/jobbrowser/templates/tasktracker.mako:42
-msgid "Node Id"
-msgstr "ID de nodo"
-
-#: src/jobbrowser/templates/tasktracker.mako:48
-msgid "Diagnostics"
-msgstr "Diagnóstico"
-
-#: src/jobbrowser/templates/tasktracker.mako:50
-msgid "Total Memory Needed in MB"
-msgstr "Memoria total necesaria en MB"
-
-#: src/jobbrowser/templates/tasktracker.mako:52
-msgid "Exit Code"
-msgstr "Código de salida"
-
-#: src/jobbrowser/templates/tasktracker.mako:60
+#: src/jobbrowser/templates/tasktracker.mako:46
 msgid "Total virtual memory:"
 msgstr "Memoria virtual total:"
 
-#: src/jobbrowser/templates/tasktracker.mako:62
+#: src/jobbrowser/templates/tasktracker.mako:48
 msgid "Total physical memory:"
 msgstr "Memoria física total:"
 
-#: src/jobbrowser/templates/tasktracker.mako:64
+#: src/jobbrowser/templates/tasktracker.mako:50
 msgid "Available space:"
 msgstr "Espacio disponible:"
 
-#: src/jobbrowser/templates/tasktracker.mako:69
+#: src/jobbrowser/templates/tasktracker.mako:55
 msgid "Map and Reduce"
 msgstr "Map y Reduce"
 
-#: src/jobbrowser/templates/tasktracker.mako:72
+#: src/jobbrowser/templates/tasktracker.mako:58
 msgid "Map count:"
 msgstr "Recuento de maps:"
 
-#: src/jobbrowser/templates/tasktracker.mako:74
+#: src/jobbrowser/templates/tasktracker.mako:60
 msgid "Reduce count:"
 msgstr "Recuento de reduces:"
 
-#: src/jobbrowser/templates/tasktracker.mako:76
+#: src/jobbrowser/templates/tasktracker.mako:62
 msgid "Max map tasks:"
 msgstr "Tareas map máximas:"
 
-#: src/jobbrowser/templates/tasktracker.mako:78
+#: src/jobbrowser/templates/tasktracker.mako:64
 msgid "Max reduce tasks:"
 msgstr "Tareas reduce máximas:"
 
@@ -751,39 +745,39 @@ msgstr "Tareas reduce máximas:"
 msgid "Task Trackers"
 msgstr "TaskTrackers"
 
-#: src/jobbrowser/templates/tasktrackers.mako:30
+#: src/jobbrowser/templates/tasktrackers.mako:36
 msgid "Host"
 msgstr "Host"
 
-#: src/jobbrowser/templates/tasktrackers.mako:31
+#: src/jobbrowser/templates/tasktrackers.mako:37
 msgid "Port"
 msgstr "Puerto"
 
-#: src/jobbrowser/templates/tasktrackers.mako:32
+#: src/jobbrowser/templates/tasktrackers.mako:38
 msgid "Last Seen"
 msgstr "Último visto"
 
-#: src/jobbrowser/templates/tasktrackers.mako:33
+#: src/jobbrowser/templates/tasktrackers.mako:39
 msgid "Available Space"
 msgstr "Espacio disponible"
 
-#: src/jobbrowser/templates/tasktrackers.mako:34
+#: src/jobbrowser/templates/tasktrackers.mako:40
 msgid "Failure Count"
 msgstr "Recuento de errores"
 
-#: src/jobbrowser/templates/tasktrackers.mako:35
+#: src/jobbrowser/templates/tasktrackers.mako:41
 msgid "Map Count"
 msgstr "Recuento de maps"
 
-#: src/jobbrowser/templates/tasktrackers.mako:36
+#: src/jobbrowser/templates/tasktrackers.mako:42
 msgid "Reduce Count"
 msgstr "Recuento de reduces"
 
-#: src/jobbrowser/templates/tasktrackers.mako:37
+#: src/jobbrowser/templates/tasktrackers.mako:43
 msgid "Max Map Tasks"
 msgstr "Tareas map máximas"
 
-#: src/jobbrowser/templates/tasktrackers.mako:38
+#: src/jobbrowser/templates/tasktrackers.mako:44
 msgid "Max Reduce Tasks"
 msgstr "Tareas reduce máximas"
 

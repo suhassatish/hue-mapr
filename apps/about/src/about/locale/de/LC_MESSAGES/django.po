@@ -142,7 +142,7 @@ msgstr "Zurück"
 
 #: src/about/templates/admin_wizard.mako:217
 msgid "Next"
-msgstr "Nächste"
+msgstr "Weiter"
 
 #: src/about/templates/admin_wizard.mako:247
 #: src/about/templates/admin_wizard.mako:265

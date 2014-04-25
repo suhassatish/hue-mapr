@@ -285,6 +285,7 @@ var Designs = (function($, ko, NodeModelChooser) {
     self.temporary = ko.observable();
     self.inTrash = ko.observable(false);
     self.isEditing = ko.observable(false);
+    self.isLoading = ko.observable(false);
     self.designs = ko.observableArray([]);
     self.trashedDesignObjects = ko.computed(function() {
       var selected = [];
@@ -403,7 +404,7 @@ var Designs = (function($, ko, NodeModelChooser) {
       var self = this;
       self.designs()[index].selected(!self.designs()[index].selected());
     },
-    select: function(index) {
+    selectByIndex: function(index) {
       var self = this;
       self.designs()[index].selected(true);
     },
@@ -426,6 +427,13 @@ var Designs = (function($, ko, NodeModelChooser) {
       $.each(self.designs(), function(index, value) {
         value.selected(false);
       });
+    },
+    getDesignObjectById: function(id) {
+      var self = this;
+      var designObjects = ko.utils.arrayFilter(self.designs(), function(value) {
+        return value.design().id() == id;
+      });
+      return (designObjects.length > 0) ? designObjects[0] : null;
     },
 
     //// Design delegation

@@ -23,7 +23,7 @@ msgstr "Script não salvo"
 
 #: src/pig/conf.py:32
 msgid "Location on local filesystem where the examples are stored."
-msgstr "Localização no sistema de arquivos local onde os exemplos são armazenados."
+msgstr "Localização no sistema de arquivos local onde os exemplos estão armazenados."
 
 #: src/pig/conf.py:38
 msgid "Location on HDFS where the Pig examples are stored."
@@ -31,7 +31,7 @@ msgstr "Localização no HDFS onde os exemplos do Pig são armazenados."
 
 #: src/pig/conf.py:48
 msgid "The app won't work without a running Oozie server"
-msgstr "O aplicativo não funcionará sem um servidor Ooozie em execução"
+msgstr "O aplicativo não funcionará sem um servidor Oozie em execução"
 
 #: src/pig/models.py:33
 msgid "Owner"
@@ -57,7 +57,7 @@ msgstr "Somente superusuários e %s têm permissão para modificar esse document
 #: src/pig/views.py:68 src/pig/views.py:93 src/pig/views.py:112
 #: src/pig/views.py:143 src/pig/views.py:179
 msgid "POST request required."
-msgstr "Solicitação POST obrigatória."
+msgstr "Solicitação POST necessária."
 
 #: src/pig/views.py:104
 msgid "Error stopping Pig script."
@@ -71,12 +71,12 @@ msgstr " (Copiar)"
 msgid "A POST request is required."
 msgstr "É necessária uma solicitação POST."
 
-#: src/pig/management/commands/pig_setup.py:46
+#: src/pig/management/commands/pig_setup.py:48
 #, python-format
 msgid "Copying examples %(local_dir)s to %(remote_data_dir)s\n"
 msgstr "Copiando exemplos %(local_dir)s para %(remote_data_dir)s\n"
 
-#: src/pig/management/commands/pig_setup.py:53
+#: src/pig/management/commands/pig_setup.py:55
 #, python-format
 msgid "Copying data %(local_dir)s to %(remote_data_dir)s\n"
 msgstr "Copiando dados de %(local_dir)s para %(remote_data_dir)s\n"
@@ -85,15 +85,15 @@ msgstr "Copiando dados de %(local_dir)s para %(remote_data_dir)s\n"
 msgid "Editor"
 msgstr "Editor"
 
-#: src/pig/templates/app.mako:29
+#: src/pig/templates/app.mako:37
 msgid "Scripts"
 msgstr "Scripts"
 
-#: src/pig/templates/app.mako:30
+#: src/pig/templates/app.mako:38
 msgid "Dashboard"
 msgstr "Painel"
 
-#: src/pig/templates/app.mako:40
+#: src/pig/templates/app.mako:50
 msgid "Search for script name or content"
 msgstr "Procurar nome ou conteúdo do script"
 
@@ -106,7 +106,7 @@ msgstr "Executar este script"
 msgid "Run"
 msgstr "Executar"
 
-#: src/pig/templates/app.mako:45
+#: src/pig/templates/app.mako:55
 msgid "Copy this script"
 msgstr "Copiar este script"
 
@@ -114,7 +114,7 @@ msgstr "Copiar este script"
 msgid "Copy"
 msgstr "Copiar"
 
-#: src/pig/templates/app.mako:46
+#: src/pig/templates/app.mako:56
 msgid "Delete this script"
 msgstr "Excluir este script"
 
@@ -122,7 +122,7 @@ msgstr "Excluir este script"
 msgid "Delete"
 msgstr "Excluir"
 
-#: src/pig/templates/app.mako:50
+#: src/pig/templates/app.mako:60
 msgid "Create a new script"
 msgstr "Criar um novo script"
 
@@ -145,7 +145,7 @@ msgstr "Nome"
 msgid "Script"
 msgstr "Script"
 
-#: src/pig/templates/app.mako:77
+#: src/pig/templates/app.mako:87
 msgid "There are no scripts matching the search criteria."
 msgstr "Não há scripts correspondentes aos critérios de pesquisa."
 
@@ -303,7 +303,7 @@ msgstr "Nenhum registro disponível."
 
 #: src/pig/templates/app.mako:385 src/pig/templates/app.mako:873
 msgid "Running"
-msgstr "Execução"
+msgstr "Em execução"
 
 #: src/pig/templates/app.mako:389
 msgid "There are currently no running scripts."
@@ -319,7 +319,7 @@ msgstr "Criado em"
 
 #: src/pig/templates/app.mako:412
 msgid "Completed"
-msgstr "Concluída"
+msgstr "Concluído"
 
 #: src/pig/templates/app.mako:416
 msgid "There are currently no completed scripts."

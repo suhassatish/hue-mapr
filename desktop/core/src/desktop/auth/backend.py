@@ -40,7 +40,7 @@ from useradmin.views import import_ldap_users
 from useradmin import ldap_access
 
 import pam
-from django_auth_ldap.backend import LDAPBackend, ldap_settings
+from django_auth_ldap.backend import LDAPBackend
 import ldap
 from django_auth_ldap.config import LDAPSearch
 
@@ -143,16 +143,6 @@ class DesktopBackendBase(object):
     raise NotImplemented("Abstract class - must implement check_auth")
 
 
-class DesktopSynchronizationBackendBase(object):
-  """
-  Abstract base class for providing user-group membership sync'ing.
-
-  Extend this class and implement sync.
-  """
-  def sync(self, user):
-    raise NotImplemented("Abstract class - must implement sync")
-
-
 class AllowFirstUserDjangoBackend(django.contrib.auth.backends.ModelBackend):
   """
   Allows the first user in, but otherwise delegates to Django's
@@ -164,7 +154,7 @@ class AllowFirstUserDjangoBackend(django.contrib.auth.backends.ModelBackend):
       if user.is_active:
         user = rewrite_user(user)
         return user
-      return None
+      return user
 
     if self.is_first_login_ever():
       user = find_or_create_user(username, password)
@@ -191,6 +181,8 @@ class AllowFirstUserDjangoBackend(django.contrib.auth.backends.ModelBackend):
 
 class OAuthBackend(DesktopBackendBase):
   """
+  Deprecated, use liboauth.backend.OAuthBackend instead
+
   Heavily based on Twitter Oauth: https://github.com/simplegeo/python-oauth2#logging-into-django-w-twitter
   Requires: python-oauth2 and httplib2
 
@@ -238,6 +230,40 @@ class AllowAllBackend(DesktopBackendBase):
   def manages_passwords_externally(cls):
     return True
 
+
+class DemoBackend(django.contrib.auth.backends.ModelBackend):
+  """
+  Log automatically users without a session with a new user account.
+  """
+  def authenticate(self, username, password):
+    user = super(DemoBackend, self).authenticate(username, password)
+
+    if not user:
+      username = self._random_name()
+
+      user = find_or_create_user(username, None)
+
+      user.is_superuser = False
+      user.save()
+      default_group = get_default_user_group()
+      if default_group is not None:
+        user.groups.add(default_group)
+
+    user = rewrite_user(user)
+
+    return user
+
+  def get_user(self, user_id):
+    user = super(DemoBackend, self).get_user(user_id)
+    user = rewrite_user(user)
+    return user
+
+  def _random_name(self):
+    import string
+    import random
+
+    N = 7
+    return ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(N))
 
 
 class PamBackend(DesktopBackendBase):
@@ -297,10 +323,36 @@ class LdapBackend(object):
 
     self._backend = _LDAPBackend()
 
-    ldap_settings.AUTH_LDAP_SERVER_URI = desktop.conf.LDAP.LDAP_URL.get()
-    if ldap_settings.AUTH_LDAP_SERVER_URI is None:
+    self._backend = _LDAPBackend()
+
+  def add_ldap_config(self, ldap_config):
+    if ldap_config.LDAP_URL.get() is None:
       LOG.warn("Could not find LDAP URL required for authentication.")
       return None
+    else:
+      setattr(self._backend.settings, 'SERVER_URI', ldap_config.LDAP_URL.get())
+
+    if desktop.conf.LDAP.SEARCH_BIND_AUTHENTICATION.get():
+      # New Search/Bind Auth
+      base_dn = ldap_config.BASE_DN.get()
+      user_name_attr = ldap_config.USERS.USER_NAME_ATTR.get()
+      user_filter = ldap_config.USERS.USER_FILTER.get()
+      if not user_filter.startswith('('):
+        user_filter = '(' + user_filter + ')'
+
+      if ldap_config.BIND_DN.get():
+        bind_dn = ldap_config.BIND_DN.get()
+        setattr(self._backend.settings, 'BIND_DN', bind_dn)
+        bind_password = ldap_config.BIND_PASSWORD.get()
+        setattr(self._backend.settings, 'BIND_PASSWORD', bind_password)
+
+      if user_filter is None:
+        search_bind_results = LDAPSearch(base_dn,
+            ldap.SCOPE_SUBTREE, "(" + user_name_attr + "=%(user)s)")
+
+      else:
+        search_bind_results = LDAPSearch(base_dn,
+            ldap.SCOPE_SUBTREE, "(&(" + user_name_attr + "=%(user)s)" + user_filter + ")")
 
     if desktop.conf.LDAP.SEARCH_BIND_AUTHENTICATION.get():
       # New Search/Bind Auth
@@ -336,12 +388,12 @@ class LdapBackend(object):
         ldap_settings.AUTH_LDAP_USER_DN_TEMPLATE = "%(user)s@" + nt_domain
 
     # Certificate-related config settings
-    if desktop.conf.LDAP.LDAP_CERT.get():
-      ldap_settings.AUTH_LDAP_START_TLS = desktop.conf.LDAP.USE_START_TLS.get()
+    if ldap_config.LDAP_CERT.get():
+      setattr(self._backend.settings, 'START_TLS', ldap_config.USE_START_TLS.get())
       ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_ALLOW)
-      ldap.set_option(ldap.OPT_X_TLS_CACERTFILE, desktop.conf.LDAP.LDAP_CERT.get())
+      ldap.set_option(ldap.OPT_X_TLS_CACERTFILE, ldap_config.LDAP_CERT.get())
     else:
-      ldap_settings.AUTH_LDAP_START_TLS = False
+      setattr(self._backend.settings, 'START_TLS', False)
       ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_NEVER)
 
   def authenticate(self, username=None, password=None):
@@ -382,40 +434,23 @@ class LdapBackend(object):
         user.groups.add(default_group)
         user.save()
 
-      return user
+      if desktop.conf.LDAP.SYNC_GROUPS_ON_LOGIN.get():
+        self.import_groups(server, user)
 
-    return None
+    return user
 
   def get_user(self, user_id):
     user = self._backend.get_user(user_id)
     user = rewrite_user(user)
     return user
 
+  def import_groups(self, server, user):
+    connection = ldap_access.get_connection_from_server(server)
+    import_ldap_users(connection, user.username, sync_groups=True, import_by_dn=False)
+
   @classmethod
   def manages_passwords_externally(cls):
     return True
-
-
-class LdapSynchronizationBackend(DesktopSynchronizationBackendBase):
-  """
-  Synchronize against LDAP authority.
-  """
-  USER_CACHE_NAME = 'ldap_use_group_sync_cache'
-
-  def sync(self, request):
-    user = request.user
-
-    if not user or not user.is_authenticated():
-      return
-
-    if not User.objects.filter(username=user.username, userprofile__creation_method=str(UserProfile.CreationMethod.EXTERNAL)).exists():
-      LOG.warn("User %s is not an Ldap user" % user.username)
-      return
-
-    # Cache should be cleared when user logs out.
-    if self.USER_CACHE_NAME not in request.session:
-      request.session[self.USER_CACHE_NAME] = import_ldap_users(user.username, sync_groups=True, import_by_dn=False)
-      request.session.modified = True
 
 
 class SpnegoDjangoBackend(django.contrib.auth.backends.ModelBackend):

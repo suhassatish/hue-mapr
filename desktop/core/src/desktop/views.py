@@ -15,6 +15,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 import logging
 import os
 import sys
@@ -32,24 +33,35 @@ from django.shortcuts import redirect
 from django.utils.translation import ugettext as _
 import django.views.debug
 
+import desktop.conf
+import desktop.log.log_buffer
+
+from desktop.api import massaged_tags_for_json, massaged_documents_for_json,\
+  _get_docs
 from desktop.lib import django_mako
 from desktop.lib.conf import GLOBAL_CONFIG
-from desktop.lib.django_util import login_notrequired, render_json, render, render_to_string
+from desktop.lib.django_util import login_notrequired, render_json, render
+from desktop.lib.i18n import smart_str
 from desktop.lib.paths import get_desktop_root
 from desktop.log.access import access_log_level, access_warn
 from desktop.models import UserPreferences, Settings
 from desktop import appmanager
-import desktop.conf
-import desktop.log.log_buffer
 
 
 LOG = logging.getLogger(__name__)
 
-@access_log_level(logging.WARN)
+
 def home(request):
-  apps = appmanager.get_apps(request.user)
-  apps = dict([(app.name, app) for app in apps])
-  return render('home.mako', request, dict(apps=apps))
+  docs = _get_docs(request.user)
+
+  apps = appmanager.get_apps_dict(request.user)
+
+  return render('home.mako', request, {
+    'apps': apps,
+    'json_documents': json.dumps(massaged_documents_for_json(docs, request.user)),
+    'json_tags': json.dumps(massaged_tags_for_json(docs, request.user)),
+    'tours_and_tutorials': Settings.get_settings().tours_and_tutorials
+  })
 
 
 @access_log_level(logging.WARN)
@@ -87,7 +99,7 @@ def download_log_view(request):
         tmp = tempfile.NamedTemporaryFile()
         log_tmp = tempfile.NamedTemporaryFile("w+t")
         for l in h.buf:
-          log_tmp.write(l + '\n')
+          log_tmp.write(smart_str(l) + '\n')
         # This is not just for show - w/out flush, we often get truncated logs
         log_tmp.flush()
         t = time.time()
@@ -100,12 +112,12 @@ def download_log_view(request):
         # if we don't seek to start of file, no bytes will be written
         tmp.seek(0)
         wrapper = FileWrapper(tmp)
-        response = HttpResponse(wrapper,content_type="application/zip")
+        response = HttpResponse(wrapper, content_type="application/zip")
         response['Content-Disposition'] = 'attachment; filename=hue-logs-%s.zip' % t
         response['Content-Length'] = length
         return response
       except Exception, e:
-        logging.exception("Couldn't construct zip file to write logs to.")
+        logging.exception("Couldn't construct zip file to write logs to: %s") % e
         return log_view(request)
 
   return render_to_response("logs.mako", dict(log=[_("No logs found.")]))
@@ -190,7 +202,7 @@ def dump_config(request):
   if request.GET.get("private"):
     show_private = True
 
-  apps = sorted(appmanager.DESKTOP_MODULES, key=lambda app: app.menu_index)
+  apps = sorted(appmanager.DESKTOP_MODULES, key=lambda app: app.name)
   apps_names = [app.name for app in apps]
   top_level = sorted(GLOBAL_CONFIG.get().values(), key=lambda obj: apps_names.index(obj.config.key))
 
@@ -223,11 +235,32 @@ def threads(request):
     out.append("")
   return HttpResponse("\n".join(out), content_type="text/plain")
 
+@access_log_level(logging.WARN)
+def memory(request):
+  """Dumps out server threads.  Useful for debugging."""
+  if not request.user.is_superuser:
+    return HttpResponse(_("You must be a superuser."))
+
+  if not hasattr(settings, 'MEMORY_PROFILER'):
+    return HttpResponse(_("You must enable the memory profiler via the memory_profiler config in the hue.ini."))
+
+  heap = settings.MEMORY_PROFILER.heap()
+  heap = heap[int(request.GET.get('from', 0)):int(request.GET.get('to', len(heap)))]
+  if 'index' in request.GET:
+    heap = heap[int(request.GET['index'])]
+  if 'type' in request.GET:
+    heap = getattr(heap, request.GET['type'])
+  return HttpResponse(str(heap), content_type="text/plain")
+
 def jasmine(request):
   return render('jasmine.mako', request, None)
 
+@login_notrequired
+def unsupported(request):
+  return render('unsupported.mako', request, None)
+
 def index(request):
-  if request.user.is_superuser:
+  if request.user.is_superuser and request.COOKIES.get('hueLandingPage') != 'home':
     return redirect(reverse('about:index'))
   else:
     return home(request)
@@ -235,7 +268,7 @@ def index(request):
 def serve_404_error(request, *args, **kwargs):
   """Registered handler for 404. We just return a simple error"""
   access_warn(request, "404 not found")
-  return render("404.mako", request, dict(uri=request.build_absolute_uri()))
+  return render("404.mako", request, dict(uri=request.build_absolute_uri()), status=404)
 
 def serve_500_error(request, *args, **kwargs):
   """Registered handler for 500. We use the debug view to make debugging easier."""
@@ -302,7 +335,7 @@ def who_am_i(request):
   time.sleep(sleep)
   return HttpResponse(request.user.username + "\t" + request.fs.user + "\n")
 
-def commonheader(title, section, user, padding="60px"):
+def commonheader(title, section, user, padding="90px"):
   """
   Returns the rendered common header
   """
@@ -335,6 +368,10 @@ def commonfooter(messages=None):
     'collect_usage': desktop.conf.COLLECT_USAGE.get(),
     'tours_and_tutorials': hue_settings.tours_and_tutorials
   })
+
+
+def collect_usage():
+  return desktop.conf.COLLECT_USAGE.get() and Settings.get_settings().collect_usage
 
 
 # If the app's conf.py has a config_validator() method, call it.
@@ -381,9 +418,12 @@ def check_config(request):
     return HttpResponse(_("You must be a superuser."))
 
   conf_dir = os.path.realpath(os.getenv("HUE_CONF_DIR", get_desktop_root("conf")))
-  return render('check_config.mako', request, dict(
-                    error_list=_get_config_errors(request, cache=False),
-                    conf_dir=conf_dir))
+  return render('check_config.mako', request, {
+                  'error_list': _get_config_errors(request, cache=False),
+                  'conf_dir': conf_dir
+              },
+              force_template=True)
+
 
 def check_config_ajax(request):
   """Alert administrators about configuration problems."""
@@ -398,5 +438,3 @@ def check_config_ajax(request):
                 request,
                 dict(error_list=error_list),
                 force_template=True)
-
-register_status_bar_view(check_config_ajax)

@@ -85,23 +85,23 @@ msgstr "実行中の Beeswax／HiveServer2 サーバーまたは Hive Metastore 
 msgid "ctrl-As"
 msgstr "Ctrl + A"
 
-#: src/beeswax/create_table.py:92
+#: src/beeswax/create_table.py:99
 msgid "ctrl-Bs"
 msgstr "Ctrl + B"
 
-#: src/beeswax/create_table.py:93
+#: src/beeswax/create_table.py:100
 msgid "ctrl-Cs"
 msgstr "Ctrl + C"
 
-#: src/beeswax/create_table.py:94
+#: src/beeswax/create_table.py:101
 msgid "tabs"
 msgstr "タブ"
 
-#: src/beeswax/create_table.py:95
+#: src/beeswax/create_table.py:102
 msgid "commas"
 msgstr "カンマ"
 
-#: src/beeswax/create_table.py:96
+#: src/beeswax/create_table.py:103
 msgid "spaces"
 msgstr "スペース"
 
@@ -138,7 +138,12 @@ msgstr "ファイル '%(path)s' を開くことができませんでした：%(e
 msgid "Internal error: Missing needed parameter to load data into table."
 msgstr "内部エラー：テーブルにデータをロードするために必要なパラメータがありません。"
 
-#: src/beeswax/forms.py:46
+#: src/beeswax/data_export.py:60
+#, python-format
+msgid "%s already exists."
+msgstr "%s はすでに存在します。"
+
+#: src/beeswax/forms.py:45
 msgid "Change the name to save as a new design."
 msgstr "名前を変更して新しい設計として保存します。"
 
@@ -158,7 +163,7 @@ msgstr "説明"
 msgid "Save"
 msgstr "保存"
 
-#: src/beeswax/forms.py:55 src/beeswax/forms.py:56
+#: src/beeswax/forms.py:54 src/beeswax/forms.py:55
 msgid "Save As"
 msgstr "名前を付けて保存"
 
@@ -172,13 +177,13 @@ msgstr "名前を入力してください。"
 msgid "Table Name"
 msgstr "テーブル名"
 
-#: src/beeswax/forms.py:92
+#: src/beeswax/forms.py:122
 msgid "Name of the new table"
 msgstr "新しいテーブルの名前"
 
-#: src/beeswax/forms.py:93
-msgid "Results Location"
-msgstr "結果の場所"
+#: src/beeswax/forms.py:142
+msgid "Invalid table prefix name"
+msgstr "無効なテーブルプレフィックス名"
 
 #: src/beeswax/forms.py:95
 #, fuzzy
@@ -333,21 +338,21 @@ msgstr "デフォルトの場所を使用"
 
 #: src/beeswax/forms.py:365
 msgid "Path to HDFS directory or file of database data."
-msgstr "HDFS ディレクトリまたはデータベースデータのファイルへのパス。"
+msgstr "HDFS ディレクトリまたはデータベースデータのファイルへのパスです。"
 
-#: src/beeswax/models.py:69
+#: src/beeswax/models.py:75
 msgid "Host of the query server."
 msgstr "クエリサーバーのホストです。"
 
-#: src/beeswax/models.py:70
+#: src/beeswax/models.py:76
 msgid "Port of the query server."
 msgstr "クエリサーバーのポートです。"
 
-#: src/beeswax/models.py:71
+#: src/beeswax/models.py:77
 msgid "Name of the query server."
 msgstr "クエリサーバーの名前です。"
 
-#: src/beeswax/models.py:72
+#: src/beeswax/models.py:78
 msgid "Type of the query server."
 msgstr "クエリサーバーのタイプです。"
 
@@ -476,7 +481,7 @@ msgstr "設計 %(id)s にアクセスできません。"
 #: src/beeswax/views.py:927
 #, python-format
 msgid "QueryHistory %(id)s does not exist."
-msgstr "QueryHistory %(id)s は存在しません。"
+msgstr "クエリ履歴 %(id)s は存在しません。"
 
 #: src/beeswax/views.py:933
 #, fuzzy, python-format
@@ -510,12 +515,22 @@ msgstr "サーバーに接続してクエリのステータスを確認できま
 msgid "Cannot find table data in \"%(file)s\"."
 msgstr "\"%(file)s\" にテーブルデータが見つかりません。"
 
-#: src/beeswax/management/commands/beeswax_install_examples.py:146
+#: src/beeswax/management/commands/beeswax_install_examples.py:94
+#, python-format
+msgid "Could not install query: %s"
+msgstr "クエリ %s をインストールできませんでした"
+
+#: src/beeswax/management/commands/beeswax_install_examples.py:112
+#, python-format
+msgid "Cannot find table data in \"%(file)s\"."
+msgstr "\"%(file)s\" にテーブルデータが見つかりません。"
+
+#: src/beeswax/management/commands/beeswax_install_examples.py:130
 #, python-format
 msgid "Table \"%(table)s\" already exists."
-msgstr "テーブル \"%(table)s\" はすでに存在します"
+msgstr "テーブル \"%(table)s\" はすでに存在します。"
 
-#: src/beeswax/management/commands/beeswax_install_examples.py:153
+#: src/beeswax/management/commands/beeswax_install_examples.py:137
 #, python-format
 msgid "Error creating table %(table)s: Operation timeout."
 msgstr "テーブル %(table)s の作成でエラーが発生しました。操作はタイムアウトします。"
@@ -525,7 +540,7 @@ msgstr "テーブル %(table)s の作成でエラーが発生しました。操�
 msgid "Error creating table %(table)s: %(error)s."
 msgstr "テーブル %(table)s の作成中にエラーが発生しました：%(error)s。"
 
-#: src/beeswax/management/commands/beeswax_install_examples.py:177
+#: src/beeswax/management/commands/beeswax_install_examples.py:179
 #, python-format
 msgid "Error loading table %(table)s: Operation timeout."
 msgstr "テーブル %(table)s のロードでエラーが発生しました。操作はタイムアウトします。"
@@ -535,10 +550,10 @@ msgstr "テーブル %(table)s のロードでエラーが発生しました。�
 msgid "Error loading table %(table)s: %(error)s."
 msgstr "テーブル %(table)s のロード中にエラーが発生しました：%(error)s。"
 
-#: src/beeswax/management/commands/beeswax_install_examples.py:202
+#: src/beeswax/server/dbms.py:140
 #, python-format
-msgid "Sample design %(name)s already exists."
-msgstr "サンプルの設計 %(name)s はすでに存在します。"
+msgid "%s interface does not support close_operation. %s interface does."
+msgstr "%s インターフェイスは close_operation をサポートしていません。%s インターフェイスはサポートしています。"
 
 #: src/beeswax/server/beeswax_lib.py:165
 msgid "Query cancelation is not supported by the Beeswax interface. Please use the Hive Server 2 interface instead."
@@ -582,23 +597,23 @@ msgstr "%s サーバー認証はサポートされていません。有効なの
 msgid "Beginning of List"
 msgstr "リストの先頭"
 
-#: src/beeswax/templates/beeswax_components.mako:207
+#: src/beeswax/templates/beeswax_components.mako:212
 msgid "Previous Page"
 msgstr "前のページ"
 
-#: src/beeswax/templates/beeswax_components.mako:208
+#: src/beeswax/templates/beeswax_components.mako:213
 msgid "Next page"
 msgstr "次のページ"
 
-#: src/beeswax/templates/beeswax_components.mako:208
+#: src/beeswax/templates/beeswax_components.mako:213
 msgid "Next Page"
 msgstr "次のページ"
 
-#: src/beeswax/templates/beeswax_components.mako:209
+#: src/beeswax/templates/beeswax_components.mako:214
 msgid "End of List"
 msgstr "リストの末尾"
 
-#: src/beeswax/templates/beeswax_components.mako:211
+#: src/beeswax/templates/beeswax_components.mako:216
 #, python-format
 msgid "Showing %(start)s to %(end)s of %(count)s items, page %(page)s of %(pages)s"
 msgstr "%(page)s/%(pages)s ページで %(count)s 件のアイテムのうち、%(start)s から %(end)s までを表示しています"
@@ -657,7 +672,7 @@ msgstr "手順 3：列の定義"
 
 #: src/beeswax/templates/choose_delimiter.mako:50
 msgid "Choose a Delimiter"
-msgstr "区切り文字の選択"
+msgstr "区切り文字を選択"
 
 #: src/beeswax/templates/choose_delimiter.mako:52
 msgid "Beeswax has determined that this file is delimited by"
@@ -748,8 +763,8 @@ msgid "Choose a file"
 msgstr "ファイルを選択"
 
 #: src/beeswax/templates/configuration.mako:24
-#: src/beeswax/templates/configuration.mako:28
-#: src/beeswax/templates/layout.mako:38
+#: src/beeswax/templates/configuration.mako:29
+#: src/beeswax/templates/execute.mako:37
 msgid "Settings"
 msgstr "設定"
 
@@ -759,14 +774,20 @@ msgid "Search for key, value, etc."
 msgstr "キー、値などの検索"
 
 #: src/beeswax/templates/configuration.mako:33
+msgid "Search for key, value, etc."
+msgstr "キー、値などを検索"
+
+#: src/beeswax/templates/configuration.mako:34
 msgid "Clear"
 msgstr "クリア"
 
-#: src/beeswax/templates/configuration.mako:40
+#: src/beeswax/templates/configuration.mako:39
+#: src/beeswax/templates/execute.mako:74
 msgid "Key"
 msgstr "キー"
 
-#: src/beeswax/templates/configuration.mako:41
+#: src/beeswax/templates/configuration.mako:40
+#: src/beeswax/templates/execute.mako:79
 msgid "Value"
 msgstr "値"
 
@@ -980,7 +1001,7 @@ msgstr "ファイルフォーマットの選択"
 #: src/beeswax/templates/create_table_manually.mako:192
 #: src/beeswax/templates/create_table_manually.mako:193
 msgid "Use"
-msgstr "を使用。"
+msgstr "使用："
 
 #: src/beeswax/templates/create_table_manually.mako:191
 msgid "for newline-delimited text files."
@@ -1277,7 +1298,7 @@ msgstr "すぐにメタデータを更新します。高速な増分更新です
 
 #: src/beeswax/templates/execute.mako:253
 msgid "Press CTRL + Space to autocomplete"
-msgstr "Ctrl キーを押したまま Space キーを押すと、オートコンプリート"
+msgstr "CTRL キーを押したまま Space キーを押すと、オートコンプリート"
 
 #: src/beeswax/templates/execute.mako:254
 msgid "You can execute queries with multiple SQL statements delimited by a semicolon ';'"
@@ -1353,27 +1374,44 @@ msgstr "いくつかのテーブルが見つからない場合、Impala に表�
 msgid "Did you know?"
 msgstr "便利な使い方"
 
-#: src/beeswax/templates/explain.mako:25
-msgid "Query Explanation"
-msgstr "クエリの説明"
+#: src/beeswax/templates/execute.mako:2256
+#: src/beeswax/templates/execute.mako:2263
+msgid "Missing some tables? In order to update the list of tables/metadata seen by Impala, execute one of these queries:"
+msgstr "不足しているテーブルがありますか？Impala で認識するテーブル／メタデータのリストを更新するには、次のクエリのいずれかを実行します："
 
-#: src/beeswax/templates/explain.mako:29
-msgid "Query Explanation:"
-msgstr "クエリの説明："
+#: src/beeswax/templates/layout.mako:41
+msgid "Spark Igniter"
+msgstr "Spark Igniter"
 
-#: src/beeswax/templates/explain.mako:32
-msgid "Explanation"
-msgstr "説明"
+#: src/beeswax/templates/layout.mako:44
+msgid "Editor"
+msgstr "エディタ"
 
-#: src/beeswax/templates/layout.mako:35
+#: src/beeswax/templates/layout.mako:46
+msgid "Applications"
+msgstr "アプリケーション"
+
+#: src/beeswax/templates/layout.mako:48
+msgid "Dashboard"
+msgstr "ダッシュボード"
+
+#: src/beeswax/templates/layout.mako:49
+msgid "Contexts"
+msgstr "コンテキスト"
+
+#: src/beeswax/templates/layout.mako:50
+msgid "Uploads"
+msgstr "アップロード"
+
+#: src/beeswax/templates/layout.mako:77
 #: src/beeswax/templates/my_queries.mako:29
-#: src/beeswax/templates/my_queries.mako:39
+#: src/beeswax/templates/my_queries.mako:40
 msgid "My Queries"
 msgstr "マイクエリ"
 
-#: src/beeswax/templates/layout.mako:36
-#: src/beeswax/templates/list_designs.mako:27
-#: src/beeswax/templates/list_designs.mako:32
+#: src/beeswax/templates/layout.mako:78
+#: src/beeswax/templates/list_designs.mako:29
+#: src/beeswax/templates/list_designs.mako:38
 #: src/beeswax/templates/list_trashed_designs.mako:27
 msgid "Saved Queries"
 msgstr "保存したクエリ"
@@ -1572,7 +1610,7 @@ msgstr "ゴミ箱に移動済みのクエリ"
 
 #: src/beeswax/templates/list_trashed_designs.mako:44
 msgid "Restore from trash"
-msgstr "ゴミ箱から復元"
+msgstr "ゴミ箱から復元する"
 
 #: src/beeswax/templates/list_trashed_designs.mako:45
 msgid "Restore"
@@ -1625,9 +1663,9 @@ msgstr "自分のクエリをすべて表示"
 msgid "View my entire query history"
 msgstr "自分のクエリ履歴全体を表示"
 
-#: src/beeswax/templates/parameterization.mako:24
-msgid "Parameterize Query"
-msgstr "クエリをパラメータ化"
+#: src/beeswax/templates/my_queries.mako:330
+msgid "Move the selected queries to the trash?"
+msgstr "選択したクエリをゴミ箱に移動しますか？"
 
 #: src/beeswax/templates/parameterization.mako:32
 msgid "Explain query"
@@ -1666,7 +1704,7 @@ msgid "Unsaved Query"
 msgstr "未保存のクエリ"
 
 #: src/beeswax/templates/util.mako:71
-#: src/beeswax/templates/watch_results.mako:26
+#: src/beeswax/templates/watch_results.mako:27
 msgid "Query Results"
 msgstr "クエリの結果"
 
@@ -1757,7 +1795,7 @@ msgstr "クエリの結果の有効期限が切れました。"
 
 #: src/beeswax/templates/watch_results.mako:147
 msgid "You can rerun it from "
-msgstr "次から再実行可能： "
+msgstr "次から再実行可能 "
 
 #: src/beeswax/templates/watch_results.mako:153
 msgid "Page offset may have incremented since last view."

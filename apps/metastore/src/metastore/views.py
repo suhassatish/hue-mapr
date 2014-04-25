@@ -15,10 +15,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-try:
-  import json
-except ImportError:
-  import simplejson as json
+import json
 import logging
 
 from django.http import HttpResponse
@@ -27,16 +24,19 @@ from django.utils.functional import wraps
 from django.utils.translation import ugettext as _
 from django.core.urlresolvers import reverse
 
+from desktop.context_processors import get_app_name
 from desktop.lib.django_util import render
 from desktop.lib.exceptions_renderable import PopupException
 
+from beeswax.design import hql_query
 from beeswax.models import SavedQuery, MetaInstall
 from beeswax.server import dbms
-
+from beeswax.server.dbms import get_query_server_config
 from metastore.forms import LoadDataForm, DbForm
 from metastore.settings import DJANGO_APPS
 
 LOG = logging.getLogger(__name__)
+
 SAVE_RESULTS_CTAS_TIMEOUT = 300         # seconds
 
 
@@ -81,17 +81,17 @@ def drop_database(request):
 
     try:
       # Can't be simpler without an important refactoring
-      design = SavedQuery.create_empty(app_name='beeswax', owner=request.user)
+      design = SavedQuery.create_empty(app_name='beeswax', owner=request.user, data=hql_query('').dumps())
       query_history = db.drop_databases(databases, design)
-      url = reverse('beeswax:watch_query', args=[query_history.id]) + '?on_success_url=' + reverse('metastore:databases')
+      url = reverse('beeswax:watch_query_history', kwargs={'query_history_id': query_history.id}) + '?on_success_url=' + reverse('metastore:databases')
       return redirect(url)
     except Exception, ex:
       error_message, log = dbms.expand_exception(ex, db)
       error = _("Failed to remove %(databases)s.  Error: %(error)s") % {'databases': ','.join(databases), 'error': error_message}
-      raise PopupException(error, title=_("Beeswax Error"), detail=log)
+      raise PopupException(error, title=_("Hive Error"), detail=log)
   else:
     title = _("Do you really want to delete the database(s)?")
-    return render('confirm.html', request, dict(url=request.path, title=title))
+    return render('confirm.mako', request, {'url': request.path, 'title': title})
 
 
 """
@@ -105,6 +105,9 @@ def show_tables(request, database=None):
   db = dbms.get(request.user)
 
   databases = db.get_databases()
+
+  if database not in databases:
+    database = 'default'
 
   if request.method == 'POST':
     db_form = DbForm(request.POST, databases=databases)
@@ -133,13 +136,20 @@ def show_tables(request, database=None):
 
 
 def describe_table(request, database, table):
-  db = dbms.get(request.user)
+  app_name = get_app_name(request)
+  query_server = get_query_server_config(app_name)
+  db = dbms.get(request.user, query_server)
+
   error_message = ''
   table_data = ''
 
-  table = db.get_table(database, table)
+  try:
+    table = db.get_table(database, table)
+  except Exception, e:
+    raise PopupException(_("Hive Error"), detail=e)
+
   partitions = None
-  if table.partition_keys:
+  if app_name != 'impala' and table.partition_keys:
     partitions = db.get_partitions(database, table, max_parts=None)
 
   try:
@@ -147,7 +157,11 @@ def describe_table(request, database, table):
   except Exception, ex:
     error_message, logs = dbms.expand_exception(ex, db)
 
-  return render("describe_table.mako", request, {
+  renderable = "describe_table.mako"
+  if request.REQUEST.get("sample", "false") == "true":
+    renderable = "sample.mako"
+
+  return render(renderable, request, {
     'breadcrumbs': [{
         'name': database,
         'url': reverse('metastore:show_tables', kwargs={'database': database})
@@ -158,7 +172,7 @@ def describe_table(request, database, table):
     ],
     'table': table,
     'partitions': partitions,
-    'sample': table_data and table_data.rows(),
+    'sample': table_data and list(table_data.rows()),
     'error_message': error_message,
     'database': database,
     'has_write_access': has_write_access(request.user),
@@ -174,17 +188,17 @@ def drop_table(request, database):
     tables_objects = [db.get_table(database, table) for table in tables]
     try:
       # Can't be simpler without an important refactoring
-      design = SavedQuery.create_empty(app_name='beeswax', owner=request.user)
+      design = SavedQuery.create_empty(app_name='beeswax', owner=request.user, data=hql_query('').dumps())
       query_history = db.drop_tables(database, tables_objects, design)
-      url = reverse('beeswax:watch_query', args=[query_history.id]) + '?on_success_url=' + reverse('metastore:show_tables')
+      url = reverse('beeswax:watch_query_history', kwargs={'query_history_id': query_history.id}) + '?on_success_url=' + reverse('metastore:show_tables')
       return redirect(url)
     except Exception, ex:
       error_message, log = dbms.expand_exception(ex, db)
       error = _("Failed to remove %(tables)s.  Error: %(error)s") % {'tables': ','.join(tables), 'error': error_message}
-      raise PopupException(error, title=_("Beeswax Error"), detail=log)
+      raise PopupException(error, title=_("Hive Error"), detail=log)
   else:
     title = _("Do you really want to delete the table(s)?")
-    return render('confirm.html', request, dict(url=request.path, title=title))
+    return render('confirm.mako', request, {'url': request.path, 'title': title})
 
 
 def read_table(request, database, table):
@@ -193,8 +207,8 @@ def read_table(request, database, table):
   table = db.get_table(database, table)
 
   try:
-    history = db.select_star_from(database, table)
-    url = reverse('beeswax:watch_query', args=[history.id]) + '?context=table:%s:%s' % (table.name, database)
+    query_history = db.select_star_from(database, table)
+    url = reverse('beeswax:watch_query_history', kwargs={'query_history_id': query_history.id}) + '?on_success_url=&context=table:%s:%s' % (table.name, database)
     return redirect(url)
   except Exception, e:
     raise PopupException(_('Cannot read table'), detail=e)
@@ -204,7 +218,7 @@ def read_partition(request, database, table, partition_id):
   db = dbms.get(request.user)
   try:
     partition = db.get_partition(database, table, int(partition_id))
-    url = reverse('beeswax:watch_query', args=[partition.id]) + '?context=table:%s:%s' % (table, database)
+    url = reverse('beeswax:watch_query_history', kwargs={'query_history_id': partition.id}) + '?on_success_url=&context=table:%s:%s' % (table, database)
     return redirect(url)
   except Exception, e:
     raise PopupException(_('Cannot read table'), detail=e)
@@ -222,9 +236,9 @@ def load_table(request, database, table):
     if load_form.is_valid():
       on_success_url = reverse('metastore:describe_table', kwargs={'database': database, 'table': table.name})
       try:
-        design = SavedQuery.create_empty(app_name='beeswax', owner=request.user)
+        design = SavedQuery.create_empty(app_name='beeswax', owner=request.user, data=hql_query('').dumps())
         query_history = db.load_data(database, table, load_form, design)
-        url = reverse('beeswax:watch_query', args=[query_history.id]) + '?on_success_url=' + on_success_url
+        url = reverse('beeswax:watch_query_history', kwargs={'query_history_id': query_history.id}) + '?on_success_url=' + on_success_url
         response['status'] = 0
         response['data'] = url
       except Exception, e:

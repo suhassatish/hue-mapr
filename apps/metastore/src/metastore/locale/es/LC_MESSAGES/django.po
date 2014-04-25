@@ -22,11 +22,11 @@ msgstr ""
 msgid "Path"
 msgstr "Ruta"
 
-#: src/metastore/forms.py:49
+#: src/metastore/forms.py:47
 msgid "Overwrite?"
 msgstr "¿Sobrescribir?"
 
-#: src/metastore/forms.py:62
+#: src/metastore/forms.py:60
 #, python-format
 msgid "%(column_name)s (partition key with type %(column_type)s)"
 msgstr "%(column_name)s [clave de partición con el tipo %(column_type)s]"
@@ -59,7 +59,7 @@ msgstr "Error al quitar %(tables)s. Error: %(error)s"
 
 #: src/metastore/views.py:186
 msgid "Do you really want to delete the table(s)?"
-msgstr "¿Está seguro de que desea eliminar la tabla?"
+msgstr "¿Está seguro de que desea eliminar las tablas?"
 
 #: src/metastore/views.py:200 src/metastore/views.py:210
 msgid "Cannot read table"
@@ -74,9 +74,20 @@ msgstr "No se pueden cargar los datos: "
 msgid "Table '%(table)s' is not partitioned."
 msgstr "La tabla '%(table)s' no está particionada."
 
-#: src/metastore/templates/components.mako:24
+#: src/metastore/views.py:305
+msgid "Column analysis not supportet yet"
+msgstr "El análisis de las columnas no se admite todavía"
+
+#: src/metastore/views.py:307
+msgid "A POST request is required"
+msgstr "Se necesita una solicitud POST"
+
+#: src/metastore/templates/components.mako:30
+msgid "Metastore Manager"
+msgstr "Metastore Manager"
+
+#: src/metastore/templates/components.mako:44
 #: src/metastore/templates/databases.mako:23
-#: src/metastore/templates/databases.mako:26
 msgid "Databases"
 msgstr "Bases de datos"
 
@@ -162,7 +173,6 @@ msgid "View"
 msgstr "Vista"
 
 #: src/metastore/templates/describe_table.mako:28
-#: src/metastore/templates/describe_table.mako:55
 msgid "Table"
 msgstr "Tabla"
 
@@ -171,15 +181,16 @@ msgstr "Tabla"
 msgid "%s : %s"
 msgstr "%s : %s"
 
-#: src/metastore/templates/describe_table.mako:36
+#: src/metastore/templates/describe_table.mako:37
+#: src/metastore/templates/describe_table.mako:145
 msgid "Name"
 msgstr "Nombre"
 
-#: src/metastore/templates/describe_table.mako:37
+#: src/metastore/templates/describe_table.mako:38
 msgid "Type"
 msgstr "Tipo"
 
-#: src/metastore/templates/describe_table.mako:38
+#: src/metastore/templates/describe_table.mako:39
 msgid "Comment"
 msgstr "Comentario"
 
@@ -265,6 +276,10 @@ msgstr "Eliminar las tablas seleccionadas"
 #: src/metastore/templates/tables.mako:67
 msgid "Table Name"
 msgstr "Nombre de tabla"
+
+#: src/metastore/templates/tables.mako:149
+msgid "Oops, no database found!"
+msgstr "No se ha encontrado ninguna base de datos."
 
 #: src/metastore/templates/util.mako:66
 msgid "Unsaved Query"

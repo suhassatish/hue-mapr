@@ -185,6 +185,10 @@ class DesktopModuleInfo(object):
   def settings(self):
     return self._submodule("settings")
 
+  @property
+  def locale_path(self):
+    return os.path.join(os.path.dirname(self.module.__file__), 'locale')
+
   def _submodule(self, name):
     return _import_module_or_none(self.module.__name__ + "." + name)
 
@@ -193,6 +197,14 @@ class DesktopModuleInfo(object):
 
 def get_apps(user):
   return filter(lambda app: user.has_hue_permission(action="access", app=app.display_name), DESKTOP_APPS)
+
+def get_apps_dict(user=None):
+  if user is not None:
+    apps = get_apps(user)
+  else:
+    apps = DESKTOP_APPS
+
+  return dict([(app.name, app) for app in apps])
 
 def load_libs():
   global DESKTOP_MODULES
@@ -215,7 +227,7 @@ def load_libs():
   DESKTOP_MODULES.append(DesktopModuleInfo(desktop))
 
 
-def load_apps():
+def load_apps(app_blacklist):
   """Loads the applications from the directories in APP_DIRS.
   Sets DESKTOP_MODULES and DJANGO_APPS globals in this module.
 
@@ -229,9 +241,10 @@ def load_apps():
   DESKTOP_APPS = []
 
   for sdk_app in pkg_resources.iter_entry_points("desktop.sdk.application"):
-    m = sdk_app.load()
-    dmi = DesktopModuleInfo(m)
-    DESKTOP_APPS.append(dmi)
+    if sdk_app.name not in app_blacklist:
+      m = sdk_app.load()
+      dmi = DesktopModuleInfo(m)
+      DESKTOP_APPS.append(dmi)
 
   LOG.debug("Loaded Desktop Applications: " + ", ".join(a.name for a in DESKTOP_APPS))
   DESKTOP_MODULES += DESKTOP_APPS

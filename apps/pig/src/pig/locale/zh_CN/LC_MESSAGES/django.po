@@ -71,12 +71,12 @@ msgstr " （副本）"
 msgid "A POST request is required."
 msgstr "需要 POST 请求。"
 
-#: src/pig/management/commands/pig_setup.py:46
+#: src/pig/management/commands/pig_setup.py:48
 #, python-format
 msgid "Copying examples %(local_dir)s to %(remote_data_dir)s\n"
 msgstr "复制示例 %(local_dir)s 至  %(remote_data_dir)s\n"
 
-#: src/pig/management/commands/pig_setup.py:53
+#: src/pig/management/commands/pig_setup.py:55
 #, python-format
 msgid "Copying data %(local_dir)s to %(remote_data_dir)s\n"
 msgstr "复制示例 %(local_dir)s 至  %(remote_data_dir)s\n"
@@ -85,15 +85,15 @@ msgstr "复制示例 %(local_dir)s 至  %(remote_data_dir)s\n"
 msgid "Editor"
 msgstr "编辑器"
 
-#: src/pig/templates/app.mako:29
+#: src/pig/templates/app.mako:37
 msgid "Scripts"
 msgstr "脚本"
 
-#: src/pig/templates/app.mako:30
+#: src/pig/templates/app.mako:38
 msgid "Dashboard"
 msgstr "控制面板"
 
-#: src/pig/templates/app.mako:40
+#: src/pig/templates/app.mako:50
 msgid "Search for script name or content"
 msgstr "搜索脚本名称或内容"
 
@@ -106,7 +106,7 @@ msgstr "运行此脚本"
 msgid "Run"
 msgstr "运行"
 
-#: src/pig/templates/app.mako:45
+#: src/pig/templates/app.mako:55
 msgid "Copy this script"
 msgstr "复制此脚本"
 
@@ -114,7 +114,7 @@ msgstr "复制此脚本"
 msgid "Copy"
 msgstr "复制"
 
-#: src/pig/templates/app.mako:46
+#: src/pig/templates/app.mako:56
 msgid "Delete this script"
 msgstr "删除此脚本"
 
@@ -122,7 +122,7 @@ msgstr "删除此脚本"
 msgid "Delete"
 msgstr "删除"
 
-#: src/pig/templates/app.mako:50
+#: src/pig/templates/app.mako:60
 msgid "Create a new script"
 msgstr "创建新脚本"
 
@@ -145,7 +145,7 @@ msgstr "名称"
 msgid "Script"
 msgstr "脚本"
 
-#: src/pig/templates/app.mako:77
+#: src/pig/templates/app.mako:87
 msgid "There are no scripts matching the search criteria."
 msgstr "没有符合搜索条件的脚本。"
 
@@ -335,7 +335,7 @@ msgstr "单击以编辑"
 
 #: src/pig/templates/app.mako:449
 msgid "Click to view"
-msgstr "点击查看"
+msgstr "单击以查看"
 
 #: src/pig/templates/app.mako:466
 msgid "Confirm Delete"

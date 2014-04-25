@@ -17,15 +17,11 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 0.9.6\n"
 
-#: src/jobsub/conf.py:31
-msgid "Location on HDFS where the jobsub examples and templates are stored."
-msgstr "Localização no HDFS onde os exemplos e modelos de jobsub estão guardados."
-
-#: src/jobsub/conf.py:36
+#: src/jobsub/conf.py:28
 msgid "Location on local filesystem where examples and template are stored."
 msgstr "Localização no sistema de ficheiros local onde os exemplos e os modelos estão guardados."
 
-#: src/jobsub/conf.py:42
+#: src/jobsub/conf.py:34
 msgid "Location on local filesystem where sample data is stored."
 msgstr "Localização no sistema de ficheiros local onde os dados de exemplo estão guardados."
 
@@ -82,15 +78,15 @@ msgstr "Mapper"
 msgid "Reducer"
 msgstr "Reducer"
 
-#: src/jobsub/models.py:136
+#: src/jobsub/models.py:132
 msgid "Name of the design, which must be unique per user."
 msgstr "Nome do design, que tem de ser único para cada utilizador."
 
-#: src/jobsub/models.py:196 src/jobsub/models.py:245
+#: src/jobsub/models.py:192 src/jobsub/models.py:241
 msgid "List of paths to files to be added to the distributed cache."
 msgstr "Lista de caminhos para os ficheiros a adicionar à cache distribuída."
 
-#: src/jobsub/models.py:198 src/jobsub/models.py:247
+#: src/jobsub/models.py:194 src/jobsub/models.py:243
 msgid "List of paths to archives to be added to the distributed cache."
 msgstr "Lista de caminhos para os ficheiros a adicionar à cache distribuída."
 
@@ -359,7 +355,7 @@ msgstr "É partilhado"
 
 #: src/jobsub/templates/designs.mako:306
 msgid "Enable other users to have access to this job."
-msgstr "Permitir que outros utilizadores tenham acesso a esta tarefa."
+msgstr "Permitir que outros utilizadores tenham acesso a este trabalho."
 
 #: src/jobsub/templates/designs.mako:312
 msgid "Capture output"
@@ -446,7 +442,7 @@ msgstr "Corpo"
 
 #: src/jobsub/templates/designs.mako:393
 msgid "Job properties"
-msgstr "Propriedades do Job"
+msgstr "Propriedades do trabalho"
 
 #: src/jobsub/templates/designs.mako:394
 msgid "Property name"
@@ -590,11 +586,11 @@ msgstr "Não existem dados disponíveis"
 
 #: src/jobsub/templates/designs.mako:726
 msgid "Showing _START_ to _END_ of _TOTAL_ entries"
-msgstr "Entradas _START_ a _END_ de _TOTAL_"
+msgstr "A mostrar _START_ a _END_ de _TOTAL_ entradas"
 
 #: src/jobsub/templates/designs.mako:727
 msgid "Showing 0 to 0 of 0 entries"
-msgstr "0 a 0 de 0 entradas"
+msgstr "A mostrar 0 a 0 de 0 entradas"
 
 #: src/jobsub/templates/designs.mako:728
 msgid "(filtered from _MAX_ total entries)"

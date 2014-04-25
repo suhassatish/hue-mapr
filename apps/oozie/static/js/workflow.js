@@ -20,6 +20,17 @@ var Modal = ModalModule($, ko);
 
 var Node = NodeModule($, IdGeneratorTable, NodeFields);
 
+var SubworkflowNode = NodeModule($, IdGeneratorTable, NodeFields);
+$.extend(SubworkflowNode.prototype, Node.prototype, {
+  'initialize': function(workflow, model, registry) {
+    var self = this;
+
+    if (self.sub_workflow()) {
+      self.sub_workflow(self.sub_workflow().toString());
+    }
+  }
+});
+
 var StartNode = NodeModule($, IdGeneratorTable, NodeFields);
 $.extend(StartNode.prototype, Node.prototype, {
   /**
@@ -120,7 +131,10 @@ $.extend(ForkNode.prototype, Node.prototype, {
     }
 
     var links = self.links().filter(function(element, index, arr) {
-      return self.registry.get(element.child()).node_type() != 'join';
+      var node = self.registry.get(element.child());
+      // If no node is found, it means that it's a temporary node that may be added to the graph.
+      // This will not be a join. It will most likely be a decision node.
+      return !node || node.node_type() != 'join';
     });
 
     if (links.length < 2) {
@@ -153,12 +167,12 @@ $.extend(ForkNode.prototype, Node.prototype, {
       id: IdGeneratorTable['decisionend'].nextId(),
       node_type: 'decisionend',
       workflow: self.workflow(),
-      child_links: join.model.child_links
+      child_links: ko.mapping.toJS(join.child_links())
     });
-    var decision_end_node = new Node(self._workflow, decision_end_model, self.registry);
     $.each(decision_end_model.child_links, function(index, link) {
       link.parent = decision_end_model.id;
     });
+    var decision_end_node = new Node(self._workflow, decision_end_model, self.registry);
     var parents = join.findParents();
     $.each(parents, function(index, parent) {
       parent.replaceChild(join, decision_end_node);
@@ -171,7 +185,7 @@ $.extend(ForkNode.prototype, Node.prototype, {
       description: self.description(),
       node_type: 'decision',
       workflow: self.workflow(),
-      child_links: self.model.child_links
+      child_links: ko.mapping.toJS(self.child_links())
     });
     var default_link = {
       parent: decision_model.id,
@@ -348,16 +362,31 @@ var WorkflowModule = function($, NodeModelChooser, Node, ForkNode, DecisionNode,
 
           return map_params(options, subscribe);
         }
+      },
+      data: {
+        create: function(options) {
+          return map_data(options);
+        },
+        update: function(options) {
+          return map_data(options);
+        }
       }
     });
 
     $.extend(self, mapping);
-    $.each(mapping['__ko_mapping__'].mappedProperties, function(key, value) {
-      var key = key;
-      self[key].subscribe(function(value) {
-        self.is_dirty( true );
-        self.model[key] = ko.mapping.toJS(value);
-      });
+
+    $.each(self['__ko_mapping__'].mappedProperties, function(key, value) {
+      if (ko.isObservable(self[key])) {
+        addHooks(self, self[key], options.model, key);
+      } else {
+        // Unstructured data object.
+        $.each(self[key], function(_key, _value) {
+          // @TODO: Don't assume all children are observable
+          if (ko.isObservable(self[key][_key])) {
+            addHooks(self, self[key][_key], options.model[key], _key);
+          }
+        });
+      }
     });
 
     self.model = options.model;
@@ -366,13 +395,19 @@ var WorkflowModule = function($, NodeModelChooser, Node, ForkNode, DecisionNode,
     self.el = (options.el) ? $(options.el) : $('#workflow');
     self.nodes = ko.observableArray([]);
     self.kill = null;
-    self.is_dirty = ko.observable( false );
-    self.loading = ko.observable( false );
-    self.read_only = ko.observable( options.read_only || false );
+    self.is_dirty = ko.observable(false);
+    self.loading = ko.observable(false);
+    self.read_only = ko.observable(options.read_only || false);
     self.new_node = ko.observable();
 
+    // Create fields from the generic data field
+    self.sla = ko.computed(function() {
+      return self.data.sla();
+    });
+
+
     self.url = ko.computed(function() {
-      return '/oozie/workflows/' + self.id()
+      return '/oozie/workflows/' + self.id();
     });
 
     // Events
@@ -428,6 +463,9 @@ var WorkflowModule = function($, NodeModelChooser, Node, ForkNode, DecisionNode,
               case 'kill':
                 temp = self.kill = new Node(self, model, self.registry);
               break;
+              case 'subworkflow':
+                temp = new SubworkflowNode(self, model, self.registry);
+              break;
               default:
                 temp = new Node(self, model, self.registry);
               break;
@@ -468,6 +506,16 @@ var WorkflowModule = function($, NodeModelChooser, Node, ForkNode, DecisionNode,
               case 'nodes':
               break;
 
+              case 'data':
+                var data = {};
+                try {
+                  data = $.parseJSON(value);
+                } catch (error){
+                  data = value;
+                }
+                updateData(self[key], data);
+              break;
+
               default:
                 self[key](value);
               break;
@@ -496,6 +544,12 @@ var WorkflowModule = function($, NodeModelChooser, Node, ForkNode, DecisionNode,
       if ('read_only' in options) {
         self.read_only(options['read_only']);
       }
+
+      if (self.errors) {
+        ko.mapping.fromJS(format_errors_mapping(self.model), self.errors);
+      } else {
+        self.errors = ko.mapping.fromJS(format_errors_mapping(self.model));
+      }
     },
 
     toString: function() {
@@ -511,19 +565,14 @@ var WorkflowModule = function($, NodeModelChooser, Node, ForkNode, DecisionNode,
     toJSON: function() {
       var self = this;
 
-      data = $.extend(true, {}, self.model);
+      data = $.extend(true, {}, ko.mapping.toJS(self));
 
-      var nodes = [];
+      data['nodes'] = [];
       $.each(self.registry.nodes, function(key, node) {
         // Create object with members from the actual model to address JSON.stringify bug
         // JSON.stringify does not pick up members specified in prototype prior to object creation.
-        var model = {};
-        for (var key in node.model) {
-          model[key] = node.model[key];
-        }
-        nodes.push(model);
+        data['nodes'].push(node.toJS());
       });
-      data['nodes'] = nodes;
 
       return JSON.stringify(data);
     },
@@ -593,10 +642,10 @@ var WorkflowModule = function($, NodeModelChooser, Node, ForkNode, DecisionNode,
       var prop = { name: ko.observable(""), value: ko.observable("") };
       // force bubble up to containing observable array.
       prop.name.subscribe(function(){
-        self.parameters.valueHasMutated();
+        self.job_properties.valueHasMutated();
       });
       prop.value.subscribe(function(){
-        self.parameters.valueHasMutated();
+        self.job_properties.valueHasMutated();
       });
       self.job_properties.push(prop);
     },
@@ -704,7 +753,12 @@ var WorkflowModule = function($, NodeModelChooser, Node, ForkNode, DecisionNode,
 
       methodChooser(self.registry.get(self.start()), self.nodes, false, true);
       $(".tooltip").remove();
-      $("*[rel=tooltip]").tooltip();
+      $("[relz=tooltip]").tooltip({placement: "left", delay: 0});
+      $("[relz=tooltip]").hover(function () {
+        $(".tooltip").css("left", parseInt($(".tooltip").css("left")) - 10 + "px");
+      }, function () {
+        $(".tooltip").remove();
+      });
     },
 
     rebuild: function() {
@@ -729,6 +783,7 @@ var WorkflowModule = function($, NodeModelChooser, Node, ForkNode, DecisionNode,
 
       self.el.find('.node-action').each(function(index, el) {
         if (!$(el).hasClass('ui-draggable')) {
+          $(el).find('ul li a').eq(0).css('cursor', 'move');
           $(el).find('.row-fluid').eq(0).css('cursor', 'move');
           $(el).draggable({
             containment: [ self.el.offset().left - 10, self.el.offset().top - 10,
@@ -738,7 +793,7 @@ var WorkflowModule = function($, NodeModelChooser, Node, ForkNode, DecisionNode,
             zIndex: 1000,
             opacity: 0.45,
             revertDuration: 0,
-            cancel: '.node-action-bar'
+            cancel: '.edit-node-link'
           });
         }
       });

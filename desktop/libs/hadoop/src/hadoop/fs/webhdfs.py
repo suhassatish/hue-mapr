@@ -36,7 +36,6 @@ from hadoop.fs.webhdfs_types import WebHdfsStat, WebHdfsContentSummary
 from hadoop.conf import UPLOAD_CHUNK_SIZE
 
 import hadoop.conf
-import hadoop.core_site
 
 
 DEFAULT_HDFS_SUPERUSER = 'hdfs'
@@ -45,6 +44,7 @@ DEFAULT_HDFS_SUPERUSER = 'hdfs'
 DEFAULT_READ_SIZE = 1024*1024 # 1MB
 
 LOG = logging.getLogger(__name__)
+
 
 class WebHdfs(Hdfs):
   """
@@ -132,14 +132,7 @@ class WebHdfs(Hdfs):
 
   @property
   def trash_path(self):
-    try:
-      return self._thread_local.trash_path[self.user]
-    except AttributeError:
-      self._thread_local.trash_paths = {}
-      self._thread_local.trash_paths[self.user] = self.join(self.get_home_dir(), '.Trash')
-    except KeyError:
-      self._thread_local.trash_paths[self.user] = self.join(self.get_home_dir(), '.Trash')
-    return self._thread_local.trash_paths[self.user]
+    return self.join(self.get_home_dir(), '.Trash')
 
   @property
   def current_trash_path(self):
@@ -282,7 +275,7 @@ class WebHdfs(Hdfs):
 
   def remove(self, path, skip_trash=False):
     """Delete a file."""
-    if hadoop.core_site.get_trash_interval() is None or skip_trash:
+    if skip_trash:
       self._delete(path, recursive=False)
     else:
       self._trash(path, recursive=False)
@@ -293,7 +286,7 @@ class WebHdfs(Hdfs):
 
   def rmtree(self, path, skip_trash=False):
     """Delete a tree recursively."""
-    if hadoop.core_site.get_trash_interval() is None or skip_trash:
+    if skip_trash:
       self._delete(path, recursive=True)
     else:
       self._trash(path, recursive=True)
@@ -306,9 +299,6 @@ class WebHdfs(Hdfs):
     Removing the root from ``path`` will provide the original path.
     Ensure parent directories exist and rename path.
     """
-    if hadoop.core_site.get_trash_interval() is None:
-      raise IOError(errno.EPERM, _("Trash is not enabled."))
-
     if not path.startswith(self.trash_path):
       raise IOError(errno.EPERM, _("File %s is not in trash") % path)
 
@@ -333,9 +323,6 @@ class WebHdfs(Hdfs):
 
     Purge all trash in users ``trash_path``
     """
-    if hadoop.core_site.get_trash_interval() is None:
-      raise IOError(errno.EPERM, _("Trash is not enabled."))
-
     for timestamped_directory in self.listdir(self.trash_path):
       self.rmtree(self.join(self.trash_path, timestamped_directory), True)
 
@@ -487,7 +474,7 @@ class WebHdfs(Hdfs):
     self._invoke_with_redirect('POST', path, params, data)
 
 
-  def copyfile(self, src, dst):
+  def copyfile(self, src, dst, skip_header=False):
     sb = self._stats(src)
     if sb is None:
       raise IOError(errno.ENOENT, _("Copy src '%s' does not exist") % src)
@@ -501,6 +488,10 @@ class WebHdfs(Hdfs):
     while True:
       data = self.read(src, offset, UPLOAD_CHUNK_SIZE.get())
       if offset == 0:
+        if skip_header:
+          n = data.index('\n')
+          if n > 0:
+            data = data[n + 1:]
         self.create(dst,
                     overwrite=True,
                     blocksize=sb.blockSize,
@@ -509,7 +500,7 @@ class WebHdfs(Hdfs):
                     data=data)
 
       cnt = len(data)
-      if cnt == 0:
+      if cnt < UPLOAD_CHUNK_SIZE.get():
         break
 
       if offset != 0:
@@ -632,10 +623,10 @@ class WebHdfs(Hdfs):
       if http_error is None:
         raise webhdfs_ex
 
-      if http_error.code not in (301, 302, 303, 307):
+      if http_error.response.status_code not in (301, 302, 303, 307):
         LOG.error("Response is not a redirect: %s" % webhdfs_ex)
         raise webhdfs_ex
-      return http_error.headers.getheader('location')
+      return http_error.response.headers['location']
     except Exception, ex:
       LOG.error("Failed to read redirect from response: %s (%s)" %
                 (webhdfs_ex, ex))
@@ -766,7 +757,7 @@ def test_fs_configuration(fs_config):
   # Access root
   try:
     statbuf = fs.stats('/')
-    if statbuf.user != 'hdfs':
+    if statbuf.user != DEFAULT_HDFS_SUPERUSER:
       return [(fs_config.WEBHDFS_URL, _("Filesystem root '/' should be owned by 'hdfs'"))]
   except Exception, ex:
     LOG.info("%s -- Validation error: %s" % (fs, ex))
@@ -782,7 +773,7 @@ def test_fs_configuration(fs_config):
             _('Failed to create temporary file "%s"') % tmpname)]
 
   # Check superuser has super power
-  try:  # Finally: delete tmpname
+  try:
     try:
       fs.chown(tmpname, fs.superuser)
     except Exception, ex:

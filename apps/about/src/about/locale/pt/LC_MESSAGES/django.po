@@ -121,7 +121,7 @@ msgstr "Criar ou importar utilizadores."
 
 #: src/about/templates/admin_wizard.mako:181
 msgid "User Admin"
-msgstr "Administrador de utilizadores"
+msgstr "Utilizador admin"
 
 #: src/about/templates/admin_wizard.mako:190
 msgid "Tours and tutorials"
@@ -134,7 +134,7 @@ msgstr "Utilizar as aplicações"
 
 #: src/about/templates/admin_wizard.mako:209
 msgid "Hue Home"
-msgstr "Início do Hue"
+msgstr "Página inicial do Hue"
 
 #: src/about/templates/admin_wizard.mako:216
 msgid "Back"

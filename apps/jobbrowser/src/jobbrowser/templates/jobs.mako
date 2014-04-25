@@ -20,13 +20,15 @@
   from django.utils.translation import ugettext as _
 %>
 <%namespace name="actionbar" file="actionbar.mako" />
+<%namespace name="components" file="jobbrowser_components.mako" />
 
 ${ commonheader(None, "jobbrowser", user) | n,unicode }
+${ components.menubar() }
 
 <link href="/jobbrowser/static/css/jobbrowser.css" rel="stylesheet">
 
 <div class="container-fluid">
-  <h1>${_('Job Browser')}</h1>
+  <div class="card card-small">
 
   <%actionbar:render>
     <%def name="search()">
@@ -36,6 +38,7 @@ ${ commonheader(None, "jobbrowser", user) | n,unicode }
     </%def>
 
     <%def name="creation()">
+      % if not is_yarn:
       <label class="checkbox retired">
         <%
             checked = ""
@@ -44,6 +47,7 @@ ${ commonheader(None, "jobbrowser", user) | n,unicode }
         %>
         <input id="showRetired" type="checkbox" ${checked}> ${_('Show retired jobs')}
       </label>
+      % endif
       <span class="btn-group">
         <a class="btn btn-status btn-success" data-value="completed">${ _('Succeeded') }</a>
         <a class="btn btn-status btn-warning" data-value="running">${ _('Running') }</a>
@@ -53,9 +57,9 @@ ${ commonheader(None, "jobbrowser", user) | n,unicode }
     </%def>
   </%actionbar:render>
 
-  <div id="noJobs" class="alert"><i class="icon-warning-sign"></i>&nbsp; ${_('There are no jobs that match your search criteria.')}</div>
+  <div id="noJobs" class="alert"><i class="fa fa-exclamation-triangle"></i>&nbsp; ${_('There are no jobs that match your search criteria.')}</div>
 
-  <table id="jobsTable" class="datatables table table-striped table-condensed">
+  <table id="jobsTable" class="datatables table table-condensed">
     <thead>
     <tr>
       <th>${_('Logs')}</th>
@@ -75,6 +79,7 @@ ${ commonheader(None, "jobbrowser", user) | n,unicode }
     <tbody>
     </tbody>
   </table>
+    </div>
 </div>
 
 <div id="killModal" class="modal hide fade">
@@ -100,13 +105,15 @@ ${ commonheader(None, "jobbrowser", user) | n,unicode }
 
     var jobTable = $(".datatables").dataTable({
       "sPaginationType": "bootstrap",
-      "iDisplayLength": 30,
+      "iDisplayLength": 50,
       "bLengthChange": false,
       "bAutoWidth": false,
-      "sDom": "<'row'r>t<'row'<'span6'i><''p>>",
+      "sDom": "<'row'r>t<'row-fluid'<'dt-pages'p><'dt-records'i>>",
       "aaSorting": [
         [1, "desc"]
       ],
+      "bProcessing": true,
+      "bDeferRender": true,
       "aoColumns": [
         {"bSortable": false, "sWidth": "20px"},
         {"sWidth": "10%"},
@@ -145,21 +152,18 @@ ${ commonheader(None, "jobbrowser", user) | n,unicode }
           $(".datatables").hide();
         }
         else {
+          var rows = [];
           $(data).each(function (cnt, job) {
-            try {
-              jobTable.fnAddData(getJobRow(job));
-              $("a[data-row-selector='true']").jHueRowSelector();
-            }
-            catch (error) {
-              $.jHueNotify.error(error);
-            }
+            rows.push(getJobRow(job));
           });
+          jobTable.fnAddData(rows);
+          $("a[data-row-selector='true']").jHueRowSelector();
         }
       }
     }
 
     var isUpdating = false;
-    var newRows = [];
+    var updateableRows = {};
 
     function updateRunning(data) {
       if (data != null && data.length > 0) {
@@ -174,18 +178,23 @@ ${ commonheader(None, "jobbrowser", user) | n,unicode }
             callJobDetails(newRows[i]);
             newRows.splice(i, 1);
           }
-        }
-        $(data).each(function (cnt, job) {
-          var nNodes = jobTable.fnGetNodes();
-          var foundRow = null;
-          $(nNodes).each(function (iNode, node) {
-            if ($(node).children("td").eq(1).text().trim() == job.shortId) {
-              foundRow = node;
-            }
-          });
-          if (foundRow == null) {
-            if (['RUNNING', 'PREP', 'WAITING', 'SUSPENDED', 'PREPSUSPENDED', 'PREPPAUSED', 'PAUSED'].indexOf(job.status.toUpperCase()) > -1) {
-              newRows.push(job);
+        });
+
+        // Find new jobs and running jobs.
+        // Update updateableRows.
+        for(var i = 0; i < data.length; ++i) {
+          var job = data[i];
+          if (Utils.RUNNING_ARRAY.indexOf(job.status.toUpperCase()) > -1) {
+            updateableRows[job.shortId] = job;
+
+            var nNodes = jobTable.fnGetNodes();
+            var foundRow = null;
+            $.each(nNodes, function (iNode, node) {
+              if ($(node).children("td").eq(1).text().trim() == job.shortId) {
+                foundRow = node;
+              }
+            });
+            if (foundRow == null) {
               try {
                 jobTable.fnAddData(getJobRow(job));
                 if ($("#noJobs").is(":visible")) {
@@ -193,10 +202,11 @@ ${ commonheader(None, "jobbrowser", user) | n,unicode }
                   $(".datatables").show();
                 }
                 $("a[data-row-selector='true']").jHueRowSelector();
+              } catch (error) {
+                $(document).trigger("error", error);
               }
-              catch (error) {
-                $.jHueNotify.error(error);
-              }
+            } else {
+              updateJobRow(job, foundRow);
             }
           }
           else {
@@ -209,6 +219,13 @@ ${ commonheader(None, "jobbrowser", user) | n,unicode }
           callJobDetails(newRows[i]);
           newRows.splice(i, 1);
         }
+      } else {
+        // Update finished jobs from updateableRows.
+        // all jobs have finished if hit this clause.
+        $.each(updateableRows, function(job_id, job) {
+          callJobDetails(job, true);
+          delete updateableRows[job_id];
+        });
       }
       isUpdating = false;
     }
@@ -225,10 +242,10 @@ ${ commonheader(None, "jobbrowser", user) | n,unicode }
                 '>${ _('Kill') }</a>';
       }
       return [
-        '<a href="' + emptyStringIfNull(job.logs) + '" data-row-selector-exclude="true"><i class="icon-tasks"></i></a>',
+        '<a href="' + emptyStringIfNull(job.logs) + '" data-row-selector-exclude="true"><i class="fa fa-tasks"></i></a>',
         '<a href="' + emptyStringIfNull(job.url) + '" title="${_('View this job')}" data-row-selector="true">' + emptyStringIfNull(job.shortId) + '</a>',
         emptyStringIfNull(job.name),
-        '<span class="label ' + getStatusClass(job.status) + '">' + (job.isRetired && !job.isMR2 ? '<i class="icon-briefcase icon-white" title="${ _('Retired') }"></i> ' : '') + job.status + '</span>',
+        '<span class="label ' + getStatusClass(job.status) + '">' + (job.isRetired && !job.isMR2 ? '<i class="fa fa-briefcase fa fa-white" title="${ _('Retired') }"></i> ' : '') + job.status + '</span>',
         emptyStringIfNull(job.user),
         '<span title="' + emptyStringIfNull(job.mapsPercentComplete) + '">' + (job.isRetired ? '${_('N/A')}' : '<div class="progress" title="' + (job.isMR2 ? job.mapsPercentComplete : job.finishedMaps + '/' + job.desiredMaps) + '"><div class="bar-label">' + job.mapsPercentComplete + '%</div><div class="' + 'bar ' + getStatusClass(job.status, "bar-") + '" style="margin-top:-20px;width:' + job.mapsPercentComplete + '%"></div></div>') + '</span>',
         '<span title="' + emptyStringIfNull(job.reducesPercentComplete) + '">' + (job.isRetired ? '${_('N/A')}' : '<div class="progress" title="' + (job.isMR2 ? job.reducesPercentComplete : job.finishedReduces + '/' + job.desiredReduces) + '"><div class="bar-label">' + job.reducesPercentComplete + '%</div><div class="' + 'bar ' + getStatusClass(job.status, "bar-") + '" style="margin-top:-20px;width:' + job.reducesPercentComplete + '%"></div></div>') + '</span>',
@@ -240,10 +257,12 @@ ${ commonheader(None, "jobbrowser", user) | n,unicode }
       ]
     }
 
-    function updateJobRow(job, row) {
+    function updateJobRow(job, row, finish) {
+      var mapsPercentComplete = (finish) ? 100 : job.mapsPercentComplete;
+      var reducesPercentComplete = (finish) ? 100 : job.reducesPercentComplete;
       jobTable.fnUpdate('<span class="label ' + getStatusClass(job.status) + '">' + job.status + '</span>', row, 3, false);
-      jobTable.fnUpdate('<span title="' + emptyStringIfNull(job.mapsPercentComplete) + '"><div class="progress" title="' + (job.isMR2 ? job.mapsPercentComplete : job.finishedMaps + '/' + job.desiredMaps) + '"><div class="bar-label">' + job.mapsPercentComplete + '%</div><div class="' + 'bar ' + getStatusClass(job.status, "bar-") + '" style="margin-top:-20px;width:' + job.mapsPercentComplete + '%"></div></div></span>', row, 5, false);
-      jobTable.fnUpdate('<span title="' + emptyStringIfNull(job.reducesPercentComplete) + '"><div class="progress" title="' + (job.isMR2 ? job.reducesPercentComplete : job.finishedReduces + '/' + job.desiredReduces) + '"><div class="bar-label">' + job.reducesPercentComplete + '%</div><div class="' + 'bar ' + getStatusClass(job.status, "bar-") + '" style="margin-top:-20px;width:' + job.reducesPercentComplete + '%"></div></div></span>', row, 6, false);
+      jobTable.fnUpdate('<span title="' + emptyStringIfNull(mapsPercentComplete) + '"><div class="progress" title="' + (job.isMR2 ? mapsPercentComplete : job.finishedMaps + '/' + job.desiredMaps) + '"><div class="bar-label">' + mapsPercentComplete + '%</div><div class="' + 'bar ' + getStatusClass(job.status, "bar-") + '" style="margin-top:-20px;width:' + mapsPercentComplete + '%"></div></div></span>', row, 5, false);
+      jobTable.fnUpdate('<span title="' + emptyStringIfNull(reducesPercentComplete) + '"><div class="progress" title="' + (job.isMR2 ? reducesPercentComplete : job.finishedReduces + '/' + job.desiredReduces) + '"><div class="bar-label">' + reducesPercentComplete + '%</div><div class="' + 'bar ' + getStatusClass(job.status, "bar-") + '" style="margin-top:-20px;width:' + reducesPercentComplete + '%"></div></div></span>', row, 6, false);
       jobTable.fnUpdate('<span title="' + emptyStringIfNull(job.durationMs) + '">' + emptyStringIfNull(job.durationFormatted) + '</span>', row, 9, false);
       var _killCell = "";
       if (job.canKill) {
@@ -258,8 +277,8 @@ ${ commonheader(None, "jobbrowser", user) | n,unicode }
       jobTable.fnUpdate(_killCell, row, 11, false);
     }
 
-    function callJobDetails(job) {
-      $.getJSON(job.url + "?format=json&rnd=" + Math.random(), function (data) {
+    function callJobDetails(job, finish) {
+      $.getJSON(job.url + "?format=json", function (data) {
         if (data != null && data.job) {
           var jobTableNodes = jobTable.fnGetNodes();
           var _foundRow = null;
@@ -269,7 +288,7 @@ ${ commonheader(None, "jobbrowser", user) | n,unicode }
             }
           });
           if (_foundRow != null) {
-            updateJobRow(data.job, _foundRow);
+            updateJobRow(data.job, _foundRow, finish);
           }
         }
       });
@@ -296,17 +315,12 @@ ${ commonheader(None, "jobbrowser", user) | n,unicode }
       if ($("#showRetired").is(":checked")) {
         _url += "&retired=on";
       }
-      _url += "&rnd=" + Math.random(); // thanks IE!
       $.getJSON(_url, callback);
     }
 
-    var _filterTimeout = -1;
-    $(".search-query").on("keyup", function () {
-      window.clearTimeout(_filterTimeout);
-      _filterTimeout = window.setTimeout(function () {
-        $("#loading").removeClass("hide");
-        callJsonData(populateTable);
-      }, 300);
+    $(".search-query").jHueDelayedInput(function(){
+      $("#loading").removeClass("hide");
+      callJsonData(populateTable);
     });
 
     $("#showRetired").change(function () {
@@ -344,7 +358,7 @@ ${ commonheader(None, "jobbrowser", user) | n,unicode }
                 _this.button("reset");
                 $("#killModal").modal("hide");
                 if (response.status != 0) {
-                  $.jHueNotify.error("${ _('There was a problem killing this job.') }");
+                  $(document).trigger("error", "${ _('There was a problem killing this job.') }");
                 }
                 else {
                   callJobDetails({ url: _this.data("url")});

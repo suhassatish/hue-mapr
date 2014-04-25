@@ -22,11 +22,11 @@ msgstr ""
 msgid "Path"
 msgstr "경로"
 
-#: src/metastore/forms.py:49
+#: src/metastore/forms.py:47
 msgid "Overwrite?"
 msgstr "덮어쓰시겠습니까?"
 
-#: src/metastore/forms.py:62
+#: src/metastore/forms.py:60
 #, python-format
 msgid "%(column_name)s (partition key with type %(column_type)s)"
 msgstr "%(column_name)s(유형 %(column_type)s이(가) 포함된 파티션 키)"
@@ -74,9 +74,20 @@ msgstr "데이터를 로드할 수 없음: "
 msgid "Table '%(table)s' is not partitioned."
 msgstr "테이블 '%(table)s'이(가) 분할되지 않았습니다."
 
-#: src/metastore/templates/components.mako:24
+#: src/metastore/views.py:305
+msgid "Column analysis not supportet yet"
+msgstr "아직 열 분석이 지원되지 않음"
+
+#: src/metastore/views.py:307
+msgid "A POST request is required"
+msgstr "POST 요청이 필요합니다."
+
+#: src/metastore/templates/components.mako:30
+msgid "Metastore Manager"
+msgstr "Metastore Manager"
+
+#: src/metastore/templates/components.mako:44
 #: src/metastore/templates/databases.mako:23
-#: src/metastore/templates/databases.mako:26
 msgid "Databases"
 msgstr "데이터베이스"
 
@@ -162,7 +173,6 @@ msgid "View"
 msgstr "보기"
 
 #: src/metastore/templates/describe_table.mako:28
-#: src/metastore/templates/describe_table.mako:55
 msgid "Table"
 msgstr "테이블"
 
@@ -171,15 +181,16 @@ msgstr "테이블"
 msgid "%s : %s"
 msgstr "%s : %s"
 
-#: src/metastore/templates/describe_table.mako:36
+#: src/metastore/templates/describe_table.mako:37
+#: src/metastore/templates/describe_table.mako:145
 msgid "Name"
 msgstr "이름"
 
-#: src/metastore/templates/describe_table.mako:37
+#: src/metastore/templates/describe_table.mako:38
 msgid "Type"
 msgstr "유형"
 
-#: src/metastore/templates/describe_table.mako:38
+#: src/metastore/templates/describe_table.mako:39
 msgid "Comment"
 msgstr "설명"
 
@@ -265,6 +276,10 @@ msgstr "선택한 테이블 삭제"
 #: src/metastore/templates/tables.mako:67
 msgid "Table Name"
 msgstr "테이블 이름"
+
+#: src/metastore/templates/tables.mako:149
+msgid "Oops, no database found!"
+msgstr "데이터베이스가 없습니다!"
 
 #: src/metastore/templates/util.mako:66
 msgid "Unsaved Query"

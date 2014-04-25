@@ -26,60 +26,61 @@ from beeswax.views import collapse_whitespace
 <%namespace name="comps" file="beeswax_components.mako" />
 <%namespace name="layout" file="layout.mako" />
 
-${ commonheader(_('My Queries'), app_name, user, '100px') | n,unicode }
+${ commonheader(_('My Queries'), app_name, user) | n,unicode }
 ${layout.menubar(section='my queries')}
 
-<style>
+<style type="text/css">
     .tab-content {
         overflow:visible!important;
     }
 </style>
 
 <div class="container-fluid">
-  <h1>${_('My Queries')}</h1>
+  <div class="card card-small">
+    <h1 class="card-heading simple">${_('My Queries')}</h1>
 
-  <%actionbar:render>
-    <%def name="search()">
-      <input id="filterInput" type="text" class="input-xlarge search-query" placeholder="${_('Search for query')}">
-    </%def>
+    <%actionbar:render>
+      <%def name="search()">
+        <input id="filterInput" type="text" class="input-xlarge search-query" placeholder="${_('Search for query')}">
+      </%def>
 
-    <%def name="actions()">
-      <div class="btn-toolbar" style="display: inline; vertical-align: middle">
-        <button id="viewBtn" class="btn toolbarBtn" title="${_('View the result of the selected')}" disabled="disabled"><i class="icon-eye-open"></i> ${_('View result')}</button>
-        <button id="editBtn" class="btn toolbarBtn" title="${_('Edit the selected query')}" disabled="disabled"><i class="icon-edit"></i> ${_('Edit')}</button>
-        <button id="cloneBtn" class="btn toolbarBtn" title="${_('Copy the selected query')}" disabled="disabled"><i class="icon-copy"></i> ${_('Copy')}</button>
-        <button id="historyBtn" class="btn toolbarBtn" title="${_('View the usage history of the selected query')}" disabled="disabled"><i class="icon-tasks"></i> ${_('Usage history')}</button>
-        <div id="delete-dropdown" class="btn-group" style="vertical-align: middle">
-          <button id="trashQueryBtn" class="btn toolbarBtn" disabled="disabled"><i class="icon-remove"></i> ${_('Move to trash')}</button>
-          <button id="trashQueryCaretBtn" class="btn toolbarBtn dropdown-toggle" data-toggle="dropdown" disabled="disabled">
-            <span class="caret"></span>
-          </button>
-          <ul class="dropdown-menu">
-            <li><a href="#" id="deleteQueryBtn" title="${_('Delete forever')}"><i class="icon-bolt"></i> ${_('Delete forever')}</a></li>
-          </ul>
+      <%def name="actions()">
+        <div class="btn-toolbar" style="display: inline; vertical-align: middle">
+          <button id="viewBtn" class="btn toolbarBtn" title="${_('View the result of the selected')}" disabled="disabled"><i class="fa fa-eye"></i> ${_('View result')}</button>
+          <button id="editBtn" class="btn toolbarBtn" title="${_('Edit the selected query')}" disabled="disabled"><i class="fa fa-edit"></i> ${_('Edit')}</button>
+          <button id="cloneBtn" class="btn toolbarBtn" title="${_('Copy the selected query')}" disabled="disabled"><i class="fa fa-files-o"></i> ${_('Copy')}</button>
+          <button id="historyBtn" class="btn toolbarBtn" title="${_('View the usage history of the selected query')}" disabled="disabled"><i class="fa fa-tasks"></i> ${_('Usage history')}</button>
+          <div id="delete-dropdown" class="btn-group" style="vertical-align: middle">
+            <button id="trashQueryBtn" class="btn toolbarBtn" disabled="disabled"><i class="fa fa-times"></i> ${_('Move to trash')}</button>
+            <button id="trashQueryCaretBtn" class="btn toolbarBtn dropdown-toggle" data-toggle="dropdown" disabled="disabled">
+              <span class="caret"></span>
+            </button>
+            <ul class="dropdown-menu">
+              <li><a href="#" id="deleteQueryBtn" title="${_('Delete forever')}"><i class="fa fa-bolt"></i> ${_('Delete forever')}</a></li>
+            </ul>
+          </div>
         </div>
-      </div>
-    </%def>
+      </%def>
 
-    <%def name="creation()">
-      <div class="btn-toolbar" style="display: inline; vertical-align: middle">
-        <a class="btn" href="${ url(app_name + ':list_trashed_designs') }" title="${_('Go to the trash')}"><i class="icon-trash"></i> ${_('View trash')}</a>
-        <a class="btn" href="${ url(app_name + ':execute_query') }" title="${_('Create new query')}"><i class="icon-plus-sign"></i> ${_('New query')}</a>
-      </div>
-    </%def>
-  </%actionbar:render>
+      <%def name="creation()">
+        <div class="btn-toolbar" style="display: inline; vertical-align: middle">
+          <a class="btn" href="${ url(app_name + ':list_trashed_designs') }" title="${_('Go to the trash')}"><i class="fa fa-trash-o"></i> ${_('View trash')}</a>
+          <a class="btn" href="${ url(app_name + ':execute_query') }" title="${_('Create new query')}"><i class="fa fa-plus-circle"></i> ${_('New query')}</a>
+        </div>
+      </%def>
+    </%actionbar:render>
 
-  <ul class="nav nav-tabs">
+    <ul class="nav nav-tabs">
     <li class="active"><a href="#recentSavedQueries" data-toggle="tab">${_('Recent Saved Queries')} &nbsp;<span id="recentSavedQueriesFilterCnt" class="badge badge-info"></span></a></li>
     <li><a href="#recentRunQueries" data-toggle="tab">${_('Recent Run Queries')}  &nbsp;<span id="recentRunQueriesFilterCnt" class="badge badge-info"></span></a></li>
   </ul>
 
-  <div class="tab-content">
+    <div class="tab-content">
     <div class="active tab-pane" id="recentSavedQueries">
-      <table id="recentSavedQueriesTable" class="table table-striped table-condensed datatables">
+      <table id="recentSavedQueriesTable" class="table table-condensed datatables">
         <thead>
           <tr>
-            <th width="1%"><div class="hueCheckbox selectAll" data-selectables="savedCheck"></div></th>
+            <th width="1%"><div class="hueCheckbox selectAll fa" data-selectables="savedCheck"></div></th>
             <th>${_('Name')}</th>
             <th>${_('Desc')}</th>
             <th>${_('Last Modified')}</th>
@@ -89,19 +90,19 @@ ${layout.menubar(section='my queries')}
         % for design in q_page.object_list:
           <tr>
             <td data-row-selector-exclude="true">
-              <div class="hueCheckbox savedCheck canDelete"
-                   data-edit-url="${ url(app_name + ':execute_query', design_id=design.id) }"
+              <div class="hueCheckbox savedCheck fa canDelete"
+                   data-edit-url="${ url(app_name + ':execute_design', design_id=design.id) }"
                    data-delete-name="${ design.id }"
                    data-history-url="${ url(app_name + ':list_query_history') }?q-design_id=${design.id}"
                    data-clone-url="${ url(app_name + ':clone_design', design_id=design.id) }"
                    data-row-selector-exclude="true"></div>
             </td>
             <td>
-              <a href="${ url(app_name + ':execute_query', design_id=design.id) }" data-row-selector="true">${design.name}</a>
+              <a href="${ url(app_name + ':execute_design', design_id=design.id) }" data-row-selector="true">${design.name}</a>
             </td>
             <td>
               % if design.desc:
-              ${design.desc}
+                ${ design.desc }
               % endif
             </td>
             <td data-sort-value="${time.mktime(design.mtime.timetuple())}">${ timesince(design.mtime) } ${_('ago')}</td>
@@ -110,7 +111,7 @@ ${layout.menubar(section='my queries')}
         </tbody>
       </table>
       % if q_page.number != q_page.num_pages():
-        <a href="${ url(app_name + ':list_designs') }?user=${request.user.username|u}" >${_('View all my queries')} &raquo;</a>
+        <a href="${ url(app_name + ':list_designs') }?q-user=${request.user.username|u}" >${_('View all my queries')} &raquo;</a>
       % endif
     </div>
 
@@ -132,15 +133,15 @@ ${layout.menubar(section='my queries')}
         %>
           <tr>
             <td width="1%" data-row-selector-exclude="true">
-              <div class="hueCheckbox runCheck"
-                data-edit-url="${ url(app_name + ':execute_query', design_id=query.design.id) }"
+              <div class="hueCheckbox runCheck fa"
+                data-edit-url="${ url(app_name + ':execute_design', design_id=query.design.id) }"
                 % if qcontext and query.last_state != models.QueryHistory.STATE.expired.index:
-                  data-view-url="${ url(app_name + ':watch_query', id=query.id) }?context=${qcontext|u}"
+                  data-view-url="${ url(app_name + ':watch_query_history', query_history_id=query.id) }?context=${qcontext|u}"
                 % endif
                 data-row-selector-exclude="true"></div>
             </td>
             <td width="10%" data-sort-value="${time.mktime(query.submission_date.timetuple())}">${ query.submission_date.strftime("%x %X") }</td>
-            <td width="20%"><a href="${ url(app_name + ':execute_query', design_id=query.design.id) }" data-row-selector="true">${ query.design.name }</a></td>
+            <td width="20%"><a href="${ url(app_name + ':execute_design', design_id=query.design.id) }" data-row-selector="true">${ query.design.name }</a></td>
             <td width="60%">
               % if len(query.query) > 100:
               <code>${collapse_whitespace(query.query[:100])}...</code>
@@ -157,6 +158,7 @@ ${layout.menubar(section='my queries')}
         <a href="${ url(app_name + ':list_query_history') }">${_('View my entire query history')} &raquo;</a>
       % endif
     </div>
+  </div>
   </div>
 </div>
 
@@ -241,32 +243,32 @@ ${layout.menubar(section='my queries')}
 
     $(".selectAll").click(function () {
       if ($(this).attr("checked")) {
-        $(this).removeAttr("checked").removeClass("icon-ok");
-        $("." + $(this).data("selectables")).removeClass("icon-ok").removeAttr("checked");
+        $(this).removeAttr("checked").removeClass("fa-check");
+        $("." + $(this).data("selectables")).removeClass("fa-check").removeAttr("checked");
       }
       else {
-        $(this).attr("checked", "checked").addClass("icon-ok");
-        $("." + $(this).data("selectables")).addClass("icon-ok").attr("checked", "checked");
+        $(this).attr("checked", "checked").addClass("fa-check");
+        $("." + $(this).data("selectables")).addClass("fa-check").attr("checked", "checked");
       }
       toggleActions();
     });
 
     $(".savedCheck").click(function () {
-      $(".runCheck").removeClass("icon-ok").removeAttr("checked");
+      $(".runCheck").removeClass("fa-check").removeAttr("checked");
     });
 
     $(".runCheck").click(function () {
-      $(".savedCheck").removeClass("icon-ok").removeAttr("checked");
+      $(".savedCheck").removeClass("fa-check").removeAttr("checked");
     });
 
     $(".savedCheck, .runCheck").click(function () {
       if ($(this).attr("checked")) {
-        $(this).removeClass("icon-ok").removeAttr("checked");
+        $(this).removeClass("fa-check").removeAttr("checked");
       }
       else {
-        $(this).addClass("icon-ok").attr("checked", "checked");
+        $(this).addClass("fa-check").attr("checked", "checked");
       }
-      $(".selectAll").removeAttr("checked").removeClass("icon-ok");
+      $(".selectAll").removeAttr("checked").removeClass("fa-check");
       toggleActions();
     });
 

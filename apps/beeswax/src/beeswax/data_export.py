@@ -20,17 +20,18 @@
 import logging
 import time
 
-from django.http import HttpResponse
+from django.utils.translation import ugettext as _
 
-from desktop.lib.export_csvxls import CSVformatter, TooBigToDownloadException
+from desktop.lib import export_csvxls
 
-from beeswax import common
+from beeswax import common, conf
 
 
 LOG = logging.getLogger(__name__)
 
 _DATA_WAIT_SLEEP = 0.1                  # Sleep 0.1 sec before checking for data availability
-FETCH_ROWS = 100000
+FETCH_SIZE = 1000
+
 
 def download(handle, format, db):
   """
@@ -42,56 +43,60 @@ def download(handle, format, db):
     LOG.error('Unknown download format "%s"' % (format,))
     return
 
-  if format == 'csv':
-    formatter = CSVformatter()
-    mimetype = 'application/csv'
-  elif format == 'xls':
-    # We 'fool' the user by sending back CSV as XSL as it supports streaming and won't freeze Hue
-    formatter = CSVformatter()
-    mimetype = 'application/xls'
-
-  gen = data_generator(handle, formatter, db)
-  resp = HttpResponse(gen, mimetype=mimetype)
-  resp['Content-Disposition'] = 'attachment; filename=query_result.%s' % (format,)
-
-  return resp
+  data, has_more = HS2DataAdapter(handle, db, conf.DOWNLOAD_ROW_LIMIT.get())
+  return export_csvxls.make_response(data[0], data[1:], format, 'query_result')
 
 
-def data_generator(handle, formatter, db):
+def upload(path, handle, user, db, fs):
   """
-  data_generator(query_model, formatter) -> generator object
+  upload(query_model, path, user, db, fs) -> None
 
-  Return a generator object for a csv. The first line is the column names.
-
-  This is similar to export_csvxls.generator, but has
-  one or two extra complexities.
+  Retrieve the query result in the format specified and upload to hdfs.
   """
-  _DATA_WAIT_SLEEP
-  is_first_row = True
+  has_more = True
+  start_over = True
 
-  yield formatter.init_doc()
+  if fs.do_as_user(user.username, fs.exists, path):
+    raise Exception(_("%s already exists.") % path)
+  else:
+    fs.do_as_user(user.username, fs.create, path)
 
-  results = db.fetch(handle, start_over=is_first_row, rows=FETCH_ROWS)
+  while has_more:
+    data, has_more = HS2DataAdapter(handle, db, conf.DOWNLOAD_ROW_LIMIT.get(), start_over=start_over)
+    dataset = export_csvxls.dataset(None, data[1:])
+    fs.do_as_user(user.username, fs.append, path, dataset.csv)
+
+    if start_over:
+      start_over = False
+
+
+def HS2DataAdapter(handle, db, max_rows=0, start_over=True):
+  """
+  HS2DataAdapter(query_model, db) -> 2D array of data.
+
+  First line should be the headers.
+  """
+
+  results = db.fetch(handle, start_over=start_over, rows=FETCH_SIZE)
+
+  while not results.ready:
+    time.sleep(_DATA_WAIT_SLEEP)
+    results = db.fetch(handle, start_over=start_over, rows=FETCH_SIZE)
+
+  data = [results.cols()]
 
   while results is not None:
-    while not results.ready:   # For Beeswax
-      time.sleep(_DATA_WAIT_SLEEP)
-      results = db.fetch(handle, start_over=is_first_row, rows=FETCH_ROWS)
-
-    # TODO Check for concurrent reading when HS2 supports start_row
-    if is_first_row:
-      is_first_row = False
-      yield formatter.format_header(results.cols())
-
     for row in results.rows():
-      try:
-        yield formatter.format_row(row)
-      except TooBigToDownloadException, ex:
-        LOG.error(ex)
+      if max_rows > -1 and len(data) > max_rows:
+        break
+      data.append(row)
+
+    if max_rows > -1 and len(data) > max_rows:
+      break
 
     if results.has_more:
-      results = db.fetch(handle, start_over=is_first_row, rows=FETCH_ROWS)
+      results = db.fetch(handle, start_over=False, rows=FETCH_SIZE)
     else:
       results = None
 
-  yield formatter.fini_doc()
+  return data, results.has_more if results else False

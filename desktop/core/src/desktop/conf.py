@@ -14,7 +14,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""General configuration for core Desktop features (authentication, etc)"""
 
 import os
 import socket
@@ -29,11 +28,18 @@ from desktop.lib.i18n import force_unicode
 from desktop.lib.paths import get_desktop_root
 
 
-USE_CHERRYPY_SERVER = Config(
-  key="use_cherrypy_server",
-  help=_("If set to true, CherryPy will be used. Otherwise, Spawning will be used as the webserver."),
-  type=coerce_bool,
-  default=False)
+def coerce_database(database):
+  if database == 'mysql':
+    return 'django.db.backends.mysql'
+  elif database == 'postgres' or database == 'postgresql_psycopg2':
+    return 'django.db.backends.postgresql_psycopg2'
+  elif database == 'oracle':
+    return 'django.db.backends.oracle'
+  elif database in ('sqlite', 'sqlite3'):
+    return 'django.db.backends.sqlite3'
+  else:
+    return str(database)
+
 
 HTTP_HOST = Config(
   key="http_host",
@@ -155,6 +161,7 @@ SMTP = ConfigSection(
       key="password",
       help=_("The password for the SMTP user."),
       type=str,
+      private=True,
       default=""
     ),
 
@@ -182,8 +189,8 @@ DATABASE = ConfigSection(
     ENGINE=Config(
       key='engine',
       help=_('Database engine, such as postgresql_psycopg2, mysql, or sqlite3.'),
-      type=str,
-      default='sqlite3',
+      type=coerce_database,
+      default='django.db.backends.sqlite3',
     ),
     NAME=Config(
       key='name',
@@ -200,6 +207,7 @@ DATABASE = ConfigSection(
     PASSWORD=Config(
       key='password',
       help=_('Database password.'),
+      private=True,
       type=str,
       default='',
     ),
@@ -300,6 +308,7 @@ SERVER_USER = Config(
   help=_("Username to run servers as."),
   type=str,
   default="hue")
+
 SERVER_GROUP = Config(
   key="server_group",
   help=_("Group to run servers as."),
@@ -327,12 +336,6 @@ AUTH = ConfigSection(
                         "django.contrib.auth.backends.ModelBackend (fully Django backend), " +
                         "desktop.auth.backend.AllowAllBackend (allows everyone), " +
                         "desktop.auth.backend.AllowFirstUserDjangoBackend (relies on Django and user manager, after the first login). ")),
-    USER_GROUP_MEMBERSHIP_SYNCHRONIZATION_BACKEND = Config(
-      key="user_group_membership_synchronization_backend",
-      help=_("Backend to synchronize user-group membership with."),
-      type=str,
-      default='',
-    ),
     USER_AUGMENTOR=Config("user_augmentor",
                    default="desktop.auth.backend.DefaultUserAugmentor",
                    help=_("Class which defines extra accessor methods for User objects.")),
@@ -446,7 +449,102 @@ LDAP = ConfigSection(
                                       "members of a group.")),
       )
     ),
-))
+
+    LDAP_SERVERS = UnspecifiedConfigSection(
+      key="ldap_servers",
+      help=_("LDAP server record."),
+      each=ConfigSection(
+        members=dict(
+          BASE_DN=Config("base_dn",
+                         default=None,
+                         help=_("The base LDAP distinguished name to use for LDAP search.")),
+          NT_DOMAIN=Config("nt_domain",
+                           default=None,
+                           help=_("The NT domain used for LDAP authentication.")),
+          LDAP_URL=Config("ldap_url",
+                           default=None,
+                           help=_("The LDAP URL to connect to.")),
+          USE_START_TLS=Config("use_start_tls",
+                               default=True,
+                               type=coerce_bool,
+                               help=_("Use StartTLS when communicating with LDAP server.")),
+          LDAP_CERT=Config("ldap_cert",
+                           default=None,
+                           help=_("A PEM-format file containing certificates for the CA's that Hue will trust for authentication over TLS. The certificate for the CA that signed the LDAP server certificate must be included among these certificates. See more here http://www.openldap.org/doc/admin24/tls.html.")),
+          LDAP_USERNAME_PATTERN=Config("ldap_username_pattern",
+                                       default=None,
+                                       help=_("A pattern to use for constructing LDAP usernames.")),
+          BIND_DN=Config("bind_dn",
+                         default=None,
+                         help=_("The distinguished name to bind as, when importing from LDAP.")),
+          BIND_PASSWORD=Config("bind_password",
+                         default=None,
+                         private=True,
+                         help=_("The password for the bind user.")),
+
+          USERS = ConfigSection(
+            key="users",
+            help=_("Configuration for LDAP user schema and search."),
+            members=dict(
+              USER_FILTER=Config("user_filter",
+                                 default="objectclass=*",
+                                 help=_("A base filter for use when searching for users.")),
+              USER_NAME_ATTR=Config("user_name_attr",
+                                    default="sAMAccountName",
+                                    help=_("The username attribute in the LDAP schema. "
+                                         "Typically, this is 'sAMAccountName' for AD and 'uid' "
+                                         "for other LDAP systems.")),
+            )
+          ),
+
+          GROUPS = ConfigSection(
+            key="groups",
+            help=_("Configuration for LDAP group schema and search."),
+            members=dict(
+              GROUP_FILTER=Config("group_filter",
+                                 default="objectclass=*",
+                                 help=_("A base filter for use when searching for groups.")),
+              GROUP_NAME_ATTR=Config("group_name_attr",
+                                    default="cn",
+                                    help=_("The group name attribute in the LDAP schema. "
+                                        "Typically, this is 'cn'.")),
+              GROUP_MEMBER_ATTR=Config("group_member_attr",
+                                       default="member",
+                                       help=_("The LDAP attribute which specifies the "
+                                            "members of a group.")),
+            ))))),
+
+    # Every thing below here is deprecated and should be removed in an upcoming major release.
+    BASE_DN=Config("base_dn",
+                   default=None,
+                   help=_("The base LDAP distinguished name to use for LDAP search.")),
+    NT_DOMAIN=Config("nt_domain",
+                     default=None,
+                     help=_("The NT domain used for LDAP authentication.")),
+    LDAP_URL=Config("ldap_url",
+                     default=None,
+                     help=_("The LDAP URL to connect to.")),
+    USE_START_TLS=Config("use_start_tls",
+                         default=True,
+                         type=coerce_bool,
+                         help=_("Use StartTLS when communicating with LDAP server.")),
+    LDAP_CERT=Config("ldap_cert",
+                     default=None,
+                     help=_("A PEM-format file containing certificates for the CA's that Hue will trust for authentication over TLS. The certificate for the CA that signed the LDAP server certificate must be included among these certificates. See more here http://www.openldap.org/doc/admin24/tls.html.")),
+    LDAP_USERNAME_PATTERN=Config("ldap_username_pattern",
+                                 default=None,
+                                 help=_("A pattern to use for constructing LDAP usernames.")),
+    BIND_DN=Config("bind_dn",
+                   default=None,
+                   help=_("The distinguished name to bind as, when importing from LDAP.")),
+    BIND_PASSWORD=Config("bind_password",
+                   default=None,
+                   private=True,
+                   help=_("The password for the bind user.")),
+    SEARCH_BIND_AUTHENTICATION=Config("search_bind_authentication",
+                   default=True,
+                   type=coerce_bool,
+                   help=_("Use search bind authentication."))))
 
 
 OAUTH = ConfigSection(
@@ -500,6 +598,7 @@ LOCAL_FILESYSTEMS = UnspecifiedConfigSection(
                   required=True,
                   help=_("The path on the local filesystem.")))))
 
+
 def default_feedback_url():
   """A version-specific URL."""
   return "http://groups.google.com/a/cloudera.org/group/hue-user"
@@ -552,6 +651,26 @@ HTTP_500_DEBUG_MODE = Config(
   default=True
 )
 
+MEMORY_PROFILER = Config(
+  key='memory_profiler',
+  help=_('Enable or disable memory profiling.'),
+  type=coerce_bool,
+  default=False)
+
+AUDIT_EVENT_LOG_DIR = Config(
+  key="audit_event_log_dir",
+  help=_("The directory where to store the auditing logs. Auditing is disable if the value is empty."),
+  type=str,
+  default=""
+)
+
+AUDIT_LOG_MAX_FILE_SIZE = Config(
+  key="audit_log_max_file_size",
+  help=_("Size in KB/MB/GB for audit log to rollover."),
+  type=str,
+  default="100MB"
+)
+
 DJANGO_SERVER_EMAIL = Config(
   key='django_server_email',
   help=_('Email address that internal error messages should send as.'),
@@ -566,6 +685,40 @@ DJANGO_EMAIL_BACKEND = Config(
 )
 
 
+def validate_ldap(user, config):
+  res = []
+
+  if config.SEARCH_BIND_AUTHENTICATION.get():
+    if config.LDAP_URL.get() is not None and bool(config.BIND_DN.get()) != bool(config.BIND_PASSWORD.get()):
+      if config.BIND_DN.get() == None:
+        res.append((LDAP.BIND_DN,
+                  unicode(_("If you set bind_password, then you must set bind_dn."))))
+      else:
+        res.append((LDAP.BIND_PASSWORD,
+                    unicode(_("If you set bind_dn, then you must set bind_password."))))
+  else:
+    if config.NT_DOMAIN.get() is not None or \
+        config.LDAP_USERNAME_PATTERN.get() is not None:
+      if config.LDAP_URL.get() is None:
+        res.append((config.LDAP_URL,
+                    unicode(_("LDAP is only partially configured. An LDAP URL must be provided."))))
+
+    if config.LDAP_URL.get() is not None:
+      if config.NT_DOMAIN.get() is None and \
+          config.LDAP_USERNAME_PATTERN.get() is None:
+        res.append((config.LDAP_URL,
+                    unicode(_("LDAP is only partially configured. An NT Domain or username "
+                    "search pattern must be provided."))))
+
+    if config.LDAP_USERNAME_PATTERN.get() is not None and \
+        '<username>' not in config.LDAP_USERNAME_PATTERN.get():
+        res.append((config.LDAP_USERNAME_PATTERN,
+                   unicode(_("The LDAP username pattern should contain the special"
+                   "<username> replacement string for authentication."))))
+
+  return res
+
+
 def config_validator(user):
   """
   config_validator() -> [ (config_variable, error_message) ]
@@ -574,7 +727,7 @@ def config_validator(user):
   """
   from desktop.lib import i18n
 
-  res = [ ]
+  res = []
   if not SECRET_KEY.get():
     res.append((SECRET_KEY, unicode(_("Secret key should be configured as a random string."))))
 
@@ -597,7 +750,7 @@ def config_validator(user):
     kt_stat = os.stat(KERBEROS.HUE_KEYTAB.get())
     if stat.S_IMODE(kt_stat.st_mode) & 0077:
       res.append((KERBEROS.HUE_KEYTAB,
-                  unicode(_("Keytab should have 0600 permissions (has %o).") %
+                  force_unicode(_("Keytab should have 0600 permissions (has %o).") %
                   stat.S_IMODE(kt_stat.st_mode))))
 
     res.extend(validate_path(KERBEROS.KINIT_PATH, is_dir=False))

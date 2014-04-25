@@ -33,6 +33,7 @@ from django.utils.translation import ugettext as _
 </%def>
 
 <%def name="_table(files, path, current_request_path, view)">
+    <script src="/static/js/jquery.hdfsautocomplete.js" type="text/javascript" charset="utf-8"></script>
     <script src="/static/ext/js/knockout-min.js" type="text/javascript" charset="utf-8"></script>
     <script src="/static/ext/js/datatables-paging-0.1.js" type="text/javascript" charset="utf-8"></script>
     <style type="text/css">
@@ -76,16 +77,21 @@ from django.utils.translation import ugettext as _
         -webkit-box-shadow: 0px -1px 3px rgba(50, 50, 50, 0.1);
         -moz-box-shadow: 0px -1px 3px rgba(50, 50, 50, 0.1);
         box-shadow: 0px -1px 3px rgba(50, 50, 50, 0.1);
-        padding-bottom: 16px;
+        padding: 0px;
       }
 
       .pagination p {
         padding-top: 10px;
         padding-left: 10px;
+        margin: 0;
+      }
+
+      .pagination select {
+        margin-top: 4px;
       }
 
       .pagination ul {
-        margin-bottom: 10px;
+        margin-top: 14px;
         margin-right: 20px;
       }
 
@@ -103,13 +109,28 @@ from django.utils.translation import ugettext as _
       .scrollable {
         margin-bottom: 80px;
       }
+
+      #jHueHdfsAutocomplete ul li {
+        cursor: pointer;
+      }
+
+      #jHueHdfsAutocomplete ul li:hover,  #jHueHdfsAutocomplete ul li.active {
+        color: #FFFFFF;
+        background: #338BB8;
+      }
+
+      #jHueHdfsAutocomplete .popover-content {
+        max-height: 200px;
+        overflow-y: auto;
+      }
+
     </style>
 
-    <table class="table table-striped table-condensed datatables tablescroller-disable">
+    <table class="table table-condensed datatables tablescroller-disable">
         <thead>
             <tr>
-                <th width="1%"><div data-bind="click: selectAll, css: {hueCheckbox: true, 'icon-ok': allSelected}"></div></th>
-                <th class="sortable sorting" data-sort="type" width="4%" data-bind="click: sort">Type</th>
+                <th width="1%"><div data-bind="click: selectAll, css: {hueCheckbox: true, 'fa': true, 'fa-check': allSelected}"></div></th>
+                <th class="sortable sorting" data-sort="type" width="1%" data-bind="click: sort">&nbsp;</th>
                 <th class="sortable sorting" data-sort="name" data-bind="click: sort">${_('Name')}</th>
                 <th class="sortable sorting" data-sort="size" width="10%" data-bind="click: sort">${_('Size')}</th>
                 <th class="sortable sorting" data-sort="user" width="10%" data-bind="click: sort">${_('User')}</th>
@@ -140,9 +161,9 @@ from django.utils.translation import ugettext as _
     <script id="fileTemplate" type="text/html">
         <tr style="cursor: pointer" data-bind="event: { mouseover: toggleHover, mouseout: toggleHover}">
             <td class="center" data-bind="click: handleSelect" style="cursor: default">
-                <div data-bind="visible: name != '.' && name != '..', css: {hueCheckbox: name != '.' && name != '..', 'icon-ok': selected}"></div>
+                <div data-bind="visible: name != '.' && name != '..', css: {hueCheckbox: name != '.' && name != '..', 'fa': name != '.' && name != '..', 'fa-check': selected}"></div>
             </td>
-            <td data-bind="click: $root.viewFile" class="left"><i data-bind="css: {'icon-file-alt': type == 'file', 'icon-folder-close': type != 'file', 'icon-folder-open': type != 'file' && hovered}"></i></td>
+            <td data-bind="click: $root.viewFile" class="left"><i data-bind="css: {'fa': true, 'fa-play': $.inArray(name, ['workflow.xml', 'coordinator.xml', 'bundle.xml']) > -1, 'fa-file-o': type == 'file', 'fa-folder': type != 'file', 'fa-folder-open': type != 'file' && hovered}"></i></td>
             <td data-bind="click: $root.viewFile, attr: {'title': tooltip}" rel="tooltip">
                 <strong><a href="#" data-bind="click: $root.viewFile, text: name"></a></strong>
             </td>
@@ -481,6 +502,8 @@ from django.utils.translation import ugettext as _
         </form>
     </div>
 
+    <div id="submit-wf-modal" class="modal hide"></div>
+
     <script type="text/javascript" charset="utf-8">
     // ajax modal windows
     function openChownWindow(path, user, group, next) {
@@ -717,18 +740,20 @@ from django.utils.translation import ugettext as _
 
       $("*[rel='tooltip']").tooltip({ placement:"bottom" });
       if (window.location.hash != null && window.location.hash.length > 1) {
-        viewModel.targetPath("${url('filebrowser.views.view', path=urlencode('/'))}" + stripHashes(window.location.hash.substring(2)));
+        var targetPath = "${url('filebrowser.views.view', path=urlencode('/'))}" + stripHashes(window.location.hash.substring(2));
+        viewModel.targetPath(targetPath);
+        if (targetPath.indexOf("!!") > -1){
+          viewModel.targetPageNum(targetPath.substring(targetPath.indexOf("!!")+2)*1)
+          targetPath = targetPath.substring(0, targetPath.indexOf("!!"));
+          viewModel.targetPath(targetPath);
+        }
       }
       viewModel.retrieveData();
 
-      var filterTimeout = -1;
-      $(".search-query").keyup(function () {
-        window.clearTimeout(filterTimeout);
-        filterTimeout = window.setTimeout(function () {
-          viewModel.searchQuery($(".search-query").val());
-          viewModel.filter();
-        }, 500);
-      });
+      $(".search-query").jHueDelayedInput(function(){
+        viewModel.searchQuery($(".search-query").val());
+        viewModel.filter();
+      }, 500);
 
       $("#editBreadcrumb").click(function () {
         $(this).hide();
@@ -736,57 +761,56 @@ from django.utils.translation import ugettext as _
         $("#hueBreadcrumbText").show().focus();
       });
 
-      $("#hueBreadcrumbText").keyup(function (e) {
-        if (e.keyCode == 13) {
-          var _el = $(this);
-          viewModel.targetPath("${url('filebrowser.views.view', path=urlencode('/'))}" + stripHashes(_el.val().substring(1)));
+      $("#hueBreadcrumbText").jHueHdfsAutocomplete({
+        home: "/user/${ user }/",
+        onEnter: function (el) {
+          viewModel.targetPath("${url('filebrowser.views.view', path=urlencode('/'))}" + stripHashes(el.val().substring(1)));
           viewModel.getStats(function (data) {
             if (data.type != null && data.type == "file") {
               location.href = data.url;
               return false;
             }
             else {
-              window.location.hash = stripHashes(_el.val());
+              window.location.hash = stripHashes(el.val());
             }
           });
-        }
+        },
+        onBlur: function() {
+          $("#hueBreadcrumbText").hide();
+          $(".hueBreadcrumb").show();
+          $("#editBreadcrumb").show();
+        },
+        smartTooltip: "${_('Did you know? You can use the tab key or CTRL + Space to autocomplete file and folder names')}"
       });
 
-      $("#hueBreadcrumbText").blur(function () {
-        $(this).hide();
-        $(".hueBreadcrumb").show();
-        $("#editBreadcrumb").show();
-      });
-
-      % if not trash_enabled and is_superuser:
-        $("#trash-help").popover({
-            'title': "${_('Did you know?')}",
-            'content': '${_('You can activate HDFS trash by setting fs.trash.interval in core-site.xml.')}',
-            'trigger': 'hover',
-            'html': true,
-            'placement': 'left'
-        });
-      % endif
       $.ajaxSetup({
         error:function (x, e) {
           if (x.status == 500) {
-            $.jHueNotify.error("${_('There was a problem with your request.')}");
+            $(document).trigger("error", "${_('There was a problem with your request.')}");
             $("#hueBreadcrumbText").blur();
           }
         }
       });
 
       $(window).bind("hashchange", function () {
-        var target = "";
+        var targetPath = "";
         var hash = window.location.hash.substring(1);
         if (hash != null && hash != "") {
-          target = "${url('filebrowser.views.view', path=urlencode('/'))}" + stripHashes(hash.substring(1));
+          targetPath = "${url('filebrowser.views.view', path=urlencode('/'))}" + stripHashes(hash.substring(1));
+          if (targetPath.indexOf("!!") > -1){
+            viewModel.targetPageNum(targetPath.substring(targetPath.indexOf("!!")+2)*1)
+            targetPath = targetPath.substring(0, targetPath.indexOf("!!"));
+          }
+          else {
+            viewModel.targetPageNum(1)
+          }
         }
         if (window.location.href.indexOf("#") == -1) {
-          target = "${current_request_path}";
+          viewModel.targetPageNum(1)
+          targetPath = "${current_request_path}";
         }
-        if (target != "") {
-          viewModel.targetPath(target);
+        if (targetPath != "") {
+          viewModel.targetPath(targetPath);
           viewModel.retrieveData();
         }
       });
@@ -798,7 +822,7 @@ from django.utils.translation import ugettext as _
       $(window).scroll(function () {
         if ($(window).scrollTop() > 95) {
           $(".actionbar").width($(".actionbar").data("originalWidth"));
-          $(".actionbar").css("position", "fixed").css("top", "40px");
+          $(".actionbar").css("position", "fixed").css("top", "73px");
           $(".actionbarGhost").removeClass("hide");
         }
         else {
@@ -876,6 +900,7 @@ from django.utils.translation import ugettext as _
             // forcing root on empty breadcrumb url
             this.url = "/";
           }
+          viewModel.targetPageNum(1);
           viewModel.targetPath("${url('filebrowser.views.view', path=urlencode('/'))}" + stripHashes(this.url));
           window.location.hash = this.url;
         }
@@ -894,7 +919,6 @@ from django.utils.translation import ugettext as _
       self.recordsPerPage = ko.observable($.cookie("hueFilebrowserRecordsPerPage"));
       self.targetPageNum = ko.observable(1);
       self.targetPath = ko.observable("${current_request_path}");
-      self.trashEnabled = ko.observable(${ trash_enabled and "true" or "false" });
 
       self.sortBy = ko.observable("name");
       self.sortDescending = ko.observable(false);
@@ -947,11 +971,11 @@ from django.utils.translation import ugettext as _
       self.currentPath = ko.observable(currentDirPath);
 
       self.inTrash = ko.computed(function() {
-        return self.currentPath().match(/^\/user\/.+?\/\.Trash/) && self.trashEnabled();
+        return self.currentPath().match(/^\/user\/.+?\/\.Trash/);
       });
 
       self.inRestorableTrash = ko.computed(function() {
-        return self.currentPath().match(/^\/user\/.+?\/\.Trash\/.+?/) && self.trashEnabled();
+        return self.currentPath().match(/^\/user\/.+?\/\.Trash\/.+?/);
       });
 
       self.getStats = function (callback) {
@@ -962,7 +986,7 @@ from django.utils.translation import ugettext as _
         self.isLoading(true);
         $.getJSON(self.targetPath() + "?pagesize=" + self.recordsPerPage() + "&pagenum=" + self.targetPageNum() + "&filter=" + self.searchQuery() + "&sortby=" + self.sortBy() + "&descending=" + self.sortDescending() + "&format=json", function (data) {
           if (data.error){
-            $.jHueNotify.error(data.error);
+            $(document).trigger("error", data.error);
             self.isLoading(false);
             return false;
           }
@@ -1006,7 +1030,12 @@ from django.utils.translation import ugettext as _
 
       self.goToPage = function (pageNumber) {
         self.targetPageNum(pageNumber);
-        self.retrieveData();
+        if (window.location.hash.indexOf("!!") > -1){
+          window.location.hash =  window.location.hash.substring(0, window.location.hash.indexOf("!!")) + "!!" + pageNumber;
+        }
+        else {
+          window.location.hash += "!!" + pageNumber;
+        }
       };
 
       self.firstPage = function () {
@@ -1186,6 +1215,14 @@ from django.utils.translation import ugettext as _
         deleteSelected();
       };
 
+      self.submitSelected = function() {
+        $.get("${ url('oozie:submit_external_job', application_path='/') }../" + self.selectedFile().path, function (response) {
+            $('#submit-wf-modal').html(response);
+            $('#submit-wf-modal').modal('show');
+          }
+        );
+      }
+
       self.createDirectory = function (formElement) {
         $(formElement).attr("action", "/filebrowser/mkdir?next=${url('filebrowser.views.view', path=urlencode('/'))}" + "." + self.currentPath());
         return true;
@@ -1247,7 +1284,7 @@ from django.utils.translation import ugettext as _
           onComplete:function (id, fileName, response) {
             num_of_pending_uploads--;
             if (response.status != 0) {
-              $.jHueNotify.error("${ _('Error: ') }" + response['data']);
+              $(document).trigger("error", "${ _('Error: ') }" + response['data']);
             } else if (num_of_pending_uploads == 0) {
               window.location = "/filebrowser/view" + self.currentPath();
             }

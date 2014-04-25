@@ -17,7 +17,25 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 0.9.6\n"
 
-#: src/desktop/appmanager.py:228
+#: src/desktop/api.py:100 src/desktop/api.py:117 src/desktop/api.py:134
+#: src/desktop/api.py:152 src/desktop/api.py:172
+msgid "POST request only"
+msgstr "Solo solicitud POST"
+
+#: src/desktop/api.py:140 src/desktop/api.py:158
+#: src/desktop/templates/500.mako:23 src/desktop/templates/error.mako:22
+msgid "Error"
+msgstr "Error"
+
+#: src/desktop/api.py:147
+msgid "Tag(s) removed!"
+msgstr "Etiquetas quitadas."
+
+#: src/desktop/api.py:166
+msgid "Permissions updated!"
+msgstr "Permisos actualizados."
+
+#: src/desktop/appmanager.py:240
 msgid "load_apps has already been called."
 msgstr "Ya se ha llamado a load_apps."
 
@@ -225,7 +243,7 @@ msgstr "Patrón que utilizar para construir nombres de usuario LDAP."
 
 #: src/desktop/conf.py:331
 msgid "The distinguished name to bind as, when importing from LDAP."
-msgstr "Nombre distintivo con el que vincular, al importar desde LDAP."
+msgstr "Nombre distintivo con el que vincular al importar desde LDAP."
 
 #: src/desktop/conf.py:334
 msgid "The password for the bind user."
@@ -397,18 +415,18 @@ msgstr "El módulo de AppSpecificMiddleware \"%(module)s\" tiene una función pr
 #: src/desktop/middleware.py:337
 #, python-format
 msgid "You do not have permission to access the %(app_name)s application."
-msgstr "No tiene permisos para acceder a la aplicación %(app_name)s."
+msgstr "No tiene permiso para acceder a la aplicación %(app_name)s."
 
 #: src/desktop/views.py:63 src/desktop/views.py:78 src/desktop/views.py:188
 #: src/desktop/views.py:215 src/desktop/views.py:381
 msgid "You must be a superuser."
 msgstr "Debe ser un superusuario."
 
-#: src/desktop/views.py:70
+#: src/desktop/views.py:97
 msgid "No logs found!"
 msgstr "No se ha encontrado ningún registro."
 
-#: src/desktop/views.py:111
+#: src/desktop/views.py:138
 msgid "No logs found."
 msgstr "No se ha encontrado ningún registro."
 
@@ -421,84 +439,96 @@ msgstr "Nombre de usuario"
 msgid "Password"
 msgstr "Contraseña"
 
-#: src/desktop/auth/views.py:111 src/desktop/auth/views.py:112
+#: src/desktop/auth/views.py:110 src/desktop/auth/views.py:111
 msgid "Could not create home directory."
 msgstr "No se ha podido crear el directorio de inicio."
 
-#: src/desktop/auth/views.py:166 src/desktop/auth/views.py:183
+#: src/desktop/auth/views.py:173 src/desktop/auth/views.py:190
 #, python-format
 msgid "Invalid response from OAuth provider: %s"
 msgstr "Respuesta del proveedor OAuth no válida: %s"
 
-#: src/desktop/lib/django_util.py:397
+#: src/desktop/lib/django_util.py:398
 msgid "year"
 msgid_plural "years"
 msgstr[0] "año"
 msgstr[1] "años"
 
-#: src/desktop/lib/django_util.py:398
+#: src/desktop/lib/django_util.py:399
 msgid "month"
 msgid_plural "months"
 msgstr[0] "mes"
 msgstr[1] "meses"
 
-#: src/desktop/lib/django_util.py:399
+#: src/desktop/lib/django_util.py:400
 msgid "week"
 msgid_plural "weeks"
 msgstr[0] "semana"
 msgstr[1] "semanas"
 
-#: src/desktop/lib/django_util.py:400
+#: src/desktop/lib/django_util.py:401
 msgid "day"
 msgid_plural "days"
 msgstr[0] "día"
 msgstr[1] "días"
 
-#: src/desktop/lib/django_util.py:401
+#: src/desktop/lib/django_util.py:402
 msgid "hour"
 msgid_plural "hours"
 msgstr[0] "hora"
 msgstr[1] "horas"
 
-#: src/desktop/lib/django_util.py:402
+#: src/desktop/lib/django_util.py:403
 msgid "minute"
 msgid_plural "minutes"
 msgstr[0] "minuto"
 msgstr[1] "minutos"
 
-#: src/desktop/lib/django_util.py:403
+#: src/desktop/lib/django_util.py:404
 msgid "second"
 msgid_plural "seconds"
 msgstr[0] "segundo"
 msgstr[1] "segundos"
 
-#: src/desktop/lib/django_util.py:424
+#: src/desktop/lib/django_util.py:425
 msgid "s"
 msgstr "s"
 
-#: src/desktop/lib/django_util.py:426
+#: src/desktop/lib/django_util.py:427
 msgid "seconds"
 msgstr "segundos"
 
-#: src/desktop/lib/django_util.py:432
+#: src/desktop/lib/django_util.py:433
 #, python-format
 msgid "%(number)d%(type)s"
 msgstr "%(number)d%(type)s"
 
-#: src/desktop/lib/django_util.py:434
+#: src/desktop/lib/django_util.py:435
 #, python-format
 msgid "%(number)d %(type)s"
 msgstr "%(number)d %(type)s"
 
-#: src/desktop/lib/django_util.py:441
+#: src/desktop/lib/django_util.py:442
 #, python-format
 msgid "%(separator)s %(number)d%(type)s"
 msgstr "%(separator)s %(number)d%(type)s"
 
-#: src/desktop/lib/django_util.py:443
+#: src/desktop/lib/django_util.py:444
 #, python-format
 msgid "%(separator)s %(number)d %(type)s"
 msgstr "%(separator)s %(number)d %(type)s"
+
+#: src/desktop/lib/python_util.py:46
+msgid "\"read\" method is not implemented"
+msgstr "No se ha implementado el método \"read\""
+
+#: src/desktop/lib/python_util.py:49
+msgid "\"write\" method is not implemented"
+msgstr "No se ha implementado el método \"write\""
+
+#: src/desktop/lib/python_util.py:52
+msgid "\"error\" method is not implemented"
+msgstr "No se ha implementado el método \"error\""
 
 #: src/desktop/lib/security_util.py:33
 #, python-format
@@ -518,11 +548,11 @@ msgstr "No hay ayuda disponible."
 
 #: src/desktop/management/commands/config_upgrade.py:38
 msgid "Upgrades the Hue configuration with a mapping file."
-msgstr "Actualiza la configuración de Hue con un archivo de asignación."
+msgstr "Actualiza la configuración de Hue con un archivo de mapping."
 
 #: src/desktop/management/commands/config_upgrade.py:41
 msgid "Location of the mapping file."
-msgstr "Ubicación del archivo de asignación."
+msgstr "Ubicación del archivo de mapping."
 
 #: src/desktop/management/commands/config_upgrade.py:49
 #, python-format
@@ -539,6 +569,7 @@ msgid "Creates a Hue application directory structure."
 msgstr "Crea una estructura de directorio de aplicaciones de Hue."
 
 #: src/desktop/management/commands/create_desktop_app.py:33
+#: src/desktop/management/commands/create_proxy_app.py:33
 msgid "application name"
 msgstr "nombre de la aplicación"
 
@@ -547,16 +578,19 @@ msgid "Expected arguments: app_name [app_dir]"
 msgstr "Argumentos esperados: app_name [app_dir]"
 
 #: src/desktop/management/commands/create_desktop_app.py:45
+#: src/desktop/management/commands/create_proxy_app.py:50
 #, python-format
 msgid "App template dir missing: %(template)s."
 msgstr "Directorio de plantillas de aplicación no encontrado: %(template)s."
 
 #: src/desktop/management/commands/create_desktop_app.py:49
+#: src/desktop/management/commands/create_proxy_app.py:54
 #, python-format
 msgid "The template path, %(path)r, does not exist."
 msgstr "La ruta de la plantilla, %(path)r, no existe."
 
 #: src/desktop/management/commands/create_desktop_app.py:52
+#: src/desktop/management/commands/create_proxy_app.py:57
 #, python-format
 msgid "%(name)r is not a valid application name. Use only numbers, letters and underscores."
 msgstr "%(name)r no es un nombre de aplicación válido. Utilice solo números, letras y caracteres de subrayado."
@@ -566,16 +600,16 @@ msgstr "%(name)r no es un nombre de aplicación válido. Utilice solo números, 
 msgid "Created fs in: %(dir)s"
 msgstr "Fs creado en: %(dir)s"
 
-#: src/desktop/management/commands/runcherrypyserver.py:47
+#: src/desktop/management/commands/runcherrypyserver.py:48
 msgid "CherryPy Server for Desktop."
 msgstr "Servidor CherryPy para escritorio."
 
-#: src/desktop/management/commands/runcherrypyserver.py:108
+#: src/desktop/management/commands/runcherrypyserver.py:110
 #, python-format
 msgid "starting server with options %(options)s"
 msgstr "iniciando servidor con opciones %(options)s"
 
-#: src/desktop/management/commands/runcpserver.py:34
+#: src/desktop/management/commands/runcpserver.py:33
 msgid "Web server for Hue."
 msgstr "Servidor web para Hue."
 
@@ -613,19 +647,15 @@ msgstr "\n"
 msgid "Cannot find pylint at '%(path)s'. Please install pylint first."
 msgstr "No se ha encontrado pylint en '%(path)s'. Instale pylint primero."
 
-#: src/desktop/management/commands/runspawningserver.py:70
-msgid "Spawning Server for Hue."
-msgstr "Servidor Spawning para Hue."
-
 #: src/desktop/templates/404.mako:20
 msgid "Not Found"
 msgstr "No encontrado"
 
-#: src/desktop/templates/404.mako:23
-msgid "Page not found"
-msgstr "Página no encontrada"
+#: src/desktop/templates/404.mako:26
+msgid "Page not found."
+msgstr "Página no encontrada."
 
-#: src/desktop/templates/404.mako:24
+#: src/desktop/templates/404.mako:27
 msgid "We're sorry, but the requested page could not be found:"
 msgstr "Lo sentimos, no se encuentra la página solicitada:"
 
@@ -672,16 +702,21 @@ msgstr "Número de línea"
 msgid "Function Name"
 msgstr "Nombre de función"
 
-#: src/desktop/templates/about_layout.mako:34
+#: src/desktop/templates/about_layout.mako:39
+#: src/desktop/templates/common_header.mako:324
+msgid "About Hue"
+msgstr "Acerca de Hue"
+
+#: src/desktop/templates/about_layout.mako:43
 msgid "Quick start"
 msgstr "Inicio rápido"
 
-#: src/desktop/templates/about_layout.mako:35
+#: src/desktop/templates/about_layout.mako:44
 #: src/desktop/templates/dump_config.mako:26
 msgid "Configuration"
 msgstr "Configuración"
 
-#: src/desktop/templates/about_layout.mako:36
+#: src/desktop/templates/about_layout.mako:45
 #: src/desktop/templates/logs.mako:27
 msgid "Server Logs"
 msgstr "Registros del servidor"
@@ -690,20 +725,20 @@ msgstr "Registros del servidor"
 msgid "Search..."
 msgstr "Buscar..."
 
-#: src/desktop/templates/check_config.mako:22
+#: src/desktop/templates/check_config.mako:20
 #: src/desktop/templates/dump_config.mako:48
 msgid "Configuration files located in"
-msgstr "Configuración de archivos ubicados en"
+msgstr "Archivos de configuración ubicados en"
 
-#: src/desktop/templates/check_config.mako:25
+#: src/desktop/templates/check_config.mako:24
 msgid "Potential misconfiguration detected. Fix and restart Hue."
 msgstr "Se ha detectado un posible error de configuración. Corríjalo y reinicie Hue."
 
-#: src/desktop/templates/check_config.mako:42
+#: src/desktop/templates/check_config.mako:41
 msgid "Current value:"
 msgstr "Valor actual:"
 
-#: src/desktop/templates/check_config.mako:50
+#: src/desktop/templates/check_config.mako:49
 msgid "All OK. Configuration check passed."
 msgstr "Todo correcto. Comprobación de configuración aprobada."
 
@@ -793,15 +828,101 @@ msgstr "Cerrar sesión"
 msgid "Home"
 msgstr "Inicio"
 
-#: src/desktop/templates/config_alert_dock.mako:20
+#: src/desktop/templates/common_header.mako:333
+msgid "Query data"
+msgstr "Consultar datos"
+
+#: src/desktop/templates/common_header.mako:333
+msgid "Query Editors"
+msgstr "Editores de consultas"
+
+#: src/desktop/templates/common_header.mako:336
+msgid "Hive"
+msgstr "Hive"
+
+#: src/desktop/templates/common_header.mako:339
+msgid "Impala"
+msgstr "Impala"
+
+#: src/desktop/templates/common_header.mako:342
+msgid "DB Query"
+msgstr "Consulta de base de datos"
+
+#: src/desktop/templates/common_header.mako:345
+msgid "Pig"
+msgstr "Pig"
+
+#: src/desktop/templates/common_header.mako:348
+msgid "Job Designer"
+msgstr "Job Designer"
+
+#: src/desktop/templates/common_header.mako:351
+msgid "Spark"
+msgstr "Spark"
+
+#: src/desktop/templates/common_header.mako:363
+msgid "Manage data"
+msgstr "Gestionar datos"
+
+#: src/desktop/templates/common_header.mako:363
+msgid "Data Browsers"
+msgstr "Data Browsers"
+
+#: src/desktop/templates/common_header.mako:366
+msgid "Metastore Tables"
+msgstr "Tablas de Metastore"
+
+#: src/desktop/templates/common_header.mako:369
+msgid "HBase"
+msgstr "HBase"
+
+#: src/desktop/templates/common_header.mako:372
+msgid "Sqoop Transfer"
+msgstr "Transferencia de Sqoop"
+
+#: src/desktop/templates/common_header.mako:375
+msgid "ZooKeeper"
+msgstr "ZooKeeper"
+
+#: src/desktop/templates/common_header.mako:384
+msgid "Schedule with Oozie"
+msgstr "Programar con Oozie"
+
+#: src/desktop/templates/common_header.mako:384
+msgid "Workflows"
+msgstr "Workflows"
+
+#: src/desktop/templates/common_header.mako:386
+msgid "Dashboard"
+msgstr "Panel"
+
+#: src/desktop/templates/common_header.mako:387
+msgid "Editor"
+msgstr "Editor"
+
+#: src/desktop/templates/common_header.mako:396
+#: src/desktop/templates/common_header.mako:400
+msgid "Solr Search"
+msgstr "Búsqueda de Solr"
+
+#: src/desktop/templates/common_header.mako:396
+#: src/desktop/templates/common_header.mako:400
+msgid "Search"
+msgstr "Buscar"
+
+#: src/desktop/templates/common_header.mako:411
+msgid "Other apps"
+msgstr "Otras aplicaciones"
+
+#: src/desktop/templates/config_alert_dock.mako:21
 msgid "Misconfiguration detected"
 msgstr "Se ha detectado un error de configuración"
 
-#: src/desktop/templates/dump_config.mako:56
+#: src/desktop/templates/dump_config.mako:52
 msgid "Installed Applications"
 msgstr "Aplicaciones instaladas"
 
-#: src/desktop/templates/dump_config.mako:72
+#: src/desktop/templates/dump_config.mako:65
 msgid "Configuration Sections and Variables"
 msgstr "Secciones y variables de configuración"
 
@@ -911,7 +1032,233 @@ msgstr "Buscar en los registros"
 msgid "Download entire log as zip"
 msgstr "Descargar todo el registro como zip"
 
-#: src/desktop/templates/popup_error.mako:70
+#: src/desktop/templates/popup_error.mako:77
 msgid "Go back"
 msgstr "Volver"
 
+#: src/desktop/templates/tours.mako:25
+msgid "The Hue Blog"
+msgstr "El blog de Hue"
+
+#: src/desktop/templates/tours.mako:30
+msgid "Get started!"
+msgstr "Empiece."
+
+#: src/desktop/templates/tours.mako:31
+msgid "Your new home."
+msgstr "La nueva página de inicio."
+
+#: src/desktop/templates/tours.mako:31
+msgid "This is where you can access all your documents and you can tag them per project. Your home is always reachable from any part of Hue, just click on the house icon on the top navigator bar."
+msgstr "Desde aquí puede acceder a todos sus documentos y etiquetarlos por proyecto. A esta página de inicio se puede acceder desde cualquier parte de Hue y en cualquier momento con solo hacer clic en el icono de la casa de la barra del navegador superior."
+
+#: src/desktop/templates/tours.mako:32
+msgid "Actions and projects"
+msgstr "Acciones y proyectos"
+
+#: src/desktop/templates/tours.mako:32
+msgid "From here you can create new documents or see a specific project or any trashed document for instance."
+msgstr "Desde aquí puede, por ejemplo, crear nuevos documentos, ver un proyecto específico o ver cualquier documento enviado a la papelera."
+
+#: src/desktop/templates/tours.mako:33
+msgid "Organize!"
+msgstr "Organícese."
+
+#: src/desktop/templates/tours.mako:33
+msgid "You can organize your documents in projects and filter them out in this area. It's a smart and fast way to focus on a specific project you are currently tackling."
+msgstr "En esta área puede organizar los documentos en proyectos y filtrarlos. Es una forma práctica y rápida de centrarse en un proyecto específico que tenga actualmente entre manos."
+
+#: src/desktop/templates/tours.mako:34
+msgid "Your documents"
+msgstr "Sus documentos"
+
+#: src/desktop/templates/tours.mako:34
+msgid "You can always have a glance at your hard work. This is the list of all your documents, The first column tells you the kind of document that is, then you can find its name, a description and some other fields."
+msgstr "En todo momento puede consultar ese job en que tanto empeño pone. Se trata de una lista de todos sus documentos. La primera columna indica la clase de documento, después puede ver el nombre, la descripción y otros campos."
+
+#: src/desktop/templates/tours.mako:35
+msgid "You can assign one or more projects to a document just by clicking in this cell."
+msgstr "Puede asignar uno o varios proyectos a un documento haciendo clic en esta celda."
+
+#: src/desktop/templates/tours.mako:36
+msgid "Share your documents"
+msgstr "Comparta sus documentos"
+
+#: src/desktop/templates/tours.mako:36
+msgid "You can also share a document you have worked on with a specific user or a group of users. Just click on the icon in this column on every document you want to share and choose users and groups from the popup."
+msgstr "También puede compartir un documento en el que ha trabajado con un usuario específico o con un grupo de usuarios. Solo tiene que hacer clic en el icono de esta columna en cada documento que desee compartir y seleccionar los usuarios y los grupos en la ventana emergente."
+
+#: src/desktop/templates/tours.mako:37
+msgid "Search your documents"
+msgstr "Busque sus documentos"
+
+#: src/desktop/templates/tours.mako:37
+msgid "You can always filter out the documents by name, description or even owner. Enjoy your new home!"
+msgstr "Siempre podrá filtrar los documentos por nombre, descripción o, incluso, propietario. ¡Disfrute de la nueva página de inicio!"
+
+#: src/desktop/templates/tours.mako:42
+msgid "Create Hive tables and load quoted"
+msgstr "Crear tablas de Hive y cargar datos citados"
+
+#: src/desktop/templates/tours.mako:42
+msgid "CSV data"
+msgstr "Datos CSV"
+
+#: src/desktop/templates/tours.mako:49
+msgid "Submit any Oozie jobs directly"
+msgstr "Enviar todos los jobs de Oozie directamente"
+
+#: src/desktop/templates/tours.mako:49
+msgid "from HDFS"
+msgstr "de HDFS"
+
+#: src/desktop/templates/tours.mako:56
+msgid "ZooKeeper Browser"
+msgstr "ZooKeeper Browser"
+
+#: src/desktop/templates/tours.mako:63
+msgid "Query your Databases"
+msgstr "Consultar las bases de datos"
+
+#: src/desktop/templates/tours.mako:70
+msgid "Graphical facets"
+msgstr "Facetas gráficas"
+
+#: src/desktop/templates/tours.mako:77
+msgid "Use Impala with Sentry"
+msgstr "Usar Impala con Sentry"
+
+#: src/desktop/templates/tours.mako:84
+msgid "Submit Oozie jobs directly from HDFS"
+msgstr "Enviar jobs de Oozie directamente desde el HDFS"
+
+#: src/desktop/templates/tours.mako:91
+msgid "A Job Browser for Yarn"
+msgstr "Un Job Browser para Yarn"
+
+#: src/desktop/templates/tours.mako:98
+msgid "Security with Yarn"
+msgstr "Seguridad con Yarn"
+
+#: src/desktop/templates/tours.mako:105
+msgid "Hive Query editor with HiveServer2"
+msgstr "Editor de consultas de Hive con HiveServer2"
+
+#: src/desktop/templates/tours.mako:105
+msgid "and Sentry"
+msgstr "y Sentry"
+
+#: src/desktop/templates/tours.mako:112
+msgid "Integrate external Web applications in"
+msgstr "Integrar aplicaciones web externas en"
+
+#: src/desktop/templates/tours.mako:112
+msgid "any language"
+msgstr "cualquier idioma"
+
+#: src/desktop/templates/tours.mako:119
+msgid "Season 2 of Hadoop Video Tutorials"
+msgstr "Segunda temporada de los tutoriales de vídeo de Hadoop"
+
+#: src/desktop/templates/tours.mako:126
+msgid "Analyze Twitter data"
+msgstr "Analizar datos de Twitter"
+
+#: src/desktop/templates/tours.mako:133
+msgid "Preparing Yelp data for analysis with"
+msgstr "Preparando datos de Yelp para analizar con"
+
+#: src/desktop/templates/tours.mako:133
+msgid "Pig and Python UDF"
+msgstr "UDF de Pig y Python"
+
+#: src/desktop/templates/tours.mako:140
+msgid "What's new in Hue 3.5"
+msgstr "Novedades en Hue 3.5"
+
+#: src/desktop/templates/tours.mako:147
+msgid "SSO with SAML"
+msgstr "SSO con SAML"
+
+#: src/desktop/templates/tours.mako:154
+msgid "Integrating your company with LDAP: How To"
+msgstr "Integración de su empresa con LDAP: Directrices"
+
+#: src/desktop/templates/tours.mako:161
+msgid "A new Spark UI"
+msgstr "Una nueva IU de Spark"
+
+#: src/desktop/templates/tours.mako:168
+msgid "Fast SQL with Impala"
+msgstr "Rapidez en SQL con Impala"
+
+#: src/desktop/templates/tours.mako:175
+msgid "The Pig Editor"
+msgstr "Editor Pig"
+
+#: src/desktop/templates/tours.mako:182
+msgid "Build and use Hive UDF in 1 minute!"
+msgstr "Cree y use Hive UDF en 1 minuto."
+
+#: src/desktop/templates/tours.mako:189
+msgid "How to use HCatalog in Hue with Pig"
+msgstr "Como usar HCatalog en Hue con Pig"
+
+#: src/desktop/templates/tours.mako:196
+msgid "HBase Browser"
+msgstr "HBase Browser"
+
+#: src/desktop/templates/tours.mako:203
+msgid "Create HBase tables"
+msgstr "Crear tablas de HBase"
+
+#: src/desktop/templates/tours.mako:210
+msgid "Oozie Workflow"
+msgstr "Workflow de Oozie"
+
+#: src/desktop/templates/tours.mako:217
+msgid "Oozie Coordinator"
+msgstr "Coordinator de Oozie"
+
+#: src/desktop/templates/tours.mako:224
+msgid "The search app with Solr"
+msgstr "Aplicación de búsqueda con Solr"
+
+#: src/desktop/templates/tours.mako:231
+msgid "HDFS File Operations Made Easy"
+msgstr "Operaciones de archivos de HDFS más fáciles"
+
+#: src/desktop/templates/tours.mako:238
+msgid "High availability in Hue"
+msgstr "High Availability en Hue"
+
+#: src/desktop/templates/tours.mako:245
+msgid "What's new in Hue 2.5"
+msgstr "Novedades en Hue 2.5"
+
+#: src/desktop/templates/tours.mako:252
+msgid "Manage users and group permissions"
+msgstr "Gestionar permisos de usuarios y grupos"
+
+#: src/desktop/templates/tours.mako:259
+msgid "Transfering data with Sqoop"
+msgstr "Transfiriendo datos con Sqoop"
+
+#: src/desktop/templates/unsupported.mako:23
+msgid "Hue - Unsupported browser"
+msgstr "Hue - Explorador no compatible"
+
+#: src/desktop/templates/unsupported.mako:91
+msgid "It looks like you are running an older browser. What about upgrading to the latest"
+msgstr "Parece que está ejecutando un explorador más antiguo. ¿Desea actualizar a la última versión?"
+
+#~ msgid "Hue - Sign up"
+#~ msgstr "Hue - Registrarse"
+#~ msgid "Hue - Sign in"
+#~ msgstr "Hue - Iniciar sesión"
+#~ msgid "Visit gethue.com"
+#~ msgstr "Visite gethue.com"
+#~ msgid "Fell asleep? Visit us on gethue.com instead!"
+#~ msgstr "¿Se ha dormido? ¡Venga a vernos a gethue.com!"
+#~ msgid "Sign up"
+#~ msgstr "Registrarse"

@@ -13,6 +13,7 @@
 ## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 ## See the License for the specific language governing permissions and
 ## limitations under the License.
+
 <%!
 import time
 from desktop.views import commonheader, commonfooter
@@ -25,13 +26,13 @@ from beeswax.views import collapse_whitespace
 <%namespace name="layout" file="layout.mako" />
 <%namespace name="comps" file="beeswax_components.mako" />
 
-${ commonheader(_('History'), app_name, user, '100px') | n,unicode }
+${ commonheader(_('History'), app_name, user) | n,unicode }
 ${ layout.menubar(section='history') }
 
 <%def name="show_saved_query(design, history)">
   % if design:
     % if request.user == design.owner:
-      <a href="${ url(app_name + ':execute_query', design_id=design.id) }">
+      <a href="${ url(app_name + ':execute_design', design_id=design.id) }">
     % endif
     % if design.is_auto:
       [ ${_('Unsaved')} ]
@@ -49,16 +50,10 @@ ${ layout.menubar(section='history') }
   % endif
 </%def>
 
-<style type="text/css">
-  .sidebar-nav {
-    padding: 9px 0;
-  }
-</style>
-
 <div class="container-fluid">
     <div class="row-fluid">
         <div class="span2">
-            <div class="well sidebar-nav">
+            <div class="sidebar-nav">
                 <ul class="nav nav-list">
                     <li class="nav-header">${_('Actions')}</li>
                     % if share_queries:
@@ -81,28 +76,29 @@ ${ layout.menubar(section='history') }
                         % endif
                     % endif
 
-                     % if filter_params.get(prefix + 'auto_query', None):
-                      <%
-                        my_querydict = filter_params.copy()
-                        my_querydict[prefix + 'auto_query'] = ''
-                        if filter:
-                          my_querydict[prefix + 'search'] = filter
-                      %>
-                      <li><a href="?${my_querydict.urlencode()}">${_('Show user queries')}</a></li>
-                    % else:
+                     % if filter_params.get(prefix + 'auto_query', 'on') == 'off':
                       <%
                         my_querydict = filter_params.copy()
                         my_querydict[prefix + 'auto_query'] = 'on'
                         if filter:
                           my_querydict[prefix + 'search'] = filter
                       %>
-                      <li><a href="?${my_querydict.urlencode()}">${_('Show auto actions')}</a></li>
+                      <li><a href="?${my_querydict.urlencode()}">${_('Show auto queries')}</a></li>
+                    % else:
+                      <%
+                        my_querydict = filter_params.copy()
+                        my_querydict[prefix + 'auto_query'] = 'off'
+                        if filter:
+                          my_querydict[prefix + 'search'] = filter
+                      %>
+                      <li><a href="?${my_querydict.urlencode()}">${_('Show only saved queries')}</a></li>
                     % endif
                 </ul>
             </div>
         </div>
         <div class="span10">
-        <h1>${_('History')}</h1>
+          <div class="card card-small">
+            <h1 class="card-heading simple">${_('History')}</h1>
 
         <%actionbar:render>
           <%def name="search()">
@@ -110,9 +106,12 @@ ${ layout.menubar(section='history') }
           </%def>
         </%actionbar:render>
 
-        <img id="spinner" src="/static/art/spinner.gif" class="hide" />
+            <div class="card-body">
+              <p>
 
-        <table class="table table-striped table-condensed datatables">
+            <img id="spinner" src="/static/art/spinner.gif" class="hide" />
+
+            <table class="table table-striped table-condensed datatables" style="padding-left: 0;">
             <thead>
               <tr>
                 <th width="10%">${_('Time')}</th>
@@ -125,9 +124,6 @@ ${ layout.menubar(section='history') }
             </thead>
             <tbody>
             % for query in page.object_list:
-              <%
-                qcontext = query.design.get_query_context()
-              %>
               <tr class="histRow">
                 <td data-sort-value="${time.mktime(query.submission_date.timetuple())}">${query.submission_date.strftime("%x %X")}</td>
                 <td>${show_saved_query(query.design, query)}</td>
@@ -141,8 +137,8 @@ ${ layout.menubar(section='history') }
                 <td>${query.owner}</td>
                 <td>${models.QueryHistory.STATE[query.last_state]}</td>
                 <td>
-                  % if qcontext and query.last_state not in (models.QueryHistory.STATE.expired.index, models.QueryHistory.STATE.failed.index):
-                    <a href="${ url(app_name + ':watch_query', id=query.id) }?context=${qcontext|u}" data-row-selector="true">${_('Results')}</a>
+                  % if query.last_state not in (models.QueryHistory.STATE.expired.index, models.QueryHistory.STATE.failed.index):
+                    <a href="${ url(app_name + ':watch_query_history', query_history_id=query.id) }" data-row-selector="true">${_('Results')}</a>
                   % else:
                     ~
                   % endif
@@ -151,7 +147,11 @@ ${ layout.menubar(section='history') }
             % endfor
             </tbody>
           </table>
-         ${comps.pagination(page)}
+
+                ${ comps.pagination(page) }
+              </p>
+            </div>
+          </div>
         </div>
     </div>
 </div>
@@ -190,16 +190,12 @@ ${ layout.menubar(section='history') }
       "bStateSave": true
     });
 
-    var filterTimeout = -1;
-    $(".search-query").keyup(function () {
-      window.clearTimeout(filterTimeout);
-      filterTimeout = window.setTimeout(function () {
-        $("#spinner").show();
-        $(".datatables").hide();
-        $(".pagination").hide();
-        location.href = '?${ filter_params.get(prefix + 'user') and (prefix + 'user=' + filter_params.get(prefix + 'user') + '&') or '' }${ prefix }search='+$(".search-query").val();
-      }, 500);
-    });
+    $(".search-query").jHueDelayedInput(function(){
+      $("#spinner").show();
+      $(".datatables").hide();
+      $(".pagination").hide();
+      location.href = '?${ filter_params.get(prefix + 'user') and (prefix + 'user=' + filter_params.get(prefix + 'user') + '&') or '' }${ prefix }search='+$(".search-query").val();
+    }, 500);
 
     var _val = $(".search-query").val();
     $(".search-query").focus().val("").val(_val);

@@ -19,6 +19,12 @@ from optparse import make_option
 from useradmin.views import import_ldap_groups
 
 from django.core.management.base import BaseCommand, CommandError
+from django.utils.translation import ugettext_lazy as _t, ugettext as _
+
+from desktop.conf import LDAP
+
+from useradmin import ldap_access
+from useradmin.views import import_ldap_groups
 
 from django.utils.translation import ugettext_lazy as _t, ugettext as _
 
@@ -45,6 +51,15 @@ class Command(BaseCommand):
       make_option("--sync-users", help=_t("Sync users in the group."),
                                       action="store_true",
                                       default=False),
+      make_option("--import-members-recursive", help=_t("Import users from the group, but also do so recursively."),
+                                                action="store_true",
+                                                default=False),
+      make_option("--sync-users", help=_t("Sync users in the group."),
+                                  action="store_true",
+                                  default=False),
+      make_option("--server", help=_t("Server to connect to."),
+                              action="store_true",
+                              default=None),
    )
 
   args = "group-name"
