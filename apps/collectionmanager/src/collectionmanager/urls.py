@@ -23,13 +23,13 @@ urlpatterns = patterns('collectionmanager.views',
   url(r'^create/manual/$', 'collections_create_manual', name='collections_create_manual'),
   url(r'^create/file/$', 'collections_create_file', name='collections_create_file'),
   url(r'^import/$', 'collections_import', name='collections_import'),
-
-  url(r'^create$', 'collections_create', name='collections_create')
 )
 
 urlpatterns += patterns('collectionmanager.api',
   url(r'^api/fields/parse/$', 'parse_fields', name='api_parse_fields'),
   url(r'^api/collections_and_cores/$', 'collections_and_cores', name='api_collections_and_cores'),
-  url(r'^api/create/$', 'collections_create', name='api_collections_create'),
+  url(r'^api/create/start/$', 'collections_create_start', name='api_collections_create_start'),
+  url(r'^api/create/watch/(?P<job_id>[-\w]+)/$', 'collections_create_watch', name='api_collections_create_watch'),
+  url(r'^api/create/finish/$', 'collections_create_finish', name='api_collections_create_finish'),
   url(r'^api/import/$', 'collections_import', name='api_collections_import')
 )

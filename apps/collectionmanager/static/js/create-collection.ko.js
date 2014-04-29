@@ -18,6 +18,7 @@ var CreateCollectionViewModel = function(wizard) {
   ];
 
   // Models
+  self.view = ko.observable("create");
   self.fieldTypes = ko.mapping.fromJS(fieldTypes);
   self.fieldSeparators = ko.mapping.fromJS(fieldSeparators);
   self.fileTypes = ko.mapping.fromJS(fileTypes);
@@ -28,6 +29,8 @@ var CreateCollectionViewModel = function(wizard) {
   self.morphlines = ko.mapping.fromJS({'name': 'message', 'expression': null});
   self.morphlines.name = self.morphlines.name.extend({'errors': null});
   self.morphlines.expression = self.morphlines.expression.extend({'errors': null});
+  self.logs = ko.observableArray();
+  self.watchUrl = ko.observable();
 
   // UI
   self.wizard = new Wizard();
@@ -50,8 +53,7 @@ var CreateCollectionViewModel = function(wizard) {
       'type': self.fileType(),
       'file-path': self.file(),
       'morphlines': ko.mapping.toJSON(self.morphlines)
-    })
-    .done(function(data) {
+    }).done(function(data) {
       if (data.status == 0) {
         self.inferFields(data.data);
       } else {
@@ -63,14 +65,55 @@ var CreateCollectionViewModel = function(wizard) {
     });
   };
 
-  self.save = function() {
+  self.beginSave = function() {
     if (self.wizard.currentPage().validate()) {
-      return $.post("/collectionmanager/api/create/", {
+      return $.post("/collectionmanager/api/create/start/", {
         'collection': ko.toJSON(self.collection),
         'file-path': self.file(),
         'type': self.fileType()
+      }).done(function(data) {
+        if (data.status == 0) {
+          self.view("logging");
+          self.watchUrl(data.watch_url);
+          self.watchLogs();
+        } else {
+          $(document).trigger("error", data.message);
+        }
       })
-      .done(function(data) {
+      .fail(function (xhr, textStatus, errorThrown) {
+        $(document).trigger("error", xhr.responseText);
+      });
+    }
+  };
+
+  self.watchLogs = function() {
+    if (self.watchUrl()) {
+      return $.get(self.watchUrl()).done(function(data) {
+        console.log(data);
+        if (data.status == 0) {
+          if (data.is_running) {
+            setTimeout(1000, self.watchLogs);
+          } else {
+            self.finishSave();
+          }
+        } else {
+          self.view("create");
+          $(document).trigger("error", data.message);
+        }
+      })
+      .fail(function (xhr, textStatus, errorThrown) {
+        $(document).trigger("error", xhr.responseText);
+      });
+    }
+  };
+
+  self.finishSave = function() {
+    if (self.wizard.currentPage().validate()) {
+      return $.post("/collectionmanager/api/create/finish/", {
+        'collection': ko.toJSON(self.collection),
+        'file-path': self.file(),
+        'type': self.fileType()
+      }).done(function(data) {
         if (data.status == 0) {
           window.location.href = '/collectionmanager';
         } else {

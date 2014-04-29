@@ -15,15 +15,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import json
 import logging
 
-from django.http import HttpResponse
-from django.utils.translation import ugettext as _
-
 from desktop.lib.django_util import render
-
-from controller import CollectionManagerController
 
 
 LOG = logging.getLogger(__name__)
