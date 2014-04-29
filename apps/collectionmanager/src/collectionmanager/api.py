@@ -19,15 +19,20 @@ import json
 import logging
 import re
 
+from django.contrib.auth.models import User
+from django.core.urlresolvers import reverse
 from django.http import HttpResponse
 from django.utils.translation import ugettext as _
 
 from desktop.lib import i18n
 from desktop.lib.exceptions_renderable import PopupException
-
-from beeswax.create_table import _parse_fields, FILE_READERS, DELIMITERS
+from libsearch import conf as search_conf
+from beeswax.create_table import _parse_fields, FILE_READERS
+from oozie.views.dashboard import show_oozie_error, check_job_access_permission,\
+                                  check_job_edition_permission
 
 from controller import CollectionManagerController
+from submission import get as get_submission_api
 
 
 LOG = logging.getLogger(__name__)
@@ -128,7 +133,54 @@ def collections_and_cores(request):
   return HttpResponse(json.dumps(response), mimetype="application/json")
 
 
-def collections_create(request):
+def collections_create_start(request):
+  if request.method != 'POST':
+    raise PopupException(_('POST request required.'))
+
+  response = {'status': -1}
+
+  collection = json.loads(request.POST.get('collection', '{}'))
+
+  if collection:
+    # Create instancedir
+    # If it already exists, we should throw an exception
+    submission_api = get_submission_api(request.fs, request.jt, request.user)
+    oozie_id = submission_api.submit(collection.get('name'))
+
+    response['status'] = 0
+    response['watch_url'] = reverse('collectionmanager:api_collections_create_watch', kwargs={'job_id': oozie_id}) + '?format=python'
+  else:
+    response['message'] = _('Collection missing.')
+
+  return HttpResponse(json.dumps(response), mimetype="application/json")
+
+
+
+@show_oozie_error
+def collections_create_watch(request, job_id):
+  oozie_workflow = check_job_access_permission(request, job_id)
+  logs, workflow_actions = get_submission_api(request.fs, request.jt, request.user).get_log(request, oozie_workflow)
+
+  workflow = {
+    'job_id': oozie_workflow.id,
+    'status': oozie_workflow.status,
+    'progress': oozie_workflow.get_progress(),
+    'is_running': oozie_workflow.is_running(),
+    'kill_url': reverse('oozie:manage_oozie_jobs', kwargs={'job_id': oozie_workflow.id, 'action': 'kill'}),
+    'rerun_url': reverse('oozie:rerun_oozie_job', kwargs={'job_id': oozie_workflow.id, 'app_path': oozie_workflow.appPath}),
+    'actions': workflow_actions
+  }
+
+  response = {
+    'status': 0,
+    'workflow': workflow,
+    'logs': logs
+  }
+
+  return HttpResponse(json.dumps(response), content_type="text/plain")
+
+
+def collections_create_finish(request):
   if request.method != 'POST':
     raise PopupException(_('POST request required.'))
 
@@ -139,7 +191,7 @@ def collections_create(request):
   if collection:
     # Create collection and add fields
     searcher = CollectionManagerController(request.user)
-    searcher.create_new_collection(collection.get('name', ''), collection.get('fields', []))
+    searcher.create_new_collection(collection.get('name'), collection.get('fields', []))
 
     # Index data
     fh = request.fs.open(request.POST.get('file-path'))
