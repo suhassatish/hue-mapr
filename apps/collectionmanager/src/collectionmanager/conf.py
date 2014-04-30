@@ -15,6 +15,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
+
 from django.utils.translation import ugettext_lazy as _t
 
 from desktop.lib.conf import Config
@@ -26,34 +28,27 @@ BATCH_INDEXER_PATH = Config(
   type=str,
   default="/var/lib/search/search-mr-job.jar")
 
-# @TODO(Abe): Magic with __file__
 CONFIG_TEMPLATE_PATH = Config(
   key="config_template_path",
   help=_t("The contents of this directory will be copied over to the solrctl host to its temporary directory."),
   private=True,
   type=str,
-  default=__file__)
-
-SOLRCTL_HOST = Config(
-  key="solrctl_host",
-  help=_t("Hostname or IP of the machine that has the solrctl binary."),
-  type=str,
-  default="localhost")
+  default=os.path.join(os.path.dirname(__file__), '../data/solr_configs'))
 
 SOLRCTL_PATH = Config(
   key="solrctl_path",
   help=_t("Location of the solrctl binary."),
   type=str,
-  default="localhost")
+  default="/usr/lib/solr/bin/solrctl")
 
-SOLRCTL_USER = Config(
-  key="solrctl_user",
-  help=_t("The user that will execute solrctl commands. This user will require passwordless SSH priviliges to the solrctl host."),
+SOLR_HOME = Config(
+  key="solr_home",
+  help=_t("Location of the solr home."),
   type=str,
-  default="hue")
+  default="/usr/lib/solr")
 
-SOLRCTL_TMP_DIR = Config(
-  key="solrctl_tmp_dir",
-  help=_t("The search configuration template will be copied to this directory on the solrctl host machine."),
+SOLR_ZK_ENSEMBLE  = Config(
+  key="solr_zk_ensemble",
+  help=_t("Zookeeper ensemble."),
   type=str,
-  default="/tmp")
+  default="localhost:2181/solr")
