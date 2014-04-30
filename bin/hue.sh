@@ -29,7 +29,6 @@ fi
 if [ "$HUE_LOG_DIR" = "" ]; then
   export HUE_LOG_DIR="$HUE_HOME/logs"
 fi
-echo "HUE_LOG_DIR = $HUE_LOG_DIR"
 mkdir -p "$HUE_LOG_DIR"
 
 if [ "$HUE_PID_DIR" = "" ]; then
