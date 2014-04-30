@@ -46,7 +46,7 @@ ${ commonheader(_('Collection Manager'), "collectionmanager", user, "29px") | n,
       </div>
     </div>
 
-    <div data-bind="if: view() == 'create'" class="span9">
+    <div class="span9">
       <div class="card wizard">
         <h1 class="card-heading simple">${_("Create collection from file")}</h1>
         <div class="card-body" data-bind="if: wizard.currentPage()">
@@ -55,34 +55,11 @@ ${ commonheader(_('Collection Manager'), "collectionmanager", user, "29px") | n,
             <br />
             <a data-bind="routie: 'wizard/' + wizard.previousUrl(), visible: wizard.hasPrevious" class="btn btn-info" href="javascript:void(0)">${_('Previous')}</a>
             <a data-bind="routie: 'wizard/' + wizard.nextUrl(), visible: wizard.hasNext" class="btn btn-info" href="javascript:void(0)">${_('Next')}</a>
-            <a data-bind="click: beginSave, visible: !wizard.hasNext()" class="btn btn-info" href="javascript:void(0)">${_('Finish')}</a>
+            <a data-bind="click: save, visible: !wizard.hasNext()" class="btn btn-info" href="javascript:void(0)">${_('Finish')}</a>
           </form>
         </div>
       </div>
     </div>
-
-    <div data-bind="if: view() == 'logging'" class="span9">
-      <div class="card wizard">
-        <h1 class="card-heading simple">${_("Creating collection from file")}</h1>
-        <div class="card-body" data-bind="if: wizard.currentPage()">
-          <div data-bind="template: {name: 'logTemplate', foreach: currentScript().actions}"></div>
-          <script id="logTemplate" type="text/html">
-            <div data-bind="css:{'alert-modified': name != '', 'alert': name != '', 'alert-success': status == 'SUCCEEDED' || status == 'OK', 'alert-error': status != 'RUNNING' && status != 'SUCCEEDED' && status != 'OK' && status != 'PREP' && status != 'SUSPENDED'}">
-              <div class="pull-right">
-                  ${ _('Status:') } <a data-bind="text: status, visible: absoluteUrl != '', attr: {'href': absoluteUrl}" target="_blank"/> <i class="fa fa-share"></i>
-              </div>
-              <h4>${ _('Progress:') } <span data-bind="text: progress"></span>${ _('%') }</h4>
-              <div data-bind="css: {'progress': name != '', 'progress-striped': name != '', 'active': status == 'RUNNING'}" style="margin-top:10px">
-                <div data-bind="css: {'bar': name != '', 'bar-success': status == 'SUCCEEDED' || status == 'OK', 'bar-warning': status == 'RUNNING' || status == 'PREP', 'bar-danger': status != 'RUNNING' && status != 'SUCCEEDED' && status != 'OK' && status != 'PREP' && status != 'SUSPENDED'}, attr: {'style': 'width:' + progressPercent}"></div>
-              </div>
-            </div>
-          </script>
-          <pre id="withoutLogs">${ _('No available logs.') } <img src="/static/art/spinner.gif" data-bind="visible: currentScript().isRunning()"/></pre>
-          <pre id="withLogs" class="hide scroll"></pre>
-        </div>
-      </div>
-    </div>
-
   </div>
 </div>
 

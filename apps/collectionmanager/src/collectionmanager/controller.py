@@ -18,15 +18,16 @@
 
 import json
 import logging
-import tablib
+import subprocess
+
+from django.utils.translation import ugettext as _
 
 from desktop.lib.exceptions_renderable import PopupException
-
 from libsearch.api import SolrApi
 from search.conf import SOLR_URL, SECURITY_ENABLED
 from search.models import Collection
-from django.utils.translation import ugettext as _
 
+from collectionmanager import conf
 
 LOG = logging.getLogger(__name__)
 
@@ -78,6 +79,18 @@ class CollectionManagerController(object):
       raise PopupException(_('Collection type does not exist: %s') % attrs)
 
   def create_new_collection(self, name, fields):
+    # Create instance directory.
+    process = subprocess.Popen([conf.SOLRCTL_PATH.get(), "instancedir", "--create", name, conf.CONFIG_TEMPLATE_PATH.get()],
+                               stdout=subprocess.PIPE,
+                               stderr=subprocess.PIPE,
+                               env={
+                                 'SOLR_HOME': conf.SOLR_HOME.get(),
+                                 'SOLR_ZK_ENSEMBLE': conf.SOLR_ZK_ENSEMBLE.get()
+                               })
+    if process.wait() != 0:
+      LOG.error("Cloud not create instance directory.\nOutput stream: %s\nError stream: %s" % process.communicate())
+      raise PopupException(_('Could not create instance directory. Check error logs for more info.'))
+
     api = SolrApi(SOLR_URL.get(), self.user, SECURITY_ENABLED.get())
     if api.create_collection(name):
       # Create only new fields
@@ -93,7 +106,7 @@ class CollectionManagerController(object):
   def update_collection_index(self, collection_or_core_name, data, indexing_strategy):
     api = SolrApi(SOLR_URL.get(), self.user, SECURITY_ENABLED.get())
     # 'data' first line should be headers.
-    if indexing_strategy == 'separated':
+    if indexing_strategy == 'upload':
       if not api.update(collection_or_core_name, data, content_type='csv'):
         raise PopupException(_('Could not update index. Check error logs for more info.'))
     elif indexing_strategy == 'mapreduce-batch-indexer':

@@ -28,8 +28,6 @@ urlpatterns = patterns('collectionmanager.views',
 urlpatterns += patterns('collectionmanager.api',
   url(r'^api/fields/parse/$', 'parse_fields', name='api_parse_fields'),
   url(r'^api/collections_and_cores/$', 'collections_and_cores', name='api_collections_and_cores'),
-  url(r'^api/create/start/$', 'collections_create_start', name='api_collections_create_start'),
-  url(r'^api/create/watch/(?P<job_id>[-\w]+)/$', 'collections_create_watch', name='api_collections_create_watch'),
-  url(r'^api/create/finish/$', 'collections_create_finish', name='api_collections_create_finish'),
+  url(r'^api/create/$', 'collections_create', name='api_collections_create'),
   url(r'^api/import/$', 'collections_import', name='api_collections_import')
 )
