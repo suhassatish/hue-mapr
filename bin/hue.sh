@@ -29,6 +29,7 @@ fi
 if [ "$HUE_LOG_DIR" = "" ]; then
   export HUE_LOG_DIR="$HUE_HOME/logs"
 fi
+echo "HUE_LOG_DIR = $HUE_LOG_DIR"
 mkdir -p "$HUE_LOG_DIR"
 
 if [ "$HUE_PID_DIR" = "" ]; then
@@ -47,6 +48,7 @@ case $startStop in
       exit 1
     fi
   fi
+  cd $HUE_HOME
   nohup $HUE_HOME/build/env/bin/hue $command >> "$log" 2>&1 < /dev/null &
   echo $! > $pid
   echo "`date` $command started, pid `cat $pid`" >> "$log" 2>&1 < /dev/null
