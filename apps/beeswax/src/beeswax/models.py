@@ -133,7 +133,7 @@ class QueryHistory(models.Model):
     query.hql_query = hql_query
     self.design.data = query.dumps()
     self.query = hql_query
- 
+
   def is_finished(self):
     is_statement_finished = not self.is_running()
 
@@ -260,6 +260,7 @@ class SavedQuery(models.Model):
     design.desc = self.desc
     design.is_auto = self.is_auto
     return design
+
 
   @classmethod
   def create_empty(cls, app_name, owner, data):
