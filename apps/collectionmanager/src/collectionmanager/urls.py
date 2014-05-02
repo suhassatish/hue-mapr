@@ -20,8 +20,7 @@ from django.conf.urls.defaults import patterns, url
 urlpatterns = patterns('collectionmanager.views',
   url(r'^$', 'collections', name='index'),
 
-  url(r'^create/manual/$', 'collections_create_manual', name='collections_create_manual'),
-  url(r'^create/file/$', 'collections_create_file', name='collections_create_file'),
+  url(r'^create/$', 'collections_create', name='collections_create'),
   url(r'^import/$', 'collections_import', name='collections_import'),
 )
 

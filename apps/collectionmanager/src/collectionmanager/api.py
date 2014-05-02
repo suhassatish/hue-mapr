@@ -62,43 +62,47 @@ def _get_type_from_morphline_type(morphline_type):
 def parse_fields(request):
   result = {'status': -1, 'message': ''}
 
-  content_type = request.POST.get('type')
-  try:
-    if content_type == 'separated':
-      file_obj = request.fs.open(request.POST.get('file-path'))
-      delimiter = [request.POST.get('field-separator', ',')]
-      delim, reader_type, fields_list = _parse_fields(
-                                          'collections-file',
-                                          file_obj,
-                                          i18n.get_site_encoding(),
-                                          [reader.TYPE for reader in FILE_READERS],
-                                          delimiter)
-      file_obj.close()
+  source_type = request.POST.get('type')
+  if source_type == 'file':
+    content_type = request.POST.get('content-type')
+    try:
+      if content_type == 'separated':
+        file_obj = request.fs.open(request.POST.get('file-path'))
+        delimiter = [request.POST.get('field-separator', ',')]
+        delim, reader_type, fields_list = _parse_fields(
+                                            'collections-file',
+                                            file_obj,
+                                            i18n.get_site_encoding(),
+                                            [reader.TYPE for reader in FILE_READERS],
+                                            delimiter)
+        file_obj.close()
 
-      field_names = fields_list[0]
-      field_types = _get_field_types(fields_list[1])
-      result['data'] = zip(field_names, field_types)
-      result['status'] = 0
-    elif content_type == 'morphlines':
-      morphlines = json.loads(request.POST.get('morphlines'))
-      # Look for entries that take on the form %{SYSLOGTIMESTAMP:timestamp}
-      field_results = re.findall(r'\%\{(?P<type>\w+)\:(?P<name>\w+)\}', morphlines['expression'])
-      if field_results:
-        result['data'] = []
-
-        for field_result in field_results:
-          result['data'].append( (field_result[1], _get_type_from_morphline_type(field_result[0])) )
-
+        field_names = fields_list[0]
+        field_types = _get_field_types(fields_list[1])
+        result['data'] = zip(field_names, field_types)
         result['status'] = 0
+      elif content_type == 'morphlines':
+        morphlines = json.loads(request.POST.get('morphlines'))
+        # Look for entries that take on the form %{SYSLOGTIMESTAMP:timestamp}
+        field_results = re.findall(r'\%\{(?P<type>\w+)\:(?P<name>\w+)\}', morphlines['expression'])
+        if field_results:
+          result['data'] = []
+
+          for field_result in field_results:
+            result['data'].append( (field_result[1], _get_type_from_morphline_type(field_result[0])) )
+
+          result['status'] = 0
+        else:
+          result['status'] = 1
+          result['message'] = _('Could not detect any fields.')
       else:
         result['status'] = 1
-        result['message'] = _('Could not detect any fields.')
+        result['message'] = _('Type %s not supported.') % content_type
+    except Exception, e:
+      LOG.exception(e.message)
+      result['message'] = e.message
     else:
-      result['status'] = 1
-      result['message'] = _('Type %s not supported.') % content_type
-  except Exception, e:
-    LOG.exception(e.message)
-    result['message'] = e.message
+      result['message'] = _('Source type %s not supported.') % source_type
 
   return HttpResponse(json.dumps(result), mimetype="application/json")
 
@@ -141,14 +145,42 @@ def collections_create(request):
     # Create instance directory, collection, and add fields
     searcher.create_new_collection(collection.get('name'), collection.get('fields', []))
 
-    # Index data
-    fh = request.fs.open(request.POST.get('file-path'))
-    if request.POST.get('type') == 'separated':
+    if request.POST.get('source') == 'file':
+      # Index data
+      fh = request.fs.open(request.POST.get('path'))
+      if request.POST.get('type') == 'separated':
+        indexing_strategy = 'upload'
+      else:
+        indexing_strategy = 'mapreduce-batch-indexer'
+      searcher.update_collection_index(collection.get('name', ''), fh.read(), indexing_strategy)
+      fh.close()
+
+    elif request.POST.get('source') == 'hive':
+      # Run a custom hive query and post data to collection
+      from beeswax.server import dbms
+      import tablib
+
       indexing_strategy = 'upload'
-    else:
-      indexing_strategy = 'mapreduce-batch-indexer'
-    searcher.update_collection_index(collection.get('name', ''), fh.read(), indexing_strategy)
-    fh.close()
+      db = dbms.get(request.user)
+
+      database = request.POST.get('database')
+      table = request.POST.get('table')
+      columns = [field['name'] for field in collection.get('fields', [])]
+
+      table = db.get_table(database, table)
+      hql = "SELECT %s FROM `%s.%s` %s" % (','.join(columns), database, table.name, db._get_browse_limit_clause(table))
+      query = dbms.hql_query(hql)
+      handle = db.execute_and_wait(query)
+
+      if handle:
+        result = db.fetch(handle, rows=100)
+        db.close(handle)
+
+        dataset = tablib.Dataset()
+        dataset.append(columns)
+        for row in result.rows():
+          dataset.append(row)
+        searcher.update_collection_index(collection.get('name', ''), dataset.csv, indexing_strategy)
 
     response['status'] = 0
     response['message'] = _('Page saved!')

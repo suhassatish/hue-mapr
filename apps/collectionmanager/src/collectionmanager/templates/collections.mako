@@ -38,8 +38,7 @@ ${ commonheader(_('Collection Manager'), "collectionmanager", user, "29px") | n,
         <ul class="nav nav-list">
           <li class="nav-header">${_('Actions')}</li>
           <li><a href="/collectionmanager/import"><i class="fa fa-plus-circle"></i> ${ _('Import an existing collection') }</a></li>
-          <li><a href="/collectionmanager/create/file/"><i class="fa fa-files-o"></i> ${_('Create a new collection from a file')}</a></li>
-          ## <li><a href="/collectionmanager/create/manual/"><i class="fa fa-wrench"></i> ${_('Create a new collection manually')}</a></li>
+          <li><a href="/collectionmanager/create/"><i class="fa fa-files-o"></i> ${_('Create a new collection')}</a></li>
         </ul>
       </div>
     </div>

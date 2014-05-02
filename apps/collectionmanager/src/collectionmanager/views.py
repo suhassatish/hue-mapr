@@ -31,13 +31,5 @@ def collections(request, is_redirect=False):
   return render('collections.mako', request, {})
 
 
-def collections_create_manual(request):
-  return render('collections_create_manual.mako', request, {})
-
-
-def collections_create_file(request):
-  return render('collections_create_file.mako', request, {})
-
-
-def collections_import(request):
-  return render('collections_import.mako', request, {})
+def collections_create(request):
+  return render('collections_create.mako', request, {})
