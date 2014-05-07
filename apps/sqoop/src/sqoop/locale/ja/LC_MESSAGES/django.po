@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2014-03-05 15:05-0800\n"
+"POT-Creation-Date: 2013-08-02 20:43-0700\n"
 "PO-Revision-Date: 2012-07-30 18:56-0700\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: ja <LL@li.org>\n"
@@ -19,50 +19,50 @@ msgstr ""
 
 #: src/sqoop/conf.py:26
 msgid "The sqoop server URL."
-msgstr "Sqoop サーバーの URL です。"
+msgstr "sqoop サーバーの URL です。"
 
-#: src/sqoop/api/connection.py:54
+#: src/sqoop/api/connection.py:53
 msgid "Could not get connections."
 msgstr "接続を取得できませんでした。"
 
-#: src/sqoop/api/connection.py:66 src/sqoop/api/connection.py:90
+#: src/sqoop/api/connection.py:64 src/sqoop/api/connection.py:87
 msgid "Error saving connection"
-msgstr "接続を保存中のエラー"
+msgstr "接続を保存中にエラーが発生しました"
 
-#: src/sqoop/api/connection.py:75
+#: src/sqoop/api/connection.py:73
 msgid "Could not create connection."
 msgstr "接続を作成できませんでした。"
 
-#: src/sqoop/api/connection.py:98
+#: src/sqoop/api/connection.py:95
 msgid "Could not update connection."
 msgstr "接続を更新できませんでした。"
 
-#: src/sqoop/api/connection.py:111 src/sqoop/api/connection.py:127
-#: src/sqoop/api/job.py:119 src/sqoop/api/job.py:135
+#: src/sqoop/api/connection.py:107 src/sqoop/api/connection.py:122
+#: src/sqoop/api/job.py:115 src/sqoop/api/job.py:130
 msgid "GET or POST request required."
 msgstr "GET または POST 要求が必要です。"
 
-#: src/sqoop/api/connection.py:133 src/sqoop/api/connection.py:157
-#: src/sqoop/api/job.py:62 src/sqoop/api/job.py:89 src/sqoop/api/job.py:141
-#: src/sqoop/api/job.py:165 src/sqoop/api/job.py:187 src/sqoop/api/job.py:209
+#: src/sqoop/api/connection.py:127 src/sqoop/api/connection.py:150
+#: src/sqoop/api/job.py:59 src/sqoop/api/job.py:85 src/sqoop/api/job.py:135
+#: src/sqoop/api/job.py:158 src/sqoop/api/job.py:179 src/sqoop/api/job.py:200
 msgid "POST request required."
 msgstr "POST 要求が必要です。"
 
-#: src/sqoop/api/connection.py:147
+#: src/sqoop/api/connection.py:141
 msgid "Could not clone connection."
 msgstr "接続を複製できませんでした。"
 
-#: src/sqoop/api/connection.py:168
+#: src/sqoop/api/connection.py:161
 msgid "Could not delete connection."
 msgstr "接続を削除できませんでした。"
 
 #: src/sqoop/api/connector.py:52
 msgid "Could not get connectors."
-msgstr "接続を取得できませんでした。"
+msgstr "コネクタを取得できませんでした。"
 
-#: src/sqoop/api/connector.py:59 src/sqoop/api/connector.py:73
-#: src/sqoop/api/framework.py:54 src/sqoop/api/job.py:231
-#: src/sqoop/api/submission.py:62
+#: src/sqoop/api/connector.py:59 src/sqoop/api/connector.py:72
+#: src/sqoop/api/framework.py:54 src/sqoop/api/job.py:221
+#: src/sqoop/api/submission.py:61
 msgid "GET request required."
 msgstr "GET 要求が必要です。"
 
@@ -85,390 +85,345 @@ msgstr "サブミッションを取得できませんでした。"
 #: src/sqoop/api/exception.py:37
 #, python-format
 msgid "Could not connect to sqoop server. %s (%s)"
-msgstr "Soop サーバーに接続できませんでした。%s（%s）"
+msgstr "sqoop サーバーに接続できませんでした。%s（%s）"
 
 #: src/sqoop/api/framework.py:51
 msgid "Could not get framework."
 msgstr "フレームワークを取得できませんでした。"
 
-#: src/sqoop/api/job.py:56
+#: src/sqoop/api/job.py:54
 msgid "Could not get jobs."
 msgstr "ジョブを取得できませんでした。"
 
-#: src/sqoop/api/job.py:71 src/sqoop/api/job.py:98
+#: src/sqoop/api/job.py:68 src/sqoop/api/job.py:94
 msgid "Error saving job"
-msgstr "ジョブを保存中のエラー"
+msgstr "ジョブを保存中にエラーが発生しました"
 
-#: src/sqoop/api/job.py:80
+#: src/sqoop/api/job.py:77
 msgid "Could not create job."
 msgstr "ジョブを作成できませんでした。"
 
-#: src/sqoop/api/job.py:106
+#: src/sqoop/api/job.py:102
 msgid "Could not update job."
 msgstr "ジョブを更新できませんでした。"
 
-#: src/sqoop/api/job.py:155
+#: src/sqoop/api/job.py:149
 msgid "Could not clone job."
 msgstr "ジョブを複製できませんでした。"
 
-#: src/sqoop/api/job.py:177
+#: src/sqoop/api/job.py:170
 msgid "Could not delete job."
 msgstr "ジョブを削除できませんでした。"
 
-#: src/sqoop/api/job.py:199
+#: src/sqoop/api/job.py:191
 msgid "Could not start job."
 msgstr "ジョブを開始できませんでした。"
 
-#: src/sqoop/api/job.py:221 src/sqoop/templates/app.mako:803
+#: src/sqoop/api/job.py:212 src/sqoop/templates/app.mako:661
 msgid "Could not stop job."
 msgstr "ジョブを停止できませんでした。"
 
-#: src/sqoop/api/job.py:243
+#: src/sqoop/api/job.py:233
 msgid "Could not get job status."
-msgstr "ジョブのステータスを取得できませんでした。"
+msgstr "ジョブステータスを取得できませんでした。"
 
 #: src/sqoop/api/submission.py:54
 msgid "Could not get submissions."
 msgstr "サブミッションを取得できませんでした。"
 
-#: src/sqoop/templates/app.mako:28 src/sqoop/templates/app.mako:51
+#: src/sqoop/templates/app.mako:28 src/sqoop/templates/app.mako:36
 msgid "Create a new job"
-msgstr "新規ジョブを作成"
+msgstr "新しいジョブの作成"
 
-#: src/sqoop/templates/app.mako:28 src/sqoop/templates/app.mako:51
+#: src/sqoop/templates/app.mako:28 src/sqoop/templates/app.mako:36
 msgid "New job"
-msgstr "新規ジョブ"
+msgstr "新しいジョブ"
 
-#: src/sqoop/templates/app.mako:31
-msgid "Manage connections"
-msgstr "接続を管理"
-
-#: src/sqoop/templates/app.mako:33 src/sqoop/templates/app.mako:53
-#: src/sqoop/templates/app.mako:54 src/sqoop/templates/app.mako:58
-#: src/sqoop/templates/app.mako:59
+#: src/sqoop/templates/app.mako:30 src/sqoop/templates/app.mako:38
+#: src/sqoop/templates/app.mako:39 src/sqoop/templates/app.mako:43
+#: src/sqoop/templates/app.mako:44
 msgid "Sqoop Jobs"
 msgstr "Sqoop ジョブ"
 
-#: src/sqoop/templates/app.mako:34
+#: src/sqoop/templates/app.mako:31
 msgid "Search for job name or content"
-msgstr "ジョブ名または内容を検索"
+msgstr "ジョブ名または内容の検索"
 
-#: src/sqoop/templates/app.mako:39
-msgid "Create a new connection"
-msgstr "新規接続を作成"
-
-#: src/sqoop/templates/app.mako:39
-msgid "New connection"
-msgstr "新規接続"
-
-#: src/sqoop/templates/app.mako:42
-msgid "Manage jobs"
-msgstr "ジョブを管理"
-
-#: src/sqoop/templates/app.mako:44
-msgid "Sqoop Connections"
-msgstr "Sqoop 接続"
-
-#: src/sqoop/templates/app.mako:45
-msgid "Search for connection name or content"
-msgstr "接続名または内容を検索"
-
-#: src/sqoop/templates/app.mako:53 src/sqoop/templates/app.mako:54
-#: src/sqoop/templates/app.mako:58 src/sqoop/templates/app.mako:59
+#: src/sqoop/templates/app.mako:38 src/sqoop/templates/app.mako:39
+#: src/sqoop/templates/app.mako:43 src/sqoop/templates/app.mako:44
 msgid "Back to jobs list"
 msgstr "ジョブリストに戻る"
 
-#: src/sqoop/templates/app.mako:53
+#: src/sqoop/templates/app.mako:38
+#, fuzzy
 msgid "New Job"
-msgstr "新規ジョブ"
+msgstr "新しいジョブ"
 
-#: src/sqoop/templates/app.mako:58
+#: src/sqoop/templates/app.mako:43
+#, fuzzy
 msgid "New Connection"
-msgstr "新規接続"
+msgstr "新しい接続"
 
-#: src/sqoop/templates/app.mako:68
+#: src/sqoop/templates/app.mako:50
 msgid "Sqoop error"
 msgstr "Sqoop エラー"
 
-#: src/sqoop/templates/app.mako:89 src/sqoop/templates/app.mako:107
-#: src/sqoop/templates/app.mako:226
+#: src/sqoop/templates/app.mako:64 src/sqoop/templates/app.mako:82
 msgid "Click to edit"
 msgstr "クリックして編集"
 
-#: src/sqoop/templates/app.mako:92 src/sqoop/templates/app.mako:98
+#: src/sqoop/templates/app.mako:67 src/sqoop/templates/app.mako:73
 msgid "Last run: "
 msgstr "前回の実行： "
 
-#: src/sqoop/templates/app.mako:115
+#: src/sqoop/templates/app.mako:90
 msgid "There are currently no jobs."
 msgstr "現在、ジョブはありません。"
 
-#: src/sqoop/templates/app.mako:115 src/sqoop/templates/app.mako:233
-msgid "Click here to add one."
-msgstr "追加するにはここをクリックします。"
+#: src/sqoop/templates/app.mako:90
+#, fuzzy
+msgid "Please click on New Job to add one."
+msgstr "新しいジョブを追加するには、［新しいジョブ］をクリックしてください。"
 
-#: src/sqoop/templates/app.mako:126
+#: src/sqoop/templates/app.mako:99
 msgid "Actions"
 msgstr "アクション"
 
-#: src/sqoop/templates/app.mako:128
+#: src/sqoop/templates/app.mako:101
 msgid "Run the job"
-msgstr "ジョブを実行"
+msgstr "ジョブの実行"
 
-#: src/sqoop/templates/app.mako:129
+#: src/sqoop/templates/app.mako:102
 msgid "Run"
 msgstr "実行"
 
-#: src/sqoop/templates/app.mako:133
+#: src/sqoop/templates/app.mako:106
 msgid "Stop the job"
-msgstr "ジョブを停止"
+msgstr "ジョブの停止"
 
-#: src/sqoop/templates/app.mako:134
+#: src/sqoop/templates/app.mako:107
 msgid "Stop"
 msgstr "停止"
 
-#: src/sqoop/templates/app.mako:138
+#: src/sqoop/templates/app.mako:111
 msgid "Copy the job"
-msgstr "ジョブをコピー"
+msgstr "ジョブのコピー"
 
-#: src/sqoop/templates/app.mako:139
+#: src/sqoop/templates/app.mako:112
 msgid "Copy"
 msgstr "コピー"
 
-#: src/sqoop/templates/app.mako:143
+#: src/sqoop/templates/app.mako:116
 msgid "Delete the job"
-msgstr "ジョブを削除"
+msgstr "ジョブの削除"
 
-#: src/sqoop/templates/app.mako:144 src/sqoop/templates/app.mako:414
-#: src/sqoop/templates/app.mako:473 src/sqoop/templates/app.mako:567
+#: src/sqoop/templates/app.mako:117 src/sqoop/templates/app.mako:354
 msgid "Delete"
 msgstr "削除"
 
-#: src/sqoop/templates/app.mako:147
+#: src/sqoop/templates/app.mako:120
 msgid "Submissions"
 msgstr "サブミッション"
 
-#: src/sqoop/templates/app.mako:149
+#: src/sqoop/templates/app.mako:122
 msgid "Browse output directory"
 msgstr "出力ディレクトリを参照"
 
-#: src/sqoop/templates/app.mako:150
+#: src/sqoop/templates/app.mako:123
 msgid "Output directory"
 msgstr "出力ディレクトリ"
 
-#: src/sqoop/templates/app.mako:154
+#: src/sqoop/templates/app.mako:127
 msgid "Browse input directory"
 msgstr "入力ディレクトリを参照"
 
-#: src/sqoop/templates/app.mako:155
+#: src/sqoop/templates/app.mako:128
 msgid "Input directory"
 msgstr "入力ディレクトリ"
 
-#: src/sqoop/templates/app.mako:159 src/sqoop/templates/app.mako:161
+#: src/sqoop/templates/app.mako:132 src/sqoop/templates/app.mako:134
 msgid "Logs"
 msgstr "ログ"
 
-#: src/sqoop/templates/app.mako:164
+#: src/sqoop/templates/app.mako:137
 msgid "Last status"
-msgstr "前回のステータス"
+msgstr "最終ステータス"
 
-#: src/sqoop/templates/app.mako:202
+#: src/sqoop/templates/app.mako:173
 msgid "Back"
 msgstr "戻る"
 
-#: src/sqoop/templates/app.mako:206
+#: src/sqoop/templates/app.mako:177
 msgid "Next"
 msgstr "次へ"
 
-#: src/sqoop/templates/app.mako:209 src/sqoop/templates/app.mako:268
+#: src/sqoop/templates/app.mako:180 src/sqoop/templates/app.mako:219
 msgid "Save"
 msgstr "保存"
 
-#: src/sqoop/templates/app.mako:211
+#: src/sqoop/templates/app.mako:182
 msgid "Save and run"
 msgstr "保存して実行"
 
-#: src/sqoop/templates/app.mako:233
-msgid "There are currently no connections."
-msgstr "現在、接続はありません。"
-
-#: src/sqoop/templates/app.mako:244 src/sqoop/templates/app.mako:382
+#: src/sqoop/templates/app.mako:195 src/sqoop/templates/app.mako:322
 msgid "Name"
 msgstr "名前"
 
-#: src/sqoop/templates/app.mako:250
+#: src/sqoop/templates/app.mako:201
 msgid "Connector"
 msgstr "コネクタ"
 
-#: src/sqoop/templates/app.mako:267
-msgid "Cancel"
-msgstr "キャンセル"
+#: src/sqoop/templates/app.mako:218
+msgid "Cancel and return to job"
+msgstr "キャンセルしてジョブに戻る"
 
-#: src/sqoop/templates/app.mako:281
+#: src/sqoop/templates/app.mako:232
 msgid "Choose a folder"
 msgstr "フォルダを選択"
 
-#: src/sqoop/templates/app.mako:292
+#: src/sqoop/templates/app.mako:245
 msgid "Are you sure you'd like to delete this job?"
 msgstr "このジョブを削除してもよろしいですか？"
 
-#: src/sqoop/templates/app.mako:296 src/sqoop/templates/app.mako:308
+#: src/sqoop/templates/app.mako:249 src/sqoop/templates/app.mako:261
 msgid "No"
 msgstr "いいえ"
 
-#: src/sqoop/templates/app.mako:297 src/sqoop/templates/app.mako:309
+#: src/sqoop/templates/app.mako:250 src/sqoop/templates/app.mako:262
 msgid "Yes, delete it"
 msgstr "はい、削除します"
 
-#: src/sqoop/templates/app.mako:304
+#: src/sqoop/templates/app.mako:257
 msgid "Are you sure you'd like to delete this connection?"
 msgstr "この接続を削除してもよろしいですか？"
 
-#: src/sqoop/templates/app.mako:319
-msgid "server at "
-msgstr "次のサーバー "
-
-#: src/sqoop/templates/app.mako:329 src/sqoop/templates/app.mako:338
+#: src/sqoop/templates/app.mako:271 src/sqoop/templates/app.mako:280
 msgid "from "
-msgstr "元 "
+msgstr "開始 "
 
-#: src/sqoop/templates/app.mako:331 src/sqoop/templates/app.mako:340
+#: src/sqoop/templates/app.mako:273 src/sqoop/templates/app.mako:282
+#, fuzzy
 msgid "to "
-msgstr "先 "
+msgstr "終了 "
 
-#: src/sqoop/templates/app.mako:389
+#: src/sqoop/templates/app.mako:329
+#, fuzzy
 msgid "Job type"
 msgstr "ジョブタイプ"
 
-#: src/sqoop/templates/app.mako:391
+#: src/sqoop/templates/app.mako:331
 msgid "Import from a Database to Hadoop"
 msgstr "データベースから Hadoop にインポート"
 
-#: src/sqoop/templates/app.mako:393
+#: src/sqoop/templates/app.mako:333
 msgid "Import"
 msgstr "インポート"
 
-#: src/sqoop/templates/app.mako:395
+#: src/sqoop/templates/app.mako:335
 msgid "Import from Hadoop to a Database"
 msgstr "Hadoop からデータベースにインポート"
 
-#: src/sqoop/templates/app.mako:397
+#: src/sqoop/templates/app.mako:337
+#, fuzzy
 msgid "Export"
 msgstr "エクスポート"
 
-#: src/sqoop/templates/app.mako:404 src/sqoop/templates/app.mako:687
+#: src/sqoop/templates/app.mako:344
+#, fuzzy
 msgid "Connection"
 msgstr "接続"
 
-#: src/sqoop/templates/app.mako:411
+#: src/sqoop/templates/app.mako:351
 msgid "Edit"
 msgstr "編集"
 
-#: src/sqoop/templates/app.mako:420
+#: src/sqoop/templates/app.mako:360
+#, fuzzy
 msgid "Add a new connection"
-msgstr "新規接続を追加"
+msgstr "新しい接続を追加"
 
-#: src/sqoop/templates/app.mako:456 src/sqoop/templates/app.mako:550
-msgid "Property name"
-msgstr "プロパティ名"
-
-#: src/sqoop/templates/app.mako:457 src/sqoop/templates/app.mako:551
-msgid "Value"
-msgstr "値"
-
-#: src/sqoop/templates/app.mako:479 src/sqoop/templates/app.mako:573
-msgid "Add"
-msgstr "追加"
-
-#: src/sqoop/templates/app.mako:488 src/sqoop/templates/app.mako:585
+#: src/sqoop/templates/app.mako:389 src/sqoop/templates/app.mako:460
 msgid "Choose..."
 msgstr "選択..."
 
-#: src/sqoop/templates/app.mako:529 src/sqoop/templates/app.mako:626
+#: src/sqoop/templates/app.mako:443 src/sqoop/templates/app.mako:514
 msgid "True"
 msgstr "True"
 
-#: src/sqoop/templates/app.mako:530 src/sqoop/templates/app.mako:627
+#: src/sqoop/templates/app.mako:444 src/sqoop/templates/app.mako:515
 msgid "False"
 msgstr "False"
 
-#: src/sqoop/templates/app.mako:671
+#: src/sqoop/templates/app.mako:557
 msgid "Step 1: From"
 msgstr "手順 1：元"
 
-#: src/sqoop/templates/app.mako:671
-msgid "Step 1: To"
-msgstr "手順 1：先"
+#: src/sqoop/templates/app.mako:563
+#, fuzzy
+msgid "Step 2: to"
+msgstr "手順 2：終了"
 
-#: src/sqoop/templates/app.mako:672 src/sqoop/templates/app.mako:694
-msgid "Database"
-msgstr "データベース"
+#: src/sqoop/templates/app.mako:570
+msgid "Step 1: Manage connections"
+msgstr "手順 1：接続の管理"
 
-#: src/sqoop/templates/app.mako:678
-msgid "Step 2: To"
-msgstr "手順 2：先"
-
-#: src/sqoop/templates/app.mako:678 src/sqoop/templates/app.mako:693
+#: src/sqoop/templates/app.mako:576
 msgid "Step 2: From"
-msgstr "手順 2：元"
+msgstr "手順 2：開始"
 
-#: src/sqoop/templates/app.mako:679 src/sqoop/templates/app.mako:701
-msgid "HDFS"
-msgstr "HDFS"
-
-#: src/sqoop/templates/app.mako:686
-msgid "Step 1: Type"
-msgstr "手順 1：タイプ"
-
-#: src/sqoop/templates/app.mako:700
+#: src/sqoop/templates/app.mako:582
 msgid "Step 3: To"
-msgstr "手順 3：先"
+msgstr "手順 3：終了"
 
-#: src/sqoop/templates/app.mako:773
-msgid "Please specify a connection."
-msgstr "接続を指定してください。"
-
-#: src/sqoop/templates/app.mako:782
+#: src/sqoop/templates/app.mako:640
 msgid "Cannot connect to sqoop server."
-msgstr "Sqoop サーバーに接続できません。"
+msgstr "sqoop サーバーに接続できません。"
 
-#: src/sqoop/templates/app.mako:787
+#: src/sqoop/templates/app.mako:645
 msgid "The job is starting..."
 msgstr "ジョブを開始しています..."
 
-#: src/sqoop/templates/app.mako:791
+#: src/sqoop/templates/app.mako:649
 msgid "Started job."
-msgstr "ジョブを開始しました。"
+msgstr "開始済みのジョブです。"
 
-#: src/sqoop/templates/app.mako:795
+#: src/sqoop/templates/app.mako:653
 msgid "Error: "
 msgstr "エラー： "
 
-#: src/sqoop/templates/app.mako:799
+#: src/sqoop/templates/app.mako:657
 msgid "Stopped job."
 msgstr "ジョブを停止しました。"
 
-#: src/sqoop/templates/app.mako:807
+#: src/sqoop/templates/app.mako:665
+#, fuzzy
 msgid "Could not load node."
 msgstr "ノードをロードできませんでした。"
 
-#: src/sqoop/templates/app.mako:856
-msgid "Did you know? You can use the tab key or CTRL + Space to autocomplete file and folder names"
-msgstr "ご存知ですか？ Tab キーを使用するか、CTRL キーを押しながら Space キーを押して、ファイル名やフォルダ名のオートコンプリートが可能です"
-
-#: src/sqoop/templates/app.mako:923
-msgid "There was a problem with the server. Look at the Sqoop2 server logs for more details."
-msgstr "サーバーで問題が発生しました。Sqoop2 サーバーログで詳細を確認してください。"
-
-#: src/sqoop/templates/app.mako:926
-msgid "Unknown error."
-msgstr "不明なエラーです。"
-
-#: src/sqoop/templates/app.mako:1027
+#: src/sqoop/templates/app.mako:728
 msgid "Watch out! This path currently does not exist."
-msgstr "注意してください。このパスは現在存在しません。"
+msgstr "注意してください。現在このパスは存在しません。"
 
-#: src/sqoop/templates/app.mako:1108
+#: src/sqoop/templates/app.mako:807
+#, fuzzy
 msgid "Untitled Job"
-msgstr "無題のジョブ"
+msgstr "無題ジョブ"
 
+#~ msgid "Create a job"
+#~ msgstr "ジョブの作成"
+#~ msgid "Previous"
+#~ msgstr "前"
+#~ msgid "Back to job"
+#~ msgstr "ジョブに戻る"
+#~ msgid "Cancel"
+#~ msgstr "キャンセル"
+#~ msgid "Back to editing a job"
+#~ msgstr "ジョブの編集に戻る"
+#~ msgid "Step 1: Job info"
+#~ msgstr "手順 1：ジョブ情報"
+#~ msgid "Step 2: Sqoop specific"
+#~ msgstr "手順 2：Sqoop 固有"
+#~ msgid "Step 3: Sqoop specific job info"
+#~ msgstr "手順 3：Sqoop 固有のジョブ情報"
+#~ msgid "Could not start job: "
+#~ msgstr "ジョブを開始できませんでした： "

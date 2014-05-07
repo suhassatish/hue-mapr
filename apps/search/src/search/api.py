@@ -22,20 +22,13 @@ import urllib
 
 from desktop.lib.exceptions_renderable import PopupException
 from desktop.lib.rest.http_client import HttpClient, RestException
-from desktop.lib.rest import resource
-from django.utils.translation import ugettext as _
-
-from search.examples import demo_handler
+from desktop.lib.rest.resource import Resource
 from search.conf import EMPTY_QUERY, SECURITY_ENABLED
 
 
 LOG = logging.getLogger(__name__)
 
 DEFAULT_USER = 'hue'
-
-
-def utf_quoter(what):
-  return urllib.quote(unicode(what).encode('utf-8'), safe='~@#$&()*!+=;,.?/\'')
 
 
 class SolrApi(object):
@@ -49,26 +42,13 @@ class SolrApi(object):
     self.security_enabled = SECURITY_ENABLED.get()
     if self.security_enabled:
       self._client.set_kerberos_auth()
-    self._root = resource.Resource(self._client)
+    self._root = Resource(self._client)
 
   def _get_params(self):
     if self.security_enabled:
       return (('doAs', self._user ),)
     return (('user.name', DEFAULT_USER), ('doAs', self._user),)
 
-  @classmethod
-  def _get_json(cls, response):
-    if type(response) != dict:
-      # Got 'plain/text' mimetype instead of 'application/json'
-      try:
-        response = json.loads(response)
-      except ValueError, e:
-        # Got some null bytes in the response
-        LOG.error('%s: %s' % (unicode(e), repr(response)))
-        response = json.loads(response.replace('\x00', ''))
-    return response
-
-  @demo_handler
   def query(self, solr_query, hue_core):
     try:
       params = self._get_params() + (
@@ -132,7 +112,7 @@ class SolrApi(object):
     try:
       params = self._get_params() + (
           ('wt', 'json'),
-      )
+      )      
       return self._root.get('admin/cores', params=params)['status']
     except RestException, e:
       raise PopupException(e, title=_('Error while accessing Solr'))
@@ -142,7 +122,7 @@ class SolrApi(object):
       params = self._get_params() + (
           ('wt', 'json'),
           ('core', core),
-      )
+      )         
       return self._root.get('admin/cores', params=params)
     except RestException, e:
       raise PopupException(e, title=_('Error while accessing Solr'))
@@ -152,7 +132,7 @@ class SolrApi(object):
       params = self._get_params() + (
           ('wt', 'json'),
           ('file', 'schema.xml'),
-      )
+      )       
       return self._root.get('%(core)s/admin/file' % {'core': core}, params=params)
     except RestException, e:
       raise PopupException(e, title=_('Error while accessing Solr'))

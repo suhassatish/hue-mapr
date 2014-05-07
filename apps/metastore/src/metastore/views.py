@@ -35,7 +35,6 @@ from beeswax.server.dbms import get_query_server_config
 from metastore.forms import LoadDataForm, DbForm
 from metastore.settings import DJANGO_APPS
 
-
 LOG = logging.getLogger(__name__)
 
 SAVE_RESULTS_CTAS_TIMEOUT = 300         # seconds
@@ -47,7 +46,7 @@ def check_has_write_access_permission(view_func):
   """
   def decorate(request, *args, **kwargs):
     if not has_write_access(request.user):
-      raise PopupException(_('You are not allowed to modify the metastore.'), detail=_('You have must have metastore:write permissions'), error_code=301)
+      raise PopupException(_('You are not allowed to modify the metastore.'), detail=_('You have metastore:read_only_access permissions'))
 
     return view_func(request, *args, **kwargs)
   return wraps(view_func)(decorate)
@@ -287,27 +286,5 @@ def describe_partitions(request, database, table):
       'database': database, 'table': table_obj, 'partitions': partitions, 'request': request})
 
 
-def analyze_table(request, database, table, column=None):
-  app_name = get_app_name(request)
-  query_server = get_query_server_config(app_name)
-  db = dbms.get(request.user, query_server)
-
-  response = {'status': -1, 'message': '', 'redirect': ''}
-
-  if request.POST:
-    if column is None:
-      query_history = db.analyze_table(database, table)
-      response['redirect'] = reverse('beeswax:watch_query_history', kwargs={'query_history_id': query_history.id}) + \
-                                     '?on_success_url=' + reverse('metastore:describe_table',
-                                                                  kwargs={'database': database, 'table': table.name})
-      response['status'] = 0
-    else:
-      response['message'] = _('Column analysis not supportet yet')
-  else:
-    response['message'] = _('A POST request is required')
-
-  return HttpResponse(json.dumps(response), mimetype="application/json")
-
-
 def has_write_access(user):
-  return user.is_superuser or user.has_hue_permission(action="write", app=DJANGO_APPS[0])
+  return user.is_superuser or not user.has_hue_permission(action="read_only_access", app=DJANGO_APPS[0])

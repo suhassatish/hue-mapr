@@ -21,53 +21,35 @@
 
 <%namespace name="actionbar" file="actionbar.mako" />
 
-${ commonheader(None, "sqoop", user) | n,unicode }
+${ commonheader(None, "sqoop", user, "40px") | n,unicode }
 <div data-bind="if: !isLoading(), css: {'hide': isLoading}" id="top-bar-container" class="hide">
   <div class="top-bar" data-bind="visible:shownSection() == 'jobs-list'">
-    <div style="margin-top: 4px; margin-right: 40px" class="pull-right">
-      <a title="${_('Create a new job')}" href="#job/new" data-bind="visible: isReady"><i class="fa fa-plus-circle"></i> ${_('New job')}</a>
-    </div>
-    <div style="margin-top: 4px; margin-right: 40px" class="pull-right">
-      <a title="${_('Manage connections')}" href="#connections" data-bind="visible: isReady"><i class="fa fa-list"></i> ${_('Manage connections')}</a>
+    <div style="margin-top: 4px; margin-right: 20px" class="pull-right">
+      <a title="${_('Create a new job')}" href="#job/new" data-bind="visible: isReady"><i class="icon-plus-sign"></i> ${_('New job')}</a>
     </div>
     <h4>${_('Sqoop Jobs')}</h4>
     <input id="filter" type="text" class="input-xlarge search-query" placeholder="${_('Search for job name or content')}"  data-bind="visible: isReady">
   </div>
 
-  <div class="top-bar" data-bind="visible:shownSection() == 'connections-list'">
-    <div style="margin-top: 4px; margin-right: 40px" class="pull-right">
-      <a title="${_('Create a new connection')}" href="#connection/new" data-bind="visible: isReady"><i class="fa fa-plus-circle"></i> ${_('New connection')}</a>
-    </div>
-    <div style="margin-top: 4px; margin-right: 40px" class="pull-right">
-      <a title="${_('Manage jobs')}" href="#jobs" data-bind="visible: isReady"><i class="fa fa-list"></i> ${_('Manage jobs')}</a>
-    </div>
-    <h4>${_('Sqoop Connections')}</h4>
-    <input id="filter" type="text" class="input-xlarge search-query" placeholder="${_('Search for connection name or content')}"  data-bind="visible: isReady">
-  </div>
-
   <!-- ko if: job -->
   <div class="top-bar" data-bind="visible:shownSection() == 'job-editor', with: job">
-    <div style="margin-top: 4px; margin-right: 40px" class="pull-right">
-      <a title="${_('Create a new job')}" href="#job/new"><i class="fa fa-plus-circle"></i> ${_('New job')}</a>
+    <div style="margin-top: 4px; margin-right: 20px" class="pull-right">
+      <a title="${_('Create a new job')}" href="#job/new"><i class="icon-plus-sign"></i> ${_('New job')}</a>
     </div>
     <h4 data-bind="visible: !persisted()"><a title="${_('Back to jobs list')}" href="#jobs">${_('Sqoop Jobs')}</a> <span class="muted">/</span> ${_('New Job')}</h4>
-    <h4 data-bind="visible: persisted"><a title="${_('Back to jobs list')}" href="#jobs">${_('Sqoop Jobs')}</a> <span class="muted">/</span> <i data-bind="css:{'fa fa-arrow-circle-o-down': type() == 'IMPORT', 'fa fa-upload': type() == 'EXPORT'}"></i> &nbsp;<span data-bind="text: type"></span> <span class="muted" data-bind="editable: name, editableOptions: {'placement': 'right'}"></span></h4>
+    <h4 data-bind="visible: persisted"><a title="${_('Back to jobs list')}" href="#jobs">${_('Sqoop Jobs')}</a> <span class="muted">/</span> <i data-bind="css:{'icon-download-alt': type() == 'IMPORT', 'icon-upload-alt': type() == 'EXPORT'}"></i> &nbsp;<span data-bind="text: type"></span> <span class="muted" data-bind="editable: name, editableOptions: {'placement': 'right'}"></span></h4>
   </div>
 
   <div class="top-bar" data-bind="visible:shownSection() == 'connection-editor', with: editConnection">
     <h4 data-bind="visible: !persisted()"><a title="${_('Back to jobs list')}" href="#jobs">${_('Sqoop Jobs')}</a> <span class="muted">/</span> <a href="#connection/edit-cancel" data-bind="text: name"></a> <span class="muted">/</span> ${_('New Connection')}</h4>
-    <h4 data-bind="visible: persisted()"><a title="${_('Back to jobs list')}" href="#jobs">${_('Sqoop Jobs')}</a> <span class="muted">/</span> <a href="#connection/edit-cancel"><i data-bind="css:{'fa fa-arrow-circle-o-down': $root.job().type() == 'IMPORT', 'fa fa-upload': $root.job().type() == 'EXPORT'}"></i> &nbsp;<span data-bind="text: $root.job().type"></span> <span data-bind="text: $root.job().name"></span></a> <span class="muted">/</span> <span data-bind="text: $root.job().name"></span></h4>
+    <h4 data-bind="visible: persisted()"><a title="${_('Back to jobs list')}" href="#jobs">${_('Sqoop Jobs')}</a> <span class="muted">/</span> <a href="#connection/edit-cancel"><i data-bind="css:{'icon-download-alt': $root.job().type() == 'IMPORT', 'icon-upload-alt': $root.job().type() == 'EXPORT'}"></i> &nbsp;<span data-bind="text: $root.job().type"></span> <span data-bind="text: $root.job().name"></span></a> <span class="muted">/</span> <span data-bind="text: $root.job().name"></span></h4>
   </div>
   <!-- /ko -->
 </div>
 
 <div class="container-fluid">
-  <div data-bind="foreach: sqoop_errors" id="sqoop-error" class="row-fluid mainSection hide" style="margin-top: 10px">
-    <div class="alert alert-error">
-      <i class="fa fa-exclamation-triangle"></i>
-      <strong>${_('Sqoop error')}:</strong>
-      <span data-bind="text: $data" class="message"></span>
-    </div>
+  <div id="sqoop-error" class="row-fluid mainSection hide" style="margin-top: 30px">
+    <div class="alert alert-error"><i class="icon-warning-sign"></i> <strong>${_('Sqoop error')}:</strong> <span class="message"></span></div>
   </div>
 
   <div class="row-fluid" data-bind="if: isLoading">
@@ -76,7 +58,7 @@ ${ commonheader(None, "sqoop", user) | n,unicode }
         <img src="/static/art/spinner-big.gif" />
       <![endif]-->
       <!--[if !IE]> -->
-        <i class="fa fa-spinner fa-spin" style="font-size: 60px; color: #DDD"></i>
+        <i class="icon-spinner icon-spin" style="font-size: 60px; color: #DDD"></i>
       <!-- <![endif]-->
     </div>
   </div>
@@ -84,7 +66,7 @@ ${ commonheader(None, "sqoop", user) | n,unicode }
   <div id="jobs" class="row-fluid mainSection hide">
     <div id="jobs-list" class="row-fluid section hide">
       <div class="row-fluid" data-bind="if: isReady">
-        <ul class="major-list" data-bind="foreach: filteredJobs">
+        <ul class="major-list" data-bind="foreach: filteredJobs() ? filteredJobs() : []">
           <!-- ko if: submission -->
           <li data-bind="routie: 'job/edit/' + id()" title="${ _('Click to edit') }">
             <div class="pull-right">
@@ -109,59 +91,57 @@ ${ commonheader(None, "sqoop", user) | n,unicode }
           </li>
           <!-- /ko -->
         </ul>
-        <div class="card" data-bind="visible: filteredJobs().length == 0">
-          <div class="span10 offset1 center nojobs">
-            <a href="#job/new" class="nounderline"><i class="fa fa-plus-circle waiting"></i></a>
-            <h1 class="emptyMessage">${ _('There are currently no jobs.') }<br/><a href="#job/new">${ _('Click here to add one.') }</a></h1>
-          </div>
-          <div class="clearfix"></div>
+
+        <div class="span10 offset1 center" data-bind="if: filteredJobs().length == 0">
+          <i class="icon-plus-sign waiting"></i>
+          <h1 class="emptyMessage">${ _('There are currently no jobs.') }<br/>${ _('Please click on New Job to add one.') }</h1>
         </div>
       </div>
     </div>
 
     <div id="job-editor" class="row-fluid section hide" data-bind="with: job">
-      <div class="sidebar-nav span2" data-bind="visible: $root.job().persisted">
+      <div class="well sidebar-nav span2" data-bind="visible: $root.job().persisted">
         <form id="advanced-settings" method="POST" class="form form-horizontal noPadding">
           <ul class="nav nav-list">
             <li class="nav-header" data-bind="visible: $root.job().persisted">${_('Actions')}</li>
             <li data-bind="visible: $root.job().persisted() && !$root.job().isRunning()">
               <a id="save-run-link" data-placement="right" rel="tooltip" title="${_('Run the job')}" href="#job/save-and-run">
-                <i class="fa fa-play"></i> ${_('Run')}
+                <i class="icon-play"></i> ${_('Run')}
               </a>
             </li>
             <li data-bind="visible: $root.job().isRunning()">
               <a data-placement="right" rel="tooltip" title="${_('Stop the job')}" href="#job/stop">
-                <i class="fa fa-stop"></i> ${_('Stop')}
+                <i class="icon-stop"></i> ${_('Stop')}
               </a>
             </li>
             <li data-bind="visible: $root.job().persisted">
               <a data-placement="right" rel="tooltip" title="${_('Copy the job')}" href="#job/copy">
-                <i class="fa fa-files-o"></i> ${_('Copy')}
+                <i class="icon-copy"></i> ${_('Copy')}
               </a>
             </li>
             <li data-bind="visible: $root.job().persisted">
               <a data-bind="click: $root.showDeleteJobModal.bind($root)" data-placement="right" rel="tooltip" title="${_('Delete the job')}" href="javascript:void(0);">
-                <i class="fa fa-times"></i> ${_('Delete')}
+                <i class="icon-remove"></i> ${_('Delete')}
               </a>
             </li>
             <li class="nav-header" data-bind="visible: $root.job().persisted">${_('Submissions')}</li>
             <li data-bind="visible: $root.job().persisted() && $root.job().outputDirectoryFilebrowserURL">
               <a data-bind="attr: { 'href': $root.job().outputDirectoryFilebrowserURL }" data-placement="right" rel="tooltip" title="${_('Browse output directory')}" href="javascript:void(0);" target="_new">
-                <i class="fa fa-folder-open"></i> ${_('Output directory')}
+                <i class="icon-folder-open"></i> ${_('Output directory')}
               </a>
             </li>
             <li data-bind="visible: $root.job().persisted() && $root.job().inputDirectoryFilebrowserURL">
               <a data-bind="attr: { 'href': $root.job().inputDirectoryFilebrowserURL }" data-placement="right" rel="tooltip" title="${_('Browse input directory')}" href="javascript:void(0);" target="_new">
-                <i class="fa fa-folder-open"></i> ${_('Input directory')}
+                <i class="icon-folder-open"></i> ${_('Input directory')}
               </a>
             </li>
             <li data-bind="visible: $root.job().submission().external_id()">
               <a rel="tooltip" title="${_('Logs')}" href="javascript:void(0);" target="_new" data-bind="attr: {href: '/jobbrowser/jobs/' + $root.job().submission().external_id() + '/single_logs'}">
-                <i class="fa fa-list"></i>
+                <i class="icon-list"></i>
                 ${_('Logs')}
               </a>
             </li>
-            <li class="nav-header" data-bind="visible: $root.job().persisted && $.inArray(submission().status(), ['BOOTING', 'RUNNING', 'UNKNOWN', 'SUCCEEDED', 'FAILURE_ON_SUBMIT', 'FAILED']) > -1">${_('Last status')}</li>
+            <li class="nav-header" data-bind="visible: $root.job().persisted">${_('Last status')}</li>
             <li data-bind="visible: $root.job().persisted">
               <span class="label label-success" data-bind="visible: submission().status() == 'SUCCEEDED'">
                 <span data-bind="text:  submission().createdFormatted()"></span>
@@ -183,7 +163,6 @@ ${ commonheader(None, "sqoop", user) | n,unicode }
       </div>
 
       <div id="job-forms" data-bind="css: {span10: $root.job().persisted, span12: !$root.job().persisted}">
-        <div class="card">
         <!-- ko if: $root.jobWizard.page -->
           <!-- ko with: $root.jobWizard -->
           <ul class="nav nav-pills" data-bind="foreach: pages">
@@ -214,26 +193,6 @@ ${ commonheader(None, "sqoop", user) | n,unicode }
           </form>
           <!-- /ko -->
         <!-- /ko -->
-          </div>
-      </div>
-    </div>
-  </div>
-
-  <div id="connections" class="row-fluid mainSection hide">
-    <div id="connections-list" class="row-fluid section hide">
-      <div class="row-fluid" data-bind="if: isReady">
-        <ul class="major-list" data-bind="foreach: filteredConnections">
-          <li data-bind="routie: 'connection/edit/' + id()" title="${ _('Click to edit') }">
-            <div class="main" data-bind="template: {name: 'connection-list-item'}"></div>
-          </li>
-        </ul>
-        <div class="card" data-bind="visible: filteredConnections().length == 0">
-          <div class="span10 offset1 center nojobs">
-            <a href="#connection/new" class="nounderline"><i class="fa fa-plus-circle waiting"></i></a>
-            <h1 class="emptyMessage">${ _('There are currently no connections.') }<br/><a href="#connection/new">${ _('Click here to add one.') }</a></h1>
-          </div>
-          <div class="clearfix"></div>
-        </div>
       </div>
     </div>
 
@@ -251,7 +210,7 @@ ${ commonheader(None, "sqoop", user) | n,unicode }
             <div class="controls">
               <select class="input-xlarge" name="connector" data-bind="'options': $root.connectors, 'optionsText': function(item) { return item.name(); }, 'optionsValue': function(item) { return item.id(); }, 'value': connector_id">
               </select>
-            </div>
+              </div>
           </div>
           <fieldset data-bind="foreach: connector">
             <div data-bind="foreach: inputs">
@@ -264,7 +223,7 @@ ${ commonheader(None, "sqoop", user) | n,unicode }
             </div>
           </fieldset>
           <div class="form-actions">
-            <a href="#connection/edit-cancel" class="btn">${_('Cancel')}</a>
+            <a href="#connection/edit-cancel" class="btn">${_('Cancel and return to job')}</a>
             <a href="#connection/save" class="btn btn-primary">${_('Save')}</a>
           </div>
         </form>
@@ -276,14 +235,16 @@ ${ commonheader(None, "sqoop", user) | n,unicode }
 <div data-bind="template: {'name': modal.name(), 'if': modal.name()}" id="modal-container" class="modal hide fade"></div>
 
 <div id="chooseFile" class="modal hide fade">
-  <div class="modal-header">
-    <a href="#" class="close" data-dismiss="modal">&times;</a>
-    <h3>${_('Choose a folder')}</h3>
-  </div>
-  <div class="modal-body">
-    <div id="filechooser"></div>
-  </div>
-  <div class="modal-footer"></div>
+    <div class="modal-header">
+        <a href="#" class="close" data-dismiss="modal">&times;</a>
+        <h3>${_('Choose a folder')}</h3>
+    </div>
+    <div class="modal-body">
+        <div id="filechooser">
+        </div>
+    </div>
+    <div class="modal-footer">
+    </div>
 </div>
 
 <script type="text/html" id="delete-job-modal">
@@ -310,21 +271,10 @@ ${ commonheader(None, "sqoop", user) | n,unicode }
 </div>
 </script>
 
-<script type="text/html" id="connection-list-item">
-<h4 style="display: inline-block">
-  <i class="fa fa-cog"></i>&nbsp;
-  <span data-bind="text: name" class="muted"></span>
-  &nbsp;&nbsp;
-  <span data-bind="text: type"></span>
-  <span>${_("server at ")}</span>
-  <span data-bind="text: hostAndPort"></span>
-</h4>
-</script>
-
 <script type="text/html" id="job-list-item">
 <h4 style="display: inline-block">
   <!-- ko if: type() == 'IMPORT' -->
-  <i class="fa fa-download"></i>&nbsp;
+  <i class="icon-download-alt"></i>&nbsp;
   <span data-bind="text: type"></span>
   <span>${_('from ')}</span>
   <span data-bind="text: $root.getDatabaseByConnectionId(connection_id())"></span>
@@ -333,7 +283,7 @@ ${ commonheader(None, "sqoop", user) | n,unicode }
   <span data-bind="text: name" class="muted"></span>
   <!-- /ko -->
   <!-- ko if: type() == 'EXPORT' -->
-  <i class="fa fa-upload"></i>&nbsp;
+  <i class="icon-upload-alt"></i>&nbsp;
   <span data-bind="text: type"></span>
   <span>${_('from ')}</span>
   <span data-bind="text: storageType"></span>
@@ -376,8 +326,6 @@ ${ commonheader(None, "sqoop", user) | n,unicode }
 
 <script type="text/html" id="job-editor-begin">
 <fieldset>
-  <div data-bind="template: {'name': 'job-editor-form-error', 'data': {'name': ko.observable('connection')}}" class=""></div>
-
   <div class="control-group">
     <label class="control-label">${ _('Name') }</label>
     <div class="controls">
@@ -389,11 +337,11 @@ ${ commonheader(None, "sqoop", user) | n,unicode }
     <label class="control-label">${ _('Job type') }</label>
     <div class="controls">
       <div title="${ _('Import from a Database to Hadoop') }" data-bind="css:{ 'big-btn': type() != '', 'selected': type() == 'IMPORT' }, click: setImport">
-        <i class="fa fa-download"></i><br/>
+        <i class="icon-download-alt"></i><br/>
         ${ _('Import') }
       </div>
       <div title="${ _('Import from Hadoop to a Database') }"data-bind="css:{ 'big-btn': type() != '', 'selected': type() == 'EXPORT' }, click: setExport">
-        <i class="fa fa-upload"></i><br/>
+        <i class="icon-upload-alt"></i><br/>
         ${ _('Export') }
       </div>
       <input name="type" type="hidden" data-bind="value: type" />
@@ -408,16 +356,16 @@ ${ commonheader(None, "sqoop", user) | n,unicode }
       <!-- ko if: $root.connection() -->
       <div style="display:inline">
         <a data-bind="routie: 'connection/edit/' + $root.connection().id()" href="javascript:void(0);" class="subbtn" style="margin-left: 5px">
-          <i class="fa fa-edit"></i> ${_('Edit')}
+          <i class="icon-edit"></i> ${_('Edit')}
         </a>
         <a data-bind="click: $root.showDeleteConnectionModal.bind($root)" href="javascript:void(0);" class="subbtn" style="margin-left: 5px">
-          <i class="fa fa-times"></i> ${_('Delete')}
+          <i class="icon-remove"></i> ${_('Delete')}
         </a>
       </div>
       <!-- /ko -->
       <div class="clearfix"></div>
       <a data-bind="routie: 'connection/new'" href="javascript:void(0);" style="margin: 5px; display: block">
-        <i class="fa fa-plus"></i> ${_('Add a new connection')}
+        <i class="icon-plus"></i> ${_('Add a new connection')}
       </a>
     </div>
   </div>
@@ -640,10 +588,8 @@ ${ commonheader(None, "sqoop", user) | n,unicode }
 <script src="/static/ext/js/knockout.mapping-2.3.2.js" type="text/javascript" charset="utf-8"></script>
 <script src="/static/ext/js/bootstrap-editable.min.js"></script>
 <script src="/static/ext/js/knockout.x-editable.js"></script>
-<script src="/static/js/jquery.hdfsautocomplete.js" type="text/javascript" charset="utf-8"></script>
 <script src="/sqoop/static/js/cclass.js" type="text/javascript" charset="utf-8"></script>
 <script src="/sqoop/static/js/koify.js" type="text/javascript" charset="utf-8"></script>
-<script src="/sqoop/static/js/sqoop.autocomplete.js" type="text/javascript" charset="utf-8"></script>
 <script src="/sqoop/static/js/sqoop.utils.js" type="text/javascript" charset="utf-8"></script>
 <script src="/sqoop/static/js/sqoop.wizard.js" type="text/javascript" charset="utf-8"></script>
 <script src="/sqoop/static/js/sqoop.forms.js" type="text/javascript" charset="utf-8"></script>
@@ -722,7 +668,7 @@ function handle_form_errors(e, node, options, data) {
   switch(data.status) {
     case 1:
     $.each(errors, function(component, err) {
-      $(document).trigger("error", err);
+      $.jHueNotify.error(err);
     });
     break;
     case 100:
@@ -764,139 +710,42 @@ function handle_form_errors(e, node, options, data) {
   }
 }
 
-function connection_missing_error(e, node) {
-  // Resets save and run btns
-  reset_save_buttons();
-  viewModel.errors({
-    'connection': [{
-      'status': 'UNACCEPTABLE',
-      'message': '${_("Please specify a connection.")}'
-    }]
-  });
-  viewModel.warnings({});
-  routie('job/edit/wizard/job-editor-begin');
-}
-
 $(document).on('connection_error.jobs', function(e, name, options, jqXHR) {
-  viewModel.sqoop_errors.removeAll();
-  viewModel.sqoop_errors.push("${ _('Cannot connect to sqoop server.') }");
+  $('#sqoop-error .message').text("${ _('Cannot connect to sqoop server.') }");
   routie('error');
 });
 
 $(document).on('start.job', function(e, options, job) {
-  $(document).trigger("info", "${ _('The job is starting...') }");
+  $.jHueNotify.info("${ _('The job is starting...') }");
 });
 
 $(document).on('started.job', function(e, job, options, submission_dict) {
-  $(document).trigger("info", "${ _('Started job.') }");
+  $.jHueNotify.info("${ _('Started job.') }");
 });
 
 $(document).on('start_fail.job', function(e, job, options, error) {
-  $(document).trigger("error", "${ _('Error: ') }" + (typeof error.exception != "undefined" ? error.exception : error));
+  $.jHueNotify.error("${ _('Error: ') }" + (typeof error.exception != "undefined" ? error.exception : error));
 });
 
 $(document).on('stopped.job', function(e, job, options, submission_dict) {
-  $(document).trigger("info", "${ _('Stopped job.') }");
+  $.jHueNotify.info("${ _('Stopped job.') }");
 });
 
 $(document).on('stop_fail.job', function(e, job, options, submission_dict) {
-  $(document).trigger("error", "${ _('Could not stop job.') }");
+  $.jHueNotify.error("${ _('Could not stop job.') }");
 });
 
 $(document).one('load_fail.job', function() {
-  $(document).trigger("error", "${ _('Could not load node.') }");
+  $.jHueNotify.error("${ _('Could not load node.') }");
 });
 
 $(document).on('save_fail.job', handle_form_errors);
-$(document).on('connection_missing.job', connection_missing_error);
 $(document).on('save_fail.connection', handle_form_errors);
 $(document).on('delete_fail.job', handle_form_errors);
 
 $(document).on('show_section', function(e, section){
   viewModel.shownSection(section);
 });
-$(document).on('changed.page', function(e, jobWizard) {
-  // Autocomplete fields and table name
-  $('input[name="table.tableName"]').typeahead({
-    'source': function(query, process) {
-      var database = viewModel.connection().database();
-      switch (viewModel.connection().jdbcDriver()) {
-        case 'com.mysql.jdbc.Driver':
-        return autocomplete.tables('mysql', database);
-        case 'org.postgresql.Driver':
-        return autocomplete.tables('postgresql', database);
-        case 'oracle.jdbc.OracleDriver':
-        return autocomplete.tables('oracle', database);
-      }
-      return [];
-    }
-  });
-  $('input[name="table.partitionColumn"],input[name="table.columns"]').typeahead({
-    'source': function(query, process) {
-      var database = viewModel.connection().database();
-      if (viewModel.job()) {
-        var table = viewModel.job().table();
-        switch (viewModel.connection().jdbcDriver()) {
-          case 'com.mysql.jdbc.Driver':
-          return autocomplete.columns('mysql', database, table);
-          break;
-          case 'org.postgresql.Driver':
-          return autocomplete.columns('postgresql', database, table);
-          break;
-          case 'oracle.jdbc.OracleDriver':
-          return autocomplete.columns('oracle', database, table);
-        }
-        return [];
-      }
-    }
-  });
-  // Autocomplete HDFS paths
-  $('input[name="output.outputDirectory"],input[name="input.inputDirectory"]').jHueHdfsAutocomplete({
-    home: "/user/${ user }/",
-    smartTooltip: "${_('Did you know? You can use the tab key or CTRL + Space to autocomplete file and folder names')}"
-  });
-});
-$(document).on('shown_section', (function(){
-  var connectionEditorShown = false;
-  return function(e, section) {
-    if (section == 'connection-editor' && !connectionEditorShown) {
-      connectionEditorShown = true;
-      $('input[name="connection.jdbcDriver"]').typeahead({
-        'source': [
-          'com.mysql.jdbc.Driver',
-          'org.postgresql.Driver',
-          'oracle.jdbc.OracleDriver'
-        ]
-      });
-      $('input[name="connection.connectionString"]').typeahead({
-        'source': function(query, process) {
-          var arr = [];
-          switch (viewModel.connection().jdbcDriver()) {
-            case 'com.mysql.jdbc.Driver':
-            arr = $.map(autocomplete.databases('mysql'), function(value, index) {
-              return 'jdbc:mysql://' + host + ':' + port + '/' + value;
-            });
-            arr.push('jdbc:mysql://[host]:[port]/[database]');
-            break;
-            case 'org.postgresql.Driver':
-            arr = $.map(autocomplete.databases('postgresql'), function(value, index) {
-              return 'jdbc:postgresql://' + host + ':' + port + '/' + value;
-            });
-            arr.push('jdbc:postgresql://[host]:[port]/[database]');
-            break;
-            case 'oracle.jdbc.OracleDriver':
-            arr = $.map(autocomplete.databases('oracle'), function(value, index) {
-              return 'jdbc:oracle:thin:' + host + '@:' + port + ':' + value;
-            });
-            arr.push('jdbc:oracle:thin:@[host]:[port]:[sid]');
-            break;
-          }
-          return arr;
-        }
-      });
-    }
-  };
-})());
 
 $(document).on('keyup', 'input#filter', function() {
   viewModel.filter($('#filter').val());
@@ -910,23 +759,9 @@ $("#jobs-list tbody").on('click', 'tr', function() {
 //// Load all the data
 var framework = new framework.Framework();
 (function() {
-  function fail(e, options, data) {
+  function fail() {
     viewModel.isLoading(false);
     viewModel.isReady(false);
-    viewModel.sqoop_errors.removeAll();
-    if (data.errors) {
-      $.each(data.errors, function(i, error_msg) {
-        viewModel.sqoop_errors.push(error_msg);
-      });
-    } else {
-      if (data.status == 500){
-        viewModel.sqoop_errors.push('${_("There was a problem with the server. Look at the Sqoop2 server logs for more details.")}');
-      }
-      else {
-        viewModel.sqoop_errors.push('${_("Unknown error.")}');
-      }
-    }
-    window.location.hash = 'error';
   }
   $(document).one('load_error.jobs', fail);
   $(document).one('load_error.framework', fail);
@@ -1088,7 +923,6 @@ $(document).ready(function () {
       } else {
         viewModel.jobWizard.index(viewModel.jobWizard.getIndex(page));
       }
-      $(document).trigger('changed.page', [viewModel.jobWizard]);
       $("*[rel=tooltip]").tooltip({
         placement: 'right'
       });
@@ -1100,7 +934,6 @@ $(document).ready(function () {
         $("*[rel=tooltip]").tooltip({
           placement: 'right'
         });
-        routie('job/edit/wizard/' + 0);
       });
     },
     "job/new": function () {
@@ -1190,38 +1023,31 @@ $(document).ready(function () {
       viewModel.chooseJobById(id);
       routie('job/delete');
     },
-    "connections": function() {
-      showSection("connections", "connections-list");
-    },
     "connection/edit": function() {
-      // if (viewModel.connection()) {
-      //   routie('')
-      // }
-      showSection("connections", "connection-editor");
+      if (viewModel.connection()) {
+        routie('')
+      }
+      showSection("jobs", "connection-editor");
       $("*[rel=tooltip]").tooltip({
         placement: 'right'
       });
     },
     "connection/edit/:id": function(id) {
       viewModel.chooseConnectionById(id);
-      showSection("connections", "connection-editor");
+      showSection("jobs", "connection-editor");
       $("*[rel=tooltip]").tooltip({
         placement: 'right'
       });
     },
     "connection/edit-cancel": function() {
-      if (viewModel.connection() && !viewModel.connection().persisted()) {
+      if (!viewModel.connection().persisted()) {
         viewModel.connections.pop();
       }
-      // routie('job/edit');
-      window.history.go(-2);
+      routie('job/edit');
     },
     "connection/new": function() {
-      $(window).one('hashchange', function() {
-        viewModel.newConnection();
-        routie('connection/edit');
-      });
-      window.history.back();
+      viewModel.newConnection();
+      routie('connection/edit');
     },
     "connection/save": function() {
       viewModel.saveConnection();
@@ -1257,15 +1083,10 @@ $(document).ready(function () {
     }
   });
 
-  $(".nojobs").on("click", function(){
-    routie("job/new");
-  });
-
   $("*[rel=tooltip]").tooltip({
     placement: 'right'
   });
 });
-
 </script>
 
 ${ commonfooter(messages) | n,unicode }

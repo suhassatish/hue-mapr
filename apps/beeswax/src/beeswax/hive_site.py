@@ -45,7 +45,6 @@ _CNF_HIVESERVER2_KERBEROS_PRINCIPAL = 'hive.server2.authentication.kerberos.prin
 _CNF_HIVESERVER2_AUTHENTICATION = 'hive.server2.authentication'
 _CNF_HIVESERVER2_IMPERSONATION = 'hive.server2.enable.doAs'
 
-
 # Host is whatever up to the colon. Allow and ignore a trailing slash.
 _THRIFT_URI_RE = re.compile("^thrift://([^:]+):(\d+)[/]?$")
 
@@ -80,8 +79,8 @@ def get_metastore():
 
     if not is_local:
       use_sasl = str(get_conf().get(_CNF_METASTORE_SASL, 'false')).lower() == 'true'
-      thrift_uri = thrift_uris.split(",")[0] # First URI
-      host = socket.getfqdn()
+      thrift_uri = thrift_uris.split(",")[0]
+      host, port = socket.getfqdn(), '0'
       match = _THRIFT_URI_RE.match(thrift_uri)
       if not match:
         LOG.error('Cannot understand remote metastore uri "%s"' % thrift_uri)
@@ -118,10 +117,6 @@ def get_hiveserver2_authentication():
 
 def hiveserver2_impersonation_enabled():
   return get_conf().get(_CNF_HIVESERVER2_IMPERSONATION, 'FALSE').upper() == 'TRUE'
-
-def hiveserver2_jdbc_url():
-  return 'jdbc:hive2://%s:%s/default' % (beeswax.conf.HIVE_SERVER_HOST.get(), beeswax.conf.HIVE_SERVER_PORT.get())
-
 
 def _parse_hive_site():
   """

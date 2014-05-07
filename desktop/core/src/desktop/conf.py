@@ -75,12 +75,6 @@ SSL_CIPHER_LIST = Config(
   help=_("List of allowed and disallowed ciphers"),
   default="DEFAULT:!aNULL:!eNULL:!LOW:!EXPORT:!SSLv2")
 
-LDAP_PASSWORD = Config(
-  key="ldap_password",
-  help=_("LDAP password of the hue user used for LDAP authentications. For example for LDAP Authentication with HiveServer2."),
-  private=True,
-  default=None)
-
 ENABLE_SERVER = Config(
   key="enable_server",
   help=_("If set to false, runcpserver will not actually start the web server.  Used if Apache is being used as a WSGI container."),
@@ -111,48 +105,13 @@ COLLECT_USAGE = Config(
   type=coerce_bool,
   default=True)
 
-POLL_ENABLED = Config(
-  key="poll_enabled",
-  help=_("Use poll(2) in Hue thrift pool."),
-  type=coerce_bool,
-  private=True,
-  default=True)
-
-MIDDLEWARE = Config(
-  key="middleware",
-  help=_("Comma-separated list of Django middleware classes to use. " +
-         "See https://docs.djangoproject.com/en/1.4/ref/middleware/ for " +
-         "more details on middlewares in Django."),
-  type=coerce_csv,
-  default=[])
-
 REDIRECT_WHITELIST = Config(
   key="redirect_whitelist",
   help=_("Comma-separated list of regular expressions, which match the redirect URL."
          "For example, to restrict to your local domain and FQDN, the following value can be used:"
          "  ^\/.*$,^http:\/\/www.mydomain.com\/.*$"),
-  type=list_of_compiled_res(skip_empty=True),
+  type=list_of_compiled_res,
   default='')
-
-SECURE_PROXY_SSL_HEADER = Config(
-  key="secure_proxy_ssl_header",
-  help=_("Support for HTTPS termination at the load-balancer level with SECURE_PROXY_SSL_HEADER."),
-  type=coerce_bool,
-  default=False)
-
-APP_BLACKLIST = Config(
-  key='app_blacklist',
-  default='',
-  type=coerce_csv,
-  help=_('Comma separated list of apps to not load at server startup.')
-)
-
-DEMO_ENABLED = Config( # Internal and Temporary
-  key="demo_enabled",
-  help=_("To set to true in combination when using Hue demo backend."),
-  type=coerce_bool,
-  private=True,
-  default=False)
 
 def is_https_enabled():
   return bool(SSL_CERTIFICATE.get() and SSL_PRIVATE_KEY.get())
@@ -289,18 +248,6 @@ SESSION = ConfigSection(
       help=_("The cookie containing the users' session ID will be secure. This should only be enabled with HTTPS."),
       type=coerce_bool,
       default=False,
-    ),
-    HTTP_ONLY=Config(
-      key='http_only',
-      help=_("The cookie containing the users' session ID will use the HTTP only flag."),
-      type=coerce_bool,
-      default=False
-    ),
-    EXPIRE_AT_BROWSER_CLOSE=Config(
-      key='expire_at_browser_close',
-      help=_("Use session-length cookies. Logs out the user when she closes the browser window."),
-      type=coerce_bool,
-      default=False
     )
   )
 )
@@ -411,30 +358,46 @@ AUTH = ConfigSection(
     FORCE_USERNAME_LOWERCASE = Config("force_username_lowercase",
                                       help=_("Force usernames to lowercase when creating new users from LDAP."),
                                       type=coerce_bool,
-                                      default=False),
-    EXPIRES_AFTER = Config("expires_after",
-                            help=_("Users will expire after they have not logged in for 'n' amount of seconds."
-                                   "A negative number means that users will never expire."),
-                            type=int,
-                            default=-1),
-    EXPIRE_SUPERUSERS = Config("expire_superusers",
-                                help=_("Apply 'expires_after' to superusers."),
-                                type=coerce_bool,
-                                default=True)
+                                      default=False)
 ))
 
 LDAP = ConfigSection(
   key="ldap",
   help=_("Configuration options for LDAP connectivity."),
   members=dict(
+    BASE_DN=Config("base_dn",
+                   default=None,
+                   help=_("The base LDAP distinguished name to use for LDAP search.")),
+    NT_DOMAIN=Config("nt_domain",
+                     default=None,
+                     help=_("The NT domain used for LDAP authentication.")),
+    LDAP_URL=Config("ldap_url",
+                     default=None,
+                     help=_("The LDAP URL to connect to.")),
+    USE_START_TLS=Config("use_start_tls",
+                         default=True,
+                         type=coerce_bool,
+                         help=_("Use StartTLS when communicating with LDAP server.")),
+    LDAP_CERT=Config("ldap_cert",
+                     default=None,
+                     help=_("A PEM-format file containing certificates for the CA's that Hue will trust for authentication over TLS. The certificate for the CA that signed the LDAP server certificate must be included among these certificates. See more here http://www.openldap.org/doc/admin24/tls.html.")),
+    LDAP_USERNAME_PATTERN=Config("ldap_username_pattern",
+                                 default=None,
+                                 help=_("A pattern to use for constructing LDAP usernames.")),
+    BIND_DN=Config("bind_dn",
+                   default=None,
+                   help=_("The distinguished name to bind as, when importing from LDAP.")),
+    BIND_PASSWORD=Config("bind_password",
+                   default=None,
+                   help=_("The password for the bind user.")),
+    SEARCH_BIND_AUTHENTICATION=Config("search_bind_authentication",
+                   default=False,
+                   type=coerce_bool,
+                   help=_("Use search bind authentication.")),
     CREATE_USERS_ON_LOGIN = Config("create_users_on_login",
       help=_("Create users when they login with their LDAP credentials."),
       type=coerce_bool,
       default=True),
-    SYNC_GROUPS_ON_LOGIN = Config("sync_groups_on_login",
-      help=_("Synchronize a users groups when they login."),
-      type=coerce_bool,
-      default=False),
     IGNORE_USERNAME_CASE = Config("ignore_username_case",
       help=_("Ignore the case of usernames when searching for existing users in Hue."),
       type=coerce_bool,
@@ -444,6 +407,7 @@ LDAP = ConfigSection(
       type=coerce_bool,
       private=True,
       default=False),
+
     SUBGROUPS = Config("subgroups",
       help=_("Choose which kind of subgrouping to use: nested or suboordinate (deprecated)."),
       type=coerce_str_lowercase,
@@ -792,10 +756,32 @@ def config_validator(user):
     res.extend(validate_path(KERBEROS.KINIT_PATH, is_dir=False))
     res.extend(validate_path(KERBEROS.CCACHE_PATH, is_dir=False))
 
-  if LDAP.LDAP_SERVERS.get():
-    for ldap_record_key in LDAP.LDAP_SERVERS.get():
-      res.extend(validate_ldap(user, LDAP.LDAP_SERVERS.get()[ldap_record_key]))
+  if LDAP.SEARCH_BIND_AUTHENTICATION.get():
+    if LDAP.LDAP_URL.get() is not None and bool(LDAP.BIND_DN.get()) != bool(LDAP.BIND_PASSWORD.get()):
+      if LDAP.BIND_DN.get() == None:
+        res.append((LDAP.BIND_DN,
+                  unicode(_("If you set bind_password, then you must set bind_dn."))))
+      else:
+        res.append((LDAP.BIND_PASSWORD,
+                    unicode(_("If you set bind_dn, then you must set bind_password."))))
   else:
-    res.extend(validate_ldap(user, LDAP))
+    if LDAP.NT_DOMAIN.get() is not None or \
+        LDAP.LDAP_USERNAME_PATTERN.get() is not None:
+      if LDAP.LDAP_URL.get() is None:
+        res.append((LDAP.LDAP_URL,
+                    unicode(_("LDAP is only partially configured. An LDAP URL must be provided."))))
+
+    if LDAP.LDAP_URL.get() is not None:
+      if LDAP.NT_DOMAIN.get() is None and \
+          LDAP.LDAP_USERNAME_PATTERN.get() is None:
+        res.append((LDAP.LDAP_URL,
+                    unicode(_("LDAP is only partially configured. An NT Domain or username "
+                    "search pattern must be provided."))))
+
+    if LDAP.LDAP_USERNAME_PATTERN.get() is not None and \
+        '<username>' not in LDAP.LDAP_USERNAME_PATTERN.get():
+        res.append((LDAP.LDAP_USERNAME_PATTERN,
+                   unicode(_("The LDAP username pattern should contain the special"
+                   "<username> replacement string for authentication."))))
 
   return res

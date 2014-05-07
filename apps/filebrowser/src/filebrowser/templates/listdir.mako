@@ -48,8 +48,8 @@ ${ fb_components.menubar() }
                 <span class="caret" style="line-height: 15px"></span>
               </button>
               <ul class="dropdown-menu" style="top: auto">
-                <li><a href="#" title="${_('Change owner/group')}" data-bind="visible: !inTrash(), click: changeOwner, enable: selectedFiles().length > 0"><i class="fa fa-user"></i> ${_('Change owner / group')}</a></li>
-                <li><a href="#" title="${_('Change permissions')}" data-bind="visible: !inTrash(), click: changePermissions, enable: selectedFiles().length > 0"><i class="fa fa-list-alt"></i> ${_('Change permissions')}</a></li>
+                <li><a href="#" title="${_('Change owner/group')}" data-bind="visible: !inTrash(), click: changeOwner, enable: selectedFiles().length > 0"><i class="icon-user"></i> ${_('Change owner / group')}</a></li>
+                <li><a href="#" title="${_('Change permissions')}" data-bind="visible: !inTrash(), click: changePermissions, enable: selectedFiles().length > 0"><i class="icon-list-alt"></i> ${_('Change permissions')}</a></li>
               </ul>
             </div>
             %else:

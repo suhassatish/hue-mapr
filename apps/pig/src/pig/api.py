@@ -59,7 +59,6 @@ class OozieApi:
 
     try:
       workflow = self._create_workflow(pig_script, params)
-      mapping = dict([(param['name'], param['value']) for param in workflow.get_parameters()])
       oozie_wf = _submit_workflow(self.user, self.fs, self.jt, workflow, mapping)
     finally:
       if workflow:

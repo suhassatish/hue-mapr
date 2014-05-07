@@ -40,24 +40,24 @@ ${ layout.menubar(section='workflows') }
     <div id="workflowControls" class="sidebar-nav">
       <ul class="nav nav-list">
         <li class="nav-header">${ _('Editor') }</li>
-        <li><a href="#editWorkflow"><i class="fa fa-code-fork"></i> ${ _('Workflow') }</a></li>
-        <li><a href="#properties"><i class="fa fa-cog"></i> ${ _('Properties') }</a></li>
+        <li><a href="#editWorkflow"><i class="icon-code-fork"></i> ${ _('Workflow') }</a></li>
+        <li><a href="#properties"><i class="icon-reorder"></i> ${ _('Properties') }</a></li>
         % if user_can_edit_job:
           <li>
-            <a data-bind="attr: {href: '/filebrowser/view' + deployment_dir() }" target="_blank" title="${ _('Go upload additional files and libraries to the deployment directory on HDFS') }" rel="tooltip" data-placement="right"><i class="fa fa-folder-open"></i> ${ _('Workspace') }</a>
+            <a data-bind="attr: {href: '/filebrowser/view' + deployment_dir() }" target="_blank" title="${ _('Go upload additional files and libraries to the deployment directory on HDFS') }" rel="tooltip" data-placement="right"><i class="icon-folder-open"></i> ${ _('Workspace') }</a>
           </li>
         % endif
 
         <li class="nav-header">${ _('Advanced') }</li>
-        <li><a href="#importAction" title="${ _('Click to import an Oozie workflow action or Job Designer action') }" rel="tooltip" data-placement="right"><i class="fa fa-arrow-circle-o-down"></i> ${ _('Import action') }</a></li>
+        <li><a href="#importAction" title="${ _('Click to import an Oozie workflow action or Job Designer action') }" rel="tooltip" data-placement="right"><i class="icon-download-alt"></i> ${ _('Import action') }</a></li>
         % if user_can_edit_job:
           <li>
-            <a title="${ _('Edit kill node') }" rel="tooltip" data-placement="right" href="#kill"><i class="fa fa-power-off"></i> ${ _('Kill node') }</a>
+            <a title="${ _('Edit kill node') }" rel="tooltip" data-placement="right" href="#kill"><i class="icon-off"></i> ${ _('Kill node') }</a>
           </li>
         % endif
 
         % if user_can_edit_job:
-          <li><a href="#listHistory"><i class="fa fa-archive"></i> ${ _('History') }</a></li>
+          <li><a href="#listHistory"><i class="icon-archive"></i> ${ _('History') }</a></li>
         % endif
 
         <li class="nav-header">${ _('Actions') }</li>
@@ -159,6 +159,22 @@ ${ layout.menubar(section='workflows') }
         </p>
       </div>
       </div>
+    </div>
+
+    <div id="editKill" class="section hide">
+      <div class="alert alert-info">
+        <h3>${ _('Kill node') }</h3>
+        <p>${_('If the "to" field has content, then the workflow editor assumes that the defined email action is to be placed before the kill action.')}</p>
+      </div>
+      <fieldset data-bind="with: context().node">
+        <p >&nbsp;${_('Action enabled: ')} <i class="icon-check" data-bind="visible: to().length > 0"></i><i class="icon-check-empty" data-bind="visible: to().length == 0"></i></p>
+
+        % for form_info in action_forms:
+          % if form_info[0] == 'email':
+            ${ actions.action_form_fields(action_form=form_info[1], node_type=form_info[0], show_primary=False) }
+          % endif
+        % endfor
+      </fieldset>
     </div>
 
     <div id="importAction" class="section hide">
@@ -631,10 +647,27 @@ function import_workflow_load_success(data) {
 }
 
 function workflow_save_success(data) {
-  if (data.status != 0) {
-    $(document).trigger("error", interpret_server_error(data, "${ _('Could not save workflow') }"));
-  } else {
-    $(document).trigger("info", "${ _('Workflow saved') }");
+  $.jHueNotify.info("${ _('Workflow saved') }");
+  workflow.reload(data.data);
+  workflow.is_dirty( false );
+  workflow.loading(false);
+  $("#btn-save-wf").button('reset');
+}
+
+function workflow_save_error(data) {
+  $.jHueNotify.error("${ _('Could not save workflow') }");
+  workflow.loading(false);
+  $("#btn-save-wf").button('reset');
+}
+
+function workflow_read_only_handler() {
+  $.jHueNotify.error("${ _('Workflow is in read only mode.') }");
+  workflow.loading(false);
+}
+
+var kill_view_model = null;
+function workflow_load_success(data) {
+  if (data.status == 0) {
     workflow.reload(data.data);
     workflow.is_dirty( false );
     workflow.loading( false );
@@ -642,9 +675,10 @@ function workflow_save_success(data) {
   }
 }
 
-function workflow_save_error(jqXHR) {
-  if (jqXHR.status !== 400) {
-    $(document).trigger("error", interpret_server_error(jqXHR.responseJSON, "${ _('Could not save workflow') }"));
+    //// Kill node
+    kill_view_model = ManageKillModule($, workflow, nodeModelChooser, Node, NodeModel);
+    ko.applyBindings(kill_view_model, $('#editKill')[0]);
+
   } else {
     ko.mapping.fromJS(jqXHR.responseJSON.details.errors, workflow.errors);
     workflow.loading(false);
@@ -652,9 +686,15 @@ function workflow_save_error(jqXHR) {
   }
 }
 
-function workflow_read_only_handler() {
-  $(document).trigger("error", "${ _('Workflow is in read only mode.') }");
-  workflow.loading(false);
+function save_workflow() {
+  workflow.loading(true);
+  if (kill_view_model.enabled()) {
+    if (kill_view_model.isValid()) {
+      workflow.save({ success: workflow_save_success, error: workflow_save_error });
+    }
+  } else {
+    workflow.save({ success: workflow_save_success, error: workflow_save_error });
+  }
 }
 
 var kill_view_model = null;
@@ -899,7 +939,7 @@ $('#importJobsub').on('click', '.action-row', function(e) {
 
           workflow.el.trigger('workflow:rebuild');
           routie('editWorkflow');
-          $(document).trigger("info", "${ _('Action imported at the top of the workflow.') } ");
+          $.jHueNotify.info("${ _('Action imported at the top of the workflow.') } ");
         } else {
           $(document).trigger("error", interpret_server_error(data, "${ _('Received invalid response from server') }"));
         }
@@ -940,7 +980,7 @@ $('#importOozieAction').on('click', '.action-row', function(e) {
 
     workflow.el.trigger('workflow:rebuild');
     routie('editWorkflow');
-    $(document).trigger("info", "${ _('Action imported at the top of the workflow.') }");
+    $.jHueNotify.info("${ _('Action imported at the top of the workflow.') } ");
   }
 });
 

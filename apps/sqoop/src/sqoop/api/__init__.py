@@ -15,7 +15,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from autocomplete import autocomplete
 from connection import get_connections, create_connection, update_connection,\
                        connection, connections, connection_clone, connection_delete
 from connector import get_connectors, connectors, connector

@@ -37,10 +37,6 @@ class SearchController(object):
   def __init__(self, user):
     self.user = user
 
-  def get_search_collections(self):
-    # TODO perms
-    return Collection.objects.filter(enabled=True)
-
   def get_new_collections(self):
     try:
       solr_collections = SolrApi(SOLR_URL.get(), self.user).collections()

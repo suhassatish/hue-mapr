@@ -629,14 +629,12 @@ def read_contents(codec_type, path, fs, offset, length):
             if path.endswith('.gz') and detect_gzip(contents):
                 codec_type = 'gzip'
                 offset = 0
-            elif path.endswith('.avro') and detect_avro(contents):
-                codec_type = 'avro'
-            elif path.endswith('.parquet') and detect_parquet(fhandle):
-                codec_type = 'parquet'
-            elif snappy_installed() and path.endswith('.snappy'):
-                codec_type = 'snappy'
-            elif snappy_installed() and stats.size <= MAX_SNAPPY_DECOMPRESSION_SIZE.get() and detect_snappy(fhandle.read()):
-                codec_type = 'snappy'
+            elif path.endswith('.avro'):
+                if detect_avro(contents):
+                    codec_type = 'avro'
+                elif snappy_installed():
+                    if stats.size > MAX_SNAPPY_DECOMPRESSION_SIZE.get():
+                        raise PopupException(_('Failed to validate snappy compressed file. File size is greater than allowed max snappy decompression size of %d.') % MAX_SNAPPY_DECOMPRESSION_SIZE.get())
 
         fhandle.seek(0)
 

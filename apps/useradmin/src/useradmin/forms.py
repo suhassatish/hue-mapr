@@ -182,10 +182,6 @@ class AddLdapGroupsForm(forms.Form):
                                                 initial=False,
                                                 required=False)
 
-  def __init__(self, *args, **kwargs):
-    super(AddLdapGroupsForm, self).__init__(*args, **kwargs)
-    self.fields['server'] = forms.ChoiceField(choices=get_server_choices(), required=False)
-
   def clean(self):
     cleaned_data = super(AddLdapGroupsForm, self).clean()
     groupname_pattern = cleaned_data.get("groupname_pattern")

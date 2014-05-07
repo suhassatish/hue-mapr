@@ -19,30 +19,20 @@ from django.template.defaultfilters import escape, escapejs
 %>
 
 
+%if messages:
+  <script>
+    %for message in messages:
+      %if message.tags == 'error':
+        $.jHueNotify.error('${ escapejs(escape(message)) }');
+      %else:
+        $.jHueNotify.info('${ escapejs(escape(message)) }');
+      %endif
+    %endfor
+  </script>
+%endif
+
 <script type="text/javascript">
   $(document).ready(function () {
-    $(document).on("info", function (e, msg) {
-      $.jHueNotify.info(msg);
-    });
-    $(document).on("warn", function (e, msg) {
-      $.jHueNotify.warn(msg);
-    });
-    $(document).on("error", function (e, msg) {
-      $.jHueNotify.error(msg);
-    });
-
-    %if messages:
-      %for message in messages:
-        %if message.tags == 'error':
-          $(document).trigger('error', '${ escapejs(escape(message)) }');
-        %elif message.tags == 'warning':
-          $(document).trigger('warn', '${ escapejs(escape(message)) }');
-        %else:
-          $(document).trigger('info', '${ escapejs(escape(message)) }');
-        %endif
-      %endfor
-    %endif
-
     $(".dataTables_wrapper").jHueTableScroller();
     var resetTimeout = -1;
     var pendingRequestsInterval = -1;
@@ -113,7 +103,8 @@ from django.template.defaultfilters import escape, escapejs
         }
         function getParameterByName(name) {
           name = name.replace(/[\[]/, "\\\[").replace(/[\]]/, "\\\]");
-          var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"), results = regex.exec(_qs);
+          var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
+                  results = regex.exec(_qs);
           return results == null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
         }
     %endif
@@ -139,11 +130,11 @@ from django.template.defaultfilters import escape, escapejs
     var _code = (e.keyCode ? e.keyCode : e.which);
     if (_catchEnterKeyOnModals && $(".modal").is(":visible") && _code == 13) {
       var _currentModal = $(".modal:visible");
-      if (_currentModal.find(".btn-primary:not(.disable-enter)").length > 0) {
-        _currentModal.find(".btn-primary:not(.disable-enter)").click();
+      if (_currentModal.find(".btn-primary").length > 0) {
+        _currentModal.find(".btn-primary").click();
       }
-      else if (_currentModal.find(".btn-danger:not(.disable-enter)").length > 0) {
-        _currentModal.find(".btn-danger:not(.disable-enter)").click();
+      else if (_currentModal.find(".btn-danger").length > 0) {
+        _currentModal.find(".btn-danger").click();
       }
     }
   });
@@ -178,10 +169,29 @@ from django.template.defaultfilters import escape, escapejs
     %endif
 
 </script>
-
-% if tours_and_tutorials:
-  <%include file="tours.mako"/>
-% endif
-
+%if tours_and_tutorials:
+  <script src="/static/js/Source/jHue/available.tours.js"></script>
+  <div id="jHueTourModal" class="modal hide fade">
+    <div class="modal-header">
+      <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+      <h3>${_('Did you know?')}</h3>
+    </div>
+    <div class="modal-body">
+      <div class="pull-left" style="color: #DDDDDD;font-size: 116px;margin: 10px; margin-right: 20px"><i class="icon-flag-checkered"></i></div>
+      <div style="margin: 10px">
+      <p>
+        ${_('There is one or more tours available for this page. These tours were created to guide you around.')}
+      </p>
+      <p>
+        ${_('You can see the list of the tours by clicking on the checkered flag badge on the side of this page.')}
+      </p>
+        </div>
+    </div>
+    <div class="modal-footer">
+      <label class="checkbox" style="float:left"><input id="jHueTourModalChk" type="checkbox" />${_('Do not show this dialog again')}</label>
+      <a href="#" class="btn btn-primary disable-feedback" data-dismiss="modal">${_('Got it, prof!')}</a>
+    </div>
+  </div>
+%endif
   </body>
 </html>

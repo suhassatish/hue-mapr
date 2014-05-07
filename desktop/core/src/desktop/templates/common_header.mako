@@ -57,9 +57,8 @@ from django.utils.translation import ugettext as _
   <style type="text/css">
     % if conf.CUSTOM.BANNER_TOP_HTML.get():
       body {
+        padding-top: ${str(int(padding[:-2]) + 40) + 'px'};
         display: none;
-        visibility: hidden;
-        padding-top: ${str(int(padding[:-2]) + 30) + 'px'};
       }
       .banner {
         height: 40px;
@@ -79,7 +78,6 @@ from django.utils.translation import ugettext as _
     % else:
       body {
         display: none;
-        visibility: hidden;
         padding-top: ${padding};
       }
     % endif
@@ -112,6 +110,13 @@ from django.utils.translation import ugettext as _
     jHueTourGlobals = {
       labels: {
         AVAILABLE_TOURS: "${_('Available tours')}",
+        NO_AVAILABLE_TOURS: "${_('None for this page.')}"
+      }
+    };
+
+    jHueTourGlobals = {
+      labels: {
+        AVAILABLE_TOURS: "${_('Available tours')}",
         NO_AVAILABLE_TOURS: "${_('None for this page.')}",
         MORE_INFO: "${_('Read more about it...')}",
         TOOLTIP_TITLE: "${_('Demo tutorials')}"
@@ -138,17 +143,16 @@ from django.utils.translation import ugettext as _
 
   <script src="/static/js/hue.utils.js"></script>
   <script src="/static/ext/js/jquery/jquery-2.0.2.min.js"></script>
-  <script src="/static/js/jquery.migration.js"></script>
-  <script src="/static/js/jquery.filechooser.js"></script>
-  <script src="/static/js/jquery.selector.js"></script>
-  <script src="/static/js/jquery.delayedinput.js"></script>
-  <script src="/static/js/jquery.rowselector.js"></script>
-  <script src="/static/js/jquery.notify.js"></script>
-  <script src="/static/js/jquery.titleupdater.js"></script>
-  <script src="/static/js/jquery.tablescroller.js"></script>
-  <script src="/static/js/jquery.tableextender.js"></script>
-  <script src="/static/js/jquery.scrollup.js"></script>
-  <script src="/static/js/jquery.tour.js"></script>
+  <script src="/static/js/Source/jHue/jquery.migration.js"></script>
+  <script src="/static/js/Source/jHue/jquery.filechooser.js"></script>
+  <script src="/static/js/Source/jHue/jquery.selector.js"></script>
+  <script src="/static/js/Source/jHue/jquery.alert.js"></script>
+  <script src="/static/js/Source/jHue/jquery.rowselector.js"></script>
+  <script src="/static/js/Source/jHue/jquery.notify.js"></script>
+  <script src="/static/js/Source/jHue/jquery.tablescroller.js"></script>
+  <script src="/static/js/Source/jHue/jquery.tableextender.js"></script>
+  <script src="/static/js/Source/jHue/jquery.scrollup.js"></script>
+  <script src="/static/js/Source/jHue/jquery.tour.js"></script>
   <script src="/static/ext/js/jquery/plugins/jquery.cookie.js"></script>
   <script src="/static/ext/js/jquery/plugins/jquery.total-storage.min.js"></script>
   <script src="/static/ext/js/jquery/plugins/jquery.placeholder.min.js"></script>
@@ -159,18 +163,10 @@ from django.utils.translation import ugettext as _
   <script src="/static/js/popover-extra-placements.js"></script>
 
   <script type="text/javascript" charset="utf-8">
-    $(document).ready(function () {
-      // forces IE's ajax calls not to cache
-      if ($.browser.msie) {
-        $.ajaxSetup({ cache: false });
-      }
-
+    $(document).ready(function() {
       // prevents framebusting and clickjacking
       if (self == top){
-        $("body").css({
-          'display': 'block',
-          'visibility': 'visible'
-        });
+        $("body").show();
       }
       else {
         top.location = self.location;
@@ -270,154 +266,28 @@ from django.utils.translation import ugettext as _
 </head>
 <body>
 
-% if conf.CUSTOM.BANNER_TOP_HTML.get():
-  <div id="banner-top" class="banner">
-    ${ conf.CUSTOM.BANNER_TOP_HTML.get() | n,unicode }
-  </div>
-% endif
-
-<%
-  def count_apps(apps, app_list):
-    count = 0
-    found_app = ""
-    for app in app_list:
-      if app in apps:
-       found_app = app
-       count += 1
-    return found_app, count
-%>
-
-<div class="navigator">
-  <div class="pull-right">
-
-  % if user.is_authenticated() and section != 'login':
-  <ul class="nav nav-pills">
-    <li class="divider-vertical"></li>
-    % if 'filebrowser' in apps:
-    <li><a title="${_('Manage HDFS')}" rel="navigator-tooltip" href="/${apps['filebrowser'].display_name}"><i class="fa fa-file"></i><span class="hideable">&nbsp;${_('File Browser')}&nbsp;</span></a></li>
+<div class="navbar navbar-fixed-top">
+    % if conf.CUSTOM.BANNER_TOP_HTML.get():
+    <div id="banner-top" class="banner">
+        ${conf.CUSTOM.BANNER_TOP_HTML.get() | n,unicode }
+    </div>
     % endif
-    % if 'jobbrowser' in apps:
-    <li><a title="${_('Manage jobs')}" rel="navigator-tooltip" href="/${apps['jobbrowser'].display_name}"><i class="fa fa-list-alt"></i><span class="hideable">&nbsp;${_('Job Browser')}&nbsp;</span><span id="jobBrowserCount" class="badge badge-warning hide" style="padding-top:0;padding-bottom: 0"></span></a></li>
-    % endif
-    <li class="dropdown">
-      <a title="${ _('Administration') }" rel="navigator-tooltip" href="index.html#" data-toggle="dropdown" class="dropdown-toggle"><i class="fa fa-cogs"></i>&nbsp;<span class="hideable">${user.username}&nbsp;</span><b class="caret"></b></a>
-      <ul class="dropdown-menu">
-        <li><a href="${ url('useradmin.views.edit_user', username=urllib.quote(user.username)) }"><i class="fa fa-key"></i>&nbsp;&nbsp;${_('Edit Profile')}</a></li>
-        %if user.is_superuser:
-        <li><a href="${ url('useradmin.views.list_users') }"><i class="fa fa-group"></i>&nbsp;&nbsp;${_('Manage users')}</a></li>
-        %endif
-      </ul>
-    </li>
-    % if 'help' in apps:
-    <li><a title="${_('Documentation')}" rel="navigator-tooltip" href="/help"><i class="fa fa-question-circle"></i></a></li>
-    % endif
-    <li id="jHueTourFlagPlaceholder"></li>
-    <li><a title="${_('Sign out')}" rel="navigator-tooltip" href="/accounts/logout/"><i class="fa fa-sign-out"></i></a></li>
-  </ul>
-  % else:
-  <ul class="nav nav-pills" style="margin-right: 40px">
-    <li id="jHueTourFlagPlaceholder"></li>
-  </ul>
-  % endif
-
-  </div>
-    <a class="brand nav-tooltip pull-left" title="${_('About Hue')}" rel="navigator-tooltip" href="/about"><img src="/static/art/hue-logo-mini-white.png" data-orig="/static/art/hue-logo-mini-white.png" data-hover="/static/art/hue-logo-mini-white-hover.png"/></a>
-    % if user.is_authenticated() and section != 'login':
-     <ul class="nav nav-pills pull-left">
-       <li><a title="${_('My documents')}" rel="navigator-tooltip" href="${ url('desktop.views.home') }" style="padding-bottom:2px!important"><i class="fa fa-home" style="font-size: 19px"></i></a></li>
-       <%
-         query_apps = count_apps(apps, ['beeswax', 'impala', 'rdbms', 'pig', 'jobsub', 'spark']);
-       %>
-       % if query_apps[1] > 1:
-       <li class="dropdown">
-         <a title="${_('Query data')}" rel="navigator-tooltip" href="#" data-toggle="dropdown" class="dropdown-toggle">${_('Query Editors')} <b class="caret"></b></a>
-         <ul role="menu" class="dropdown-menu">
-           % if 'beeswax' in apps:
-           <li><a href="/${apps['beeswax'].display_name}"><img src="${ apps['beeswax'].icon_path }"/> ${_('Hive')}</a></li>
-           % endif
-           % if 'impala' in apps:
-           <li><a href="/${apps['impala'].display_name}"><img src="${ apps['impala'].icon_path }"/> ${_('Impala')}</a></li>
-           % endif
-           % if 'rdbms' in apps:
-           <li><a href="/${apps['rdbms'].display_name}"><img src="${ apps['rdbms'].icon_path }"/> ${_('DB Query')}</a></li>
-           % endif
-           % if 'pig' in apps:
-           <li><a href="/${apps['pig'].display_name}"><img src="${ apps['pig'].icon_path }"/> ${_('Pig')}</a></li>
-           % endif
-           % if 'jobsub' in apps:
-           <li><a href="/${apps['jobsub'].display_name}"><img src="${ apps['jobsub'].icon_path }"/> ${_('Job Designer')}</a></li>
-           % endif
-           % if 'spark' in apps:
-           <li><a href="/${apps['spark'].display_name}"><img src="${ apps['spark'].icon_path }"/> ${_('Spark')}</a></li>
-           % endif
-         </ul>
-       </li>
-       % elif query_apps[1] == 1:
-          <li><a href="/${apps[query_apps[0]].display_name}">${apps[query_apps[0]].nice_name}</a></li>
-       % endif
-       <%
-         data_apps = count_apps(apps, ['metastore', 'hbase', 'sqoop', 'zookeeper']);
-       %>
-       % if data_apps[1] > 1:
-       <li class="dropdown">
-         <a title="${_('Manage data')}" rel="navigator-tooltip" href="#" data-toggle="dropdown" class="dropdown-toggle">${_('Data Browsers')} <b class="caret"></b></a>
-         <ul role="menu" class="dropdown-menu">
-           % if 'metastore' in apps:
-           <li><a href="/${apps['metastore'].display_name}"><img src="${ apps['metastore'].icon_path }"/> ${_('Metastore Tables')}</a></li>
-           % endif
-           % if 'hbase' in apps:
-           <li><a href="/${apps['hbase'].display_name}"><img src="${ apps['hbase'].icon_path }"/> ${_('HBase')}</a></li>
-           % endif
-           % if 'sqoop' in apps:
-           <li><a href="/${apps['sqoop'].display_name}"><img src="${ apps['sqoop'].icon_path }"/> ${_('Sqoop Transfer')}</a></li>
-           % endif
-           % if 'zookeeper' in apps:
-           <li><a href="/${apps['zookeeper'].display_name}"><img src="${ apps['zookeeper'].icon_path }"/> ${_('ZooKeeper')}</a></li>
-           % endif
-         </ul>
-       </li>
-       % elif data_apps[1] == 1:
-         <li><a href="/${apps[data_apps[0]].display_name}">${apps[data_apps[0]].nice_name}</a></li>
-       % endif
-       % if 'oozie' in apps:
-       <li class="dropdown">
-         <a title="${_('Schedule with Oozie')}" rel="navigator-tooltip" href="#" data-toggle="dropdown" class="dropdown-toggle">${_('Workflows')} <b class="caret"></b></a>
-         <ul role="menu" class="dropdown-menu">
-           <li><a href="${ url('oozie:index') }"><img src="/oozie/static/art/icon_oozie_dashboard_24.png" /> ${_('Dashboard')}</a></li>
-           <li><a href="${ url('oozie:list_workflows') }"><img src="/oozie/static/art/icon_oozie_editor_24.png" /> ${_('Editor')}</a></li>
-         </ul>
-       </li>
-       % endif
-       % if 'search' in apps:
-         <%! from search.search_controller import SearchController %>
-         <% collections = SearchController(user).get_search_collections() %>
-         % if not collections:
-           <li>
-             <a title="${_('Solr Search')}" rel="navigator-tooltip" href="${ url('search:index') }">${_('Search')}</a>
-           </li>
-         % else:
-           <li class="dropdown">
-             <a title="${_('Solr Search')}" rel="navigator-tooltip" href="#" data-toggle="dropdown" class="dropdown-toggle">${_('Search')} <b class="caret"></b></a>
-             <ul role="menu" class="dropdown-menu">
-               % for collection in collections:
-               <li><a href="${ url('search:index') }?collection=${ collection.id }"><img src="${ collection.icon }"/> ${ collection.label }</a></li>
-               % endfor
-             </ul>
-           </li>
-         % endif
-       % endif
-       % if other_apps:
-       <li class="dropdown">
-         <a href="#" data-toggle="dropdown" class="dropdown-toggle">${_('Other apps')} <b class="caret"></b></a>
-         <ul role="menu" class="dropdown-menu">
-           % for other in other_apps:
-             <li><a href="/${ other.display_name }"><img src="${ other.icon_path }"/> ${ other.nice_name }</a></li>
-           % endfor
-         </ul>
-       </li>
-       % endif
-     </ul>
-   % endif
+    <div class="navbar-inner">
+      <div class="container-fluid">
+        <a class="brand nav-tooltip" title="${_('About Hue')}" href="/about"><img src="/static/art/hue-logo-mini-letterpress.png" /></a>
+        % if user.is_authenticated():
+        <div id="usernameDropdown" class="btn-group pull-right">
+          <a class="btn dropdown-toggle" data-toggle="dropdown" href="#">
+            <i class="icon-user"></i> ${user.username}
+            <span class="caret"></span>
+          </a>
+          <ul class="dropdown-menu">
+            <li><a class="userProfile" href="${ url('useradmin.views.edit_user', username=urllib.quote(user.username)) }">${_('Profile')}</a></li>
+            <li class="divider"></li>
+            <li><a href="/accounts/logout/">${_('Sign Out')}</a></li>
+          </ul>
+        </div>
+        % endif
 
 </div>
 

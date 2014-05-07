@@ -164,11 +164,10 @@ var SmartViewModel = function(options) {
 
   self.columnFamilies = ko.observableArray();
   self.name = ko.observable(options.name);
-  self.name.subscribe(function(val){
-    if(!val) return;
+  self.name.subscribe(function(){
     self.columnFamilies([]);
     self._reloadcfs();
-    if(app.station() == 'table' && app.search.cur_input())
+    if(app.station() == 'table')
       return;
     self.querySet.removeAll();
     self.evaluateQuery();
@@ -270,14 +269,9 @@ var SmartViewModel = function(options) {
 
   self.columnQuery = ko.observable("");
   self.columnQuery.subscribe(function(query) {
-    var dataRowFilter = function(index, data_row) {
-      data_row.searchQuery(query);
-    };
-    if (self.selected().length > 0) {
-      $.each(self.selected(), dataRowFilter);
-    } else {
-      $.each(self.items(), dataRowFilter);
-    }
+    $(self.items()).each(function() {
+      table_search(query);
+    });
   });
 
   self.rows = ko.computed(function() {
@@ -324,44 +318,6 @@ var SmartViewModel = function(options) {
       self.isLoading(false);
     });
   };
-
-  self.showGrid = ko.observable(false);
-  self.showGrid.subscribe(function(val) {
-    if(val) {
-      var rows = self.items();
-      var columns = {};
-      //build full lookup hash of columns
-      for(var i=0; i<rows.length; i++) {
-        var cols = rows[i].items();
-        for(var q=0; q<cols.length; q++) {
-          if(!columns[cols[q].name])
-            columns[cols[q].name] = "";
-        }
-      }
-
-      for(var i=0; i<rows.length; i++) {
-        //clone blank template from hash
-        var new_row = $.extend({}, columns);
-        var cols = rows[i].items();
-        var col_list = [];
-        //set existing values
-        for(var q=0; q<cols.length; q++) {
-          new_row[cols[q].name] = cols[q];
-        }
-        //build actual row from hash
-        var keys = Object.keys(new_row);
-        for(var r=0; r<keys.length; r++) {
-          if(!new_row[keys[r]]) new_row[keys[r]] = new ColumnRow({ name: keys[r], value: '', parent: rows[i] });
-          col_list.push(new_row[keys[r]]);
-        }
-        //set and sort
-        rows[i].items(col_list);
-        rows[i].sortDropDown.sort();
-      }
-    } else {
-      self.reload();
-    }
-  });
 
   self.truncateLimit = ko.observable(1500);
 
@@ -525,12 +481,6 @@ var SmartViewDataRow = function(options) {
     return self;
   };
 
-  self.deselectAllVisible = function(){
-    for(t=0; t<self.displayedItems().length; t++)
-      self.displayedItems()[t].isSelected(false);
-    return self;
-  };
-
   self.toggleSelectAllVisible = function() {
     if(self.selected().length != self.displayedItems().length)
       return self.selectAllVisible();
@@ -564,7 +514,7 @@ var ColumnRow = function(options) {
     function doDrop() {
       logGA('filter_columns');
       self.parent.isLoading(true);
-      return API.queryTable('deleteColumn', prepForTransport(self.parent.row), prepForTransport(self.name)).done(function(data) {
+      return API.queryTable('deleteColumn', self.parent.row, self.name).done(function(data) {
         self.parent.items.remove(self);
         if(self.parent.items().length > 0)
           self.parent.reload(); //change later
@@ -933,13 +883,9 @@ var tagsearch = function() {
     switch(self.mode()) {
       case 'filter':
         var focus = val.replace(/\{|\}|\s|&[^;]+?;/g,"").split(searchRenderers.rowkey.nested.filter.nested.linker.select).slice(-1)[0];
-        if(focus != "") {
-          self.activeSuggestions(self.filters.filter(function(a) {
-            return a.toLowerCase().replace(" ","").indexOf(focus.toLowerCase()) != -1;
-          }));
-        } else {
-          self.activeSuggestions([]);
-        }
+        self.activeSuggestions(self.filters.filter(function(a) {
+          return a.toLowerCase().replace(" ","").indexOf(focus.toLowerCase()) != -1;
+        }));
         return;
       case 'rowkey':
         var validate = window.getSelection().getRangeAt(0).startContainer.nodeValue;
@@ -1011,8 +957,6 @@ var CellHistoryPage = function(options) {
 
   self.pickHistory = function(data) {
     data.history = self;
-    if(!ko.isObservable(data.value))
-      data.value = ko.observable(data.value);
-    launchModal('cell_edit_modal',{ content: data, mime: detectMimeType(data.value()), readonly: true })
+    launchModal('cell_edit_modal',{ content: data, mime: detectMimeType(data.value), readonly: true })
   };
 };

@@ -17,15 +17,6 @@
 # 
 # Extra python utils
 
-import select
-import socket
-from django.utils.translation import ugettext as _
-from desktop import conf
-from desktop.lib.i18n import smart_str
-
-
-__all__ = ['CaseInsensitiveDict', 'create_synchronous_io_multiplexer']
-
 
 class CaseInsensitiveDict(dict):
   def __setitem__(self, key, value):

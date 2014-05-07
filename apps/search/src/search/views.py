@@ -64,15 +64,20 @@ def index(request):
   solr_query = {}
 
   if search_form.is_valid():
+    collection_id = search_form.cleaned_data['collection']
+    solr_query['q'] = search_form.cleaned_data['query'].encode('utf8')
+    solr_query['fq'] = search_form.cleaned_data['fq']
+    if search_form.cleaned_data['sort']:
+      solr_query['sort'] = search_form.cleaned_data['sort']
+    solr_query['rows'] = search_form.cleaned_data['rows'] or 15
+    solr_query['start'] = search_form.cleaned_data['start'] or 0
+    solr_query['facets'] = search_form.cleaned_data['facets'] or 1
+
     try:
       collection_id = search_form.cleaned_data['collection']
       hue_collection = Collection.objects.get(id=collection_id)
-
-      solr_query = search_form.solr_query_dict
+      solr_query['collection'] = hue_collection.name
       response = SolrApi(SOLR_URL.get(), request.user).query(solr_query, hue_collection)
-
-      solr_query['total_pages'] = int(math.ceil((float(response['response']['numFound']) / float(solr_query['rows']))))
-      solr_query['search_time'] = response['responseHeader']['QTime']
     except Exception, e:
       error['title'] = force_unicode(e.title) if hasattr(e, 'title') else ''
       error['message'] = force_unicode(str(e))
@@ -154,35 +159,23 @@ def admin_collections(request, is_redirect=False):
 def admin_collections_import(request):
   if request.method == 'POST':
     searcher = SearchController(request.user)
-    imported = []
-    not_imported = []
-    status = -1
-    message = ""
+    status = 0
+    err_message = _('Error')
+    result = {
+      'status': status,
+      'message': err_message
+    }
     importables = json.loads(request.POST["selected"])
     for imp in importables:
       try:
         searcher.add_new_collection(imp)
         imported.append(imp['name'])
       except Exception, e:
-        not_imported.append(imp['name'] + ": " + unicode(str(e), "utf8"))
-
-    if len(imported) == len(importables):
-      status = 0;
-      message = _('Collection(s) or core(s) imported successfully!')
-    elif len(not_imported) == len(importables):
-      status = 2;
-      message = _('There was an error importing the collection(s) or core(s)')
-    else:
-      status = 1;
-      message = _('Collection(s) or core(s) partially imported')
-
-    result = {
-      'status': status,
-      'message': message,
-      'imported': imported,
-      'notImported': not_imported
-    }
-
+        err_message += unicode(str(e), "utf8") + "\n"
+      if status == len(importables):
+        result['message'] = _('Imported successfully')
+      else:
+        result['message'] = _('Imported with errors: ') + err_message
     return HttpResponse(json.dumps(result), mimetype="application/json")
   else:
     if request.GET.get('format') == 'json':
@@ -244,7 +237,7 @@ def admin_collection_properties(request, collection_id):
 
   if request.method == 'POST':
     collection_form = CollectionForm(request.POST, instance=hue_collection, user=request.user)
-    if collection_form.is_valid(): # Check for autocomplete in data?
+    if collection_form.is_valid():
       searcher = SearchController(request.user)
       hue_collection = collection_form.save(commit=False)
       hue_collection.is_core_only = not searcher.is_collection(hue_collection.name)
@@ -268,7 +261,6 @@ def admin_collection_properties(request, collection_id):
 def admin_collection_template(request, collection_id):
   hue_collection = Collection.objects.get(id=collection_id)
   solr_collection = SolrApi(SOLR_URL.get(), request.user).collection_or_core(hue_collection)
-  sample_data = {}
 
   if request.method == 'POST':
     hue_collection.result.update_from_post(request.POST)
@@ -283,17 +275,7 @@ def admin_collection_template(request, collection_id):
   solr_query['start'] = 0
   solr_query['facets'] = 0
 
-  try:
-    response = SolrApi(SOLR_URL.get(), request.user).query(solr_query, hue_collection)
-    sample_data = json.dumps(response["response"]["docs"])
-  except PopupException, e:
-    message = e
-    try:
-      message = json.loads(e.message.message)['error']['msg'] # Try to get the core error
-    except:
-      pass
-    request.error(_('No preview available, some facets are invalid: %s') % message)
-    LOG.exception(e)
+  response = SolrApi(SOLR_URL.get(), request.user).query(solr_query, hue_collection)
 
   return render('admin_collection_template.mako', request, {
     'solr_collection': solr_collection,

@@ -82,8 +82,8 @@ ${ commonheader(None, "hbase", user) | n,unicode }
           % endif
         </span>
         <span class="smartview-row-controls pull-right">
-          <button class="btn" data-bind="click: $data.toggleSelectedCollapse, enable: $data.selected().length > 0, clickBubble: false" data-toggle="tooltip" title="${_('Toggle Collapse Selected')}"><i data-bind="css: { 'fa': true, 'fa-compress': !$data.isCollapsed(), 'fa-expand': $data.isCollapsed() }"></i></button>
-          <button class="btn" data-bind="click: $data.toggleSelectAllVisible, enable: $data.displayedItems().length > 0, clickBubble: false" data-toggle="tooltip" title="${_('Select All Visible')}"><i class="fa fa-check-square-o"></i></button>
+          <button class="btn" data-bind="click: $data.toggleSelectedCollapse, enable: $data.selected().length > 0, clickBubble: false" data-toggle="tooltip" title="${_('Toggle Collapse Selected')}"><i data-bind="css: { 'icon-resize-small': !$data.isCollapsed(), 'icon-resize-full': $data.isCollapsed() }"></i></button>
+          <button class="btn" data-bind="click: $data.toggleSelectAllVisible, enable: $data.displayedItems().length > 0, clickBubble: false" data-toggle="tooltip" title="${_('Select All Visible')}"><i class="icon-check"></i></button>
           <input type="text" placeholder="${('Filter Column Names/Family')}" data-bind="value: $data.searchQuery, valueUpdate: $data.items().length < 100 ? 'afterkeydown' : 'change', clickBubble: false"/>
           ${sortBtn('$data.sortDropDown')}
           % if user.is_superuser:
@@ -92,6 +92,7 @@ ${ commonheader(None, "hbase", user) | n,unicode }
           % if can_write:
           <a href="#new_column_modal" data-bind="click:function(){app.focusModel($data);launchModal('new_column_modal', $data);}" class="btn" title="${_('Add New Column/Cell')}"><i class="fa fa-plus"></i></a>
           % endif
+          <a href="#new_column_modal" data-bind="click:function(){$('#new_column_row_key').val($data.row);app.focusModel($data);logGA('new_column_modal');}" class="btn" data-toggle="modal" title="${_('Add New Column/Cell')}"><i class="icon-plus"></i></a>
         </span>
       </h5>
       <ul class="smartview-cells" data-bind="event: {scroll: onScroll}">
@@ -103,8 +104,8 @@ ${ commonheader(None, "hbase", user) | n,unicode }
             % if user.is_superuser:
               <a class="corner-btn btn" data-bind="click: $data.drop, clickBubble: false"><i class="fa fa-trash-o"></i></a>
             % endif
-            <a class="corner-btn btn" data-bind="visible: $data.editing(), event: { mousedown: function(){launchModal('cell_edit_modal',{content:$data, mime: detectMimeType($data.value())})} }"><i class="fa fa-pencil"></i> ${_('Full Editor')}</a>
-            <pre data-bind="text: ($data.value().length > 146 ? $data.value().substring(0, 144)+'...' : $data.value()).replace(/(\r\n|\n|\r)/gm,''), click: editCell.bind(null, $data), clickBubble: false, visible: !$data.isLoading() && !$data.editing()"></pre>
+            <a class="corner-btn btn" data-bind="visible: $data.editing(), event: { mousedown: function(){launchModal('cell_edit_modal',{content:$data, mime: detectMimeType($data.value())})} }"><i class="icon-pencil"></i> ${_('Full Editor')}</a>
+            <pre data-bind="text: ($data.value().length > 146 ? $data.value().substring(0, 144)+'...' : $data.value()).replace(/(\r\n|\n|\r)/gm,''), click: $data.value().length > 146 ? function(){launchModal('cell_edit_modal',{content:$data, mime: detectMimeType($data.value())})} : function(){$data.editing(true)}, clickBubble: false, visible: !$data.isLoading() && !$data.editing()"></pre>
             <textarea data-bind="visible: !$data.isLoading() && $data.editing(), hasfocus: $data.editing, value: $data.value, click:function(){}, clickBubble: false"></textarea>
             <img src="/static/art/spinner.gif" data-bind="visible: $data.isLoading() " />
           </div>
@@ -115,7 +116,7 @@ ${ commonheader(None, "hbase", user) | n,unicode }
   </div>
   <br/>
   <center data-bind="visible: ${datasource}.isLoading()">
-  <!--[if !IE]><!--><i class="fa fa-spinner fa-spin loader-main"></i><!--<![endif]-->
+  <!--[if !IE]><!--><i class="icon-spinner icon-spin loader-main"></i><!--<![endif]-->
   <!--[if IE]><img src="/hbase/static/art/loader.gif" /><![endif]-->
   </center>
   <div class="alert" data-bind="visible: ${datasource}.items().length == 0 && !${datasource}.isLoading()">
@@ -138,8 +139,8 @@ ${ commonheader(None, "hbase", user) | n,unicode }
 <div class="container-fluid">
   <div class="card card-small">
   <!-- Page Header -->
-  <h1 class="card-heading simple">
-    <a href="/hbase/">${_('Home')}</a> - <a data-bind="text: app.cluster(), attr: { href: '#' + app.cluster() }"></a>
+  <h1>
+    <a href="/hbase/">HBase Browser</a> - <a data-bind="text: app.cluster(), attr: { href: '#' + app.cluster() }"></a>
     <span data-bind="visible: app.station() == 'table'">/ <a data-bind="text: app.views.tabledata.name(), attr: { href: '#' + app.cluster() + '/' + app.views.tabledata.name()}"></a></span>
     <span class="pull-right">
       <span class="dropdown">
@@ -154,21 +155,18 @@ ${ commonheader(None, "hbase", user) | n,unicode }
     </span>
   </h1>
 
-  <div class="card-body">
-    <p>
-
   <!-- Application Pages -->
   <div id="main"></div>
 
   <div id="hbase-page-clusterview" class="hbase-page"> <!-- maybe turn these into script tags, then populate them into #main and then rerender + apply bindings to old viemodels to have modular viewmodels? -->
     <div class="actionbar">
-      <div style="padding-bottom: 20px">
+      <div class="well well-small">
         <input type="text" class="input-large search-query" placeholder="${_('Search for Table Name')}" data-bind="value: views.tables.searchQuery, valueUpdate: 'afterkeydown'">
         % if user.is_superuser:
           <span class="btn-group">
-            <button class="btn" data-bind="enable: views.tables.canEnable, click: views.tables.enableSelected"><i class="fa fa-check-square"></i> ${_('Enable')}</button>
+            <button class="btn" data-bind="enable: views.tables.canEnable, click: views.tables.enableSelected"><i class="icon-check-sign"></i> ${_('Enable')}</button>
             <button class="btn" data-bind="enable: views.tables.canDisable, click: views.tables.disableSelected">
-              <i class="fa fa-square-o"></i> ${_('Disable')}
+              <i class="icon-check-empty"></i> ${_('Disable')}
             </button>
           </span>
           <button class="btn" data-bind="enable: views.tables.selected().length > 0, click: views.tables.dropSelected"><i class="fa fa-trash-o"></i> ${_('Drop')}</button>
@@ -187,7 +185,7 @@ ${ commonheader(None, "hbase", user) | n,unicode }
       <tr>
         <td><div data-bind="click: $data.select, css: {hueCheckbox: true,'fa': true, 'fa-check':$data.isSelected}" data-row-selector-exclude="true"></div></td>
         <td width="90%"><a data-bind="text:$data.name,attr: {href: '#'+app.cluster()+'/'+$data.name}" data-row-selector="true"></a></td>
-        <td width="5%"><i data-bind="click: $data.toggle, css: {'fa': true, 'fa-check-square':$data.enabled, 'fa-square-o':$data.enabled != true}" data-row-selector-exclude="true"></i></td>
+        <td width="5%"><i data-bind="click: $data.toggle, css: {'icon-check-sign':$data.enabled, 'icon-check-empty':$data.enabled != true}" data-row-selector-exclude="true"></i></td>
       </tr>
     </script>
 
@@ -204,7 +202,7 @@ ${ commonheader(None, "hbase", user) | n,unicode }
         <ul>
           <li><input type="text" name="table_columns" placeholder="family_name"></li>
         </ul>
-        <a class="btn action_addColumn"><i class="fa fa-plus-circle"></i> ${_('Additional Column Family')}</a>
+        <a class="btn action_addColumn"><i class="icon-plus-sign"></i> ${_('Additional Column Family')}</a>
       </div>
       <div class="modal-footer">
         <button class="btn" data-dismiss="modal" aria-hidden="true">${_('Cancel')}</button>
@@ -219,8 +217,7 @@ ${ commonheader(None, "hbase", user) | n,unicode }
       <div class="container-fluid">
         <div class="row-fluid">
           <div id="searchbar-main" class="span5" data-bind="click: search.clickTagBar">
-            <a class="search-remove" data-bind="visible: search.cur_input() != '', click: function(){ app.search.cur_input(''); app.search.focused(true) }"><i class="fa fa-times-circle"></i></a>
-            <div id="search-tags" contenteditable="true" data-bind="editableText: search.cur_input, hasfocus: search.focused, css: { 'active': search.cur_input() != '' }, event: { 'keydown': search.onKeyDown, click: search.updateMenu.bind(null) }" data-placeholder="${_('row_key, row_prefix* +scan_len [col1, family:col2, fam3:, col_prefix* +3, fam: col2 to col3] {Filter1() AND Filter2()}')}">
+            <div id="search-tags" contenteditable="true" data-bind="editableText: search.cur_input, hasfocus: search.focused, css: { 'active': search.cur_input() != '' }, event: { 'keydown': search.onKeyDown, click: search.updateMenu.bind(null) }" data-placeholder="${_('row_key, row_key_prefix* + scan_length, row_key [family:col1, family2:col2, family3:]')}">
             </div>
           </div>
           <ul id="search-typeahead" data-bind="visible: search.focused() && !search.submitted()">
@@ -235,7 +232,8 @@ ${ commonheader(None, "hbase", user) | n,unicode }
             <li class="search-suggestion" data-bind="event: { mousedown: app.search.replaceFocusNode.bind(null, $data) }, css: {active: app.search.activeSuggestion() == $index()}"><a><span data-bind="text: $data"></span></a></li>
             <!-- /ko -->
           </ul>
-          <button class="btn btn-primary add-on" data-bind="enabled: !search.submitted(), click: search.evaluate.bind(null)"><i class="fa fa-search"></i></button>
+          <a class="search-remove" data-bind="visible: search.cur_input() != '', click: function(){ app.search.cur_input(''); }"><i class="icon-remove-sign"></i></a>
+          <button class="btn btn-primary add-on" data-bind="enabled: !search.submitted(), click: search.evaluate.bind(null)"><i class="icon-search"></i></button>
           <span id="column-family-selectors">
             <!-- ko foreach: views.tabledata.columnFamilies() -->
               <span class="label" data-bind="text: $data.name, style: {'backgroundColor': ($data.enabled()) ? stringHashColor($data.name.split(':')[0]) : '#ccc' ,'cursor':'pointer'}, click: $data.toggle"></span>
@@ -286,6 +284,8 @@ ${ commonheader(None, "hbase", user) | n,unicode }
             <a id="bulk-upload-btn" class="btn fileChooserBtn" data-toggle="tooltip" title="${_('.CSV, .TSV, etc...')}" aria-hidden="true"><i class="fa fa-upload"></i> ${_('Bulk Upload')}</a>
             <a href="#new_row_modal" data-bind="click:function(){app.focusModel(app.views.tabledata);launchModal('new_row_modal')}" role="button" class="btn btn-primary" data-callback=""><i class='fa fa-plus-circle'></i> ${_('New Row')}</a>
             % endif
+            <button id="bulk-upload-btn" class="btn fileChooserBtn" data-toggle="tooltip" title="${_('.CSV, .TSV, etc...')}" aria-hidden="true"><i class="icon-upload"></i> ${_('Bulk Upload')}</button>
+            <a href="#new_row_modal" data-bind="click:function(){app.focusModel(app.views.tabledata);logGA('new_row_modal');}" role="button" class="btn btn-primary" data-callback="" data-toggle="modal"><i class='icon-plus-sign'></i> ${_('New Row')}</a>
           </span>
         </div>
     </div>
@@ -344,11 +344,11 @@ ${ commonheader(None, "hbase", user) | n,unicode }
     <script id="cell_edit_modal_template" type="text/html">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-        <h3>${_('Edit Cell')} - <span data-bind="text: content.name || formatTimestamp(content.timestamp)"></span> <code data-bind="text: mime"></code> <small><i class="fa fa-clock-o"></i> <span data-bind="text: $data.content.timestamp"></span></small></h3>
+        <h3>Edit Cell - <span data-bind="text: content.name || formatTimestamp(content.timestamp)"></span> <code data-bind="text: mime"></code> <small><i class="icon-time"></i> <span data-bind="text: $data.content.timestamp"></span></small></h3>
       </div>
       <div class="modal-body container-fluid">
           <div class="row-fluid">
-            <div class="span9 controls">
+            <div class="span10 controls">
               <!-- ko if: !$data.readonly -->
               <input type="hidden" data-bind="value: app.cluster"/>
               <input type="hidden" data-bind="value: app.views.tabledata.name"/>
@@ -358,8 +358,8 @@ ${ commonheader(None, "hbase", user) | n,unicode }
               <!-- ko template: {name: 'cell_'+mime.split('/')[0].toLowerCase()+'_template'} -->
               <!-- /ko -->
             </div>
-            <div class="span3">
-              <ul class="nav nav-list">
+            <div class="span2">
+              <ul class="nav nav-list well well-small">
                 <li class="nav-header">${_('Cell History:')}</li>
                 <!-- ko foreach: $data.content.history.items() -->
                   <li data-bind="css: { 'active': $data.timestamp == $parent.content.timestamp }"><a data-bind="click: $parent.content.history.pickHistory.bind(null, $data), text: formatTimestamp($data.timestamp)"></a></li>
@@ -373,8 +373,8 @@ ${ commonheader(None, "hbase", user) | n,unicode }
       <div class="modal-footer" data-bind="if: !$data.readonly">
         % if user.is_superuser:
           <button class="btn" data-dismiss="modal" aria-hidden="true">${_('Cancel')}</button>
-          <a id="file-upload-btn" class="btn fileChooserBtn" aria-hidden="true"><i class="fa fa-upload"></i> ${_('Upload')}</a>
-          <input data-bind="visible: mime.split('/')[0].toLowerCase() != 'application' && mime.split('/')[0].toLowerCase() != 'image'" type="submit" class="btn btn-primary" value="${_('Save')}">
+          <button id="file-upload-btn" class="btn fileChooserBtn" aria-hidden="true"><i class="icon-upload"></i> ${_('Upload')}</button>
+          <input type="submit" class="btn btn-primary" value="${_('Save')}">
         % else:
           <button class="btn" data-dismiss="modal" aria-hidden="true">${_('OK')}</button>
         % endif
@@ -415,6 +415,7 @@ ${ commonheader(None, "hbase", user) | n,unicode }
 
 </div>
 
+
 <script type="text/javascript">
 var i18n_cache = {
   "Confirm Delete": "${_('Confirm Delete')}",
@@ -448,8 +449,6 @@ function i18n(text) {
     return i18n_cache[text];
   return text;
 };
-
-canWrite = ${ str(can_write).lower() };
 </script>
 <script src="/static/ext/js/datatables-paging-0.1.js" type="text/javascript" charset="utf-8"></script>
 <script src="/static/ext/js/knockout-min.js" type="text/javascript" charset="utf-8"></script>

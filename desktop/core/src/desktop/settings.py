@@ -32,6 +32,11 @@ from desktop.lib.paths import get_desktop_root
 from desktop.lib.python_util import force_dict_to_strings
 
 
+try:
+  import json
+except ImportError:
+  import simplejson as json
+
 HUE_DESKTOP_VERSION = pkg_resources.get_distribution("desktop").version or "Unknown"
 NICE_NAME = "Hue"
 
@@ -273,7 +278,7 @@ else:
     "PASSWORD" : desktop.conf.DATABASE.PASSWORD.get(),
     "HOST" : desktop.conf.DATABASE.HOST.get(),
     "PORT" : str(desktop.conf.DATABASE.PORT.get()),
-    "OPTIONS": force_dict_to_strings(desktop.conf.DATABASE.OPTIONS.get()),
+    "OPTIONS": desktop.conf.DATABASE.OPTIONS.get(),
     # DB used for tests
     "TEST_NAME" : get_desktop_root('desktop-test.db')
   }
@@ -282,20 +287,9 @@ DATABASES = {
   'default': default_db
 }
 
-
 # Configure sessions
 SESSION_COOKIE_AGE = desktop.conf.SESSION.TTL.get()
 SESSION_COOKIE_SECURE = desktop.conf.SESSION.SECURE.get()
-SESSION_EXPIRE_AT_BROWSER_CLOSE = desktop.conf.SESSION.EXPIRE_AT_BROWSER_CLOSE.get()
-
-# HTTP only
-SESSION_COOKIE_HTTPONLY = desktop.conf.SESSION.HTTP_ONLY.get()
-
-# django-nose test specifics
-TEST_RUNNER = 'desktop.lib.test_runners.HueTestRunner'
-# Turn off cache middleware
-if 'test' in sys.argv:
-  CACHE_MIDDLEWARE_SECONDS = 0
 
 TIME_ZONE = desktop.conf.TIME_ZONE.get()
 # Desktop supports only one authentication backend.
@@ -323,32 +317,9 @@ if SAML_AUTHENTICATION:
   LOGIN_URL = '/saml2/login/'
   SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
-# Middleware classes.
-for middleware in desktop.conf.MIDDLEWARE.get():
-  MIDDLEWARE_CLASSES.append(middleware)
-
-# OpenId
-OPENID_AUTHENTICATION = 'libopenid.backend.OpenIDBackend' in AUTHENTICATION_BACKENDS
-if OPENID_AUTHENTICATION:
-  from libopenid.openid_settings import *
-  INSTALLED_APPS.append('libopenid')
-  LOGIN_URL = '/openid/login'
-  SESSION_EXPIRE_AT_BROWSER_CLOSE = True
-
-# OAuth
-OAUTH_AUTHENTICATION='liboauth.backend.OAuthBackend' in AUTHENTICATION_BACKENDS
-if OAUTH_AUTHENTICATION:
-    INSTALLED_APPS.append('liboauth')
-    LOGIN_URL = '/oauth/accounts/login'
-    SESSION_EXPIRE_AT_BROWSER_CLOSE = True
-
 # URL Redirection white list.
 if desktop.conf.REDIRECT_WHITELIST.get():
   MIDDLEWARE_CLASSES.append('desktop.middleware.EnsureSafeRedirectURLMiddleware')
-
-#Support HTTPS load-balancing
-if desktop.conf.SECURE_PROXY_SSL_HEADER.get():
-  SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTOCOL', 'https')
 
 ############################################################
 

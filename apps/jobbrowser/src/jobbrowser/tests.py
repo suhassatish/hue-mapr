@@ -86,7 +86,7 @@ class TestJobBrowserWithHadoop(unittest.TestCase, OozieServerProvider):
 
   def setUp(self):
     """
-    To clean: creating test1, test2, test3...users
+    Beware: creating test1, test2, test3...users
     """
     TestJobBrowserWithHadoop.user_count += 1
     self.username = 'test' + str(TestJobBrowserWithHadoop.user_count)

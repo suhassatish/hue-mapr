@@ -1087,9 +1087,24 @@ for x in sys.stdin:
       'create': 'Create table',
     }, follow=True)
 
-    # Ensure we can see table.
-    response = self.client.get("/metastore/table/default/my_table")
-    assert_true("my_col" in response.content)
+    if "watch_wait.mako" in resp.template:
+      assert_equal_mod_whitespace("""
+          CREATE EXTERNAL TABLE `default.my_table`
+          (
+           `my_col` string
+          )
+          COMMENT "Yo>>>>dude"
+          ROW FORMAT DELIMITED
+            FIELDS TERMINATED BY ','
+            COLLECTION ITEMS TERMINATED BY '\\002'
+            MAP KEYS TERMINATED BY '\\003'
+            STORED AS TextFile LOCATION "/tmp/foo"
+      """, resp.context['query'].query)
+      assert_true('on_success_url=%2Fmetastore%2Ftable%2Fdefault%2Fmy_table' in resp.context['fwd_params'], resp.context['fwd_params'])
+    else:
+      # Create was fast
+      assert_true('describe_table.mako' in resp.template, resp.template)
+      assert_true('Table my_table' in resp.content, resp.content)
 
 
   def test_create_table_timestamp(self):
@@ -1115,6 +1130,10 @@ for x in sys.stdin:
     assert_true('2012-01-01&nbsp;10:11:30' in response.content, response.content)
 
   def test_partitioned_create_table(self):
+    """
+    Test HQL generation of create table with partition columns
+    """
+    raise SkipTest
     # Make sure we get a form
     resp = self.client.get("/beeswax/create/create_table/default")
     assert_true("Field terminator" in resp.content)
@@ -1621,13 +1640,126 @@ def test_hive_site():
 
     assert_equal(beeswax.hive_site.get_conf()['hive.metastore.warehouse.dir'], u'/abc')
     assert_equal(beeswax.hive_site.get_hiveserver2_kerberos_principal('localhost'), 'hs2test/test.com@TEST.COM')
-    assert_equal(beeswax.hive_site.get_hiveserver2_authentication(), 'NOSASL')
+    assert_equal(beeswax.hive_site.get_hiveserver2_authentication(), 'NONE')
   finally:
     beeswax.hive_site.reset()
     if saved is not None:
       beeswax.conf.HIVE_CONF_DIR = saved
     shutil.rmtree(tmpdir)
 
+def test_hive_site_host_pattern_local_host():
+  """Test hive-site parsing"""
+  hostname = socket.getfqdn()
+  tmpdir = tempfile.mkdtemp()
+  saved = None
+  try:
+    # We just replace the Beeswax conf variable
+    class Getter(object):
+      def get(self):
+        return tmpdir
+
+    thrift_uris = 'thrift://%s:9999' % hostname
+    xml = hive_site_xml(is_local=False, use_sasl=False, thrift_uris=thrift_uris, kerberos_principal='test/_HOST@TEST.COM', hs2_kerberos_principal='test/_HOST@TEST.COM')
+    file(os.path.join(tmpdir, 'hive-site.xml'), 'w').write(xml)
+
+    beeswax.hive_site.reset()
+    saved = beeswax.conf.BEESWAX_HIVE_CONF_DIR
+    beeswax.conf.BEESWAX_HIVE_CONF_DIR = Getter()
+
+    reset = []
+    reset.append(beeswax.conf.BEESWAX_SERVER_HOST.set_for_testing(hostname))
+
+    is_local, host, port, kerberos_principal = beeswax.hive_site.get_metastore()
+    assert_false(is_local)
+    assert_equal(host, hostname)
+    assert_equal(port, 9999)
+    assert_equal(beeswax.hive_site.get_conf()['hive.metastore.warehouse.dir'], u'/abc')
+    assert_equal(kerberos_principal, 'test/' + socket.getfqdn().lower() + '@TEST.COM')
+    assert_equal(beeswax.hive_site.get_hiveserver2_kerberos_principal(hostname), 'test/' + socket.getfqdn().lower() + '@TEST.COM')
+  finally:
+    for finish in reset:
+      finish()
+    beeswax.hive_site.reset()
+    if saved is not None:
+      beeswax.conf.BEESWAX_HIVE_CONF_DIR = saved
+    shutil.rmtree(tmpdir)
+
+def test_hive_site_host_pattern_remote_host():
+  """Test hive-site parsing"""
+  hostname = 'darkside-12345'
+  tmpdir = tempfile.mkdtemp()
+  saved = None
+  try:
+    # We just replace the Beeswax conf variable
+    class Getter(object):
+      def get(self):
+        return tmpdir
+
+    thrift_uris = 'thrift://%s:9999' % hostname
+    xml = hive_site_xml(is_local=False, use_sasl=False, thrift_uris=thrift_uris, kerberos_principal='test/_HOST@TEST.COM', hs2_kerberos_principal='test/_HOST@TEST.COM')
+    file(os.path.join(tmpdir, 'hive-site.xml'), 'w').write(xml)
+
+    beeswax.hive_site.reset()
+    saved = beeswax.conf.BEESWAX_HIVE_CONF_DIR
+    beeswax.conf.BEESWAX_HIVE_CONF_DIR = Getter()
+
+    reset = []
+    reset.append(beeswax.conf.BEESWAX_SERVER_HOST.set_for_testing(hostname))
+
+    is_local, host, port, kerberos_principal = beeswax.hive_site.get_metastore()
+    assert_false(is_local)
+    assert_equal(host, hostname)
+    assert_equal(port, 9999)
+    assert_equal(beeswax.hive_site.get_conf()['hive.metastore.warehouse.dir'], u'/abc')
+    assert_equal(kerberos_principal, 'test/%s@TEST.COM' % hostname)
+    assert_equal(beeswax.hive_site.get_hiveserver2_kerberos_principal(hostname), 'test/%s@TEST.COM' % hostname)
+  finally:
+    for finish in reset:
+      finish()
+    beeswax.hive_site.reset()
+    if saved is not None:
+      beeswax.conf.BEESWAX_HIVE_CONF_DIR = saved
+    shutil.rmtree(tmpdir)
+
+def test_hive_site_external_metastore():
+  """Test hive-site parsing with sasl enabled and external metastore"""
+  tmpdir = tempfile.mkdtemp()
+  saved = None
+  try:
+    # We just replace the Beeswax conf variable
+    class Getter(object):
+      def get(self):
+        return tmpdir
+
+    xml = hive_site_xml(is_local=False, use_sasl=False)
+    file(os.path.join(tmpdir, 'hive-site.xml'), 'w').write(xml)
+
+    beeswax.hive_site.reset()
+    saved = beeswax.conf.BEESWAX_HIVE_CONF_DIR
+    beeswax.conf.BEESWAX_HIVE_CONF_DIR = Getter()
+
+    # No sasl
+    is_local, host, port, kerberos_principal = beeswax.hive_site.get_metastore()
+    assert_false(is_local)
+    assert_equal(host, 'darkside-1234')
+    assert_equal(port, 9999)
+    assert_equal(beeswax.hive_site.get_conf()['hive.metastore.warehouse.dir'], u'/abc')
+    assert_equal(kerberos_principal, 'test/test.com@TEST.COM')
+
+    # Sasl
+    file(os.path.join(tmpdir, 'hive-site.xml'), 'w').write(hive_site_xml(is_local=False, use_sasl=True))
+    beeswax.hive_site.reset()
+    is_local, host, port, kerberos_principal = beeswax.hive_site.get_metastore()
+    assert_false(is_local)
+    assert_equal(host, 'darkside-1234')
+    assert_equal(port, 9999)
+    assert_equal(beeswax.hive_site.get_conf()['hive.metastore.warehouse.dir'], u'/abc')
+    assert_equal(kerberos_principal, 'test/test.com@TEST.COM')
+  finally:
+    beeswax.hive_site.reset()
+    if saved is not None:
+      beeswax.conf.BEESWAX_HIVE_CONF_DIR = saved
+    shutil.rmtree(tmpdir)
 
 def test_hive_site_host_pattern_local_host():
   hostname = socket.getfqdn()
@@ -1663,6 +1795,39 @@ def test_hive_site_host_pattern_local_host():
 
 def test_hive_site_null_hs2krb():
   """Test hive-site parsing with null hs2 kerberos principal"""
+  tmpdir = tempfile.mkdtemp()
+  saved = None
+  try:
+    # We just replace the Beeswax conf variable
+    class Getter(object):
+      def get(self):
+        return tmpdir
+
+    xml = hive_site_xml(is_local=True, use_sasl=False, hs2_kerberos_principal=None)
+    file(os.path.join(tmpdir, 'hive-site.xml'), 'w').write(xml)
+
+    beeswax.hive_site.reset()
+    saved = beeswax.conf.BEESWAX_HIVE_CONF_DIR
+    beeswax.conf.BEESWAX_HIVE_CONF_DIR = Getter()
+
+    is_local, host, port, kerberos_principal = beeswax.hive_site.get_metastore()
+    assert_true(is_local)
+    # Local so don't use hive-site.xml
+    assert_not_equal(host, 'darkside-1234')
+    assert_not_equal(port, 9999)
+    assert_not_equal(kerberos_principal, 'test/test.com@TEST.COM')
+    assert_equal(beeswax.hive_site.get_conf()['hive.metastore.warehouse.dir'], u'/abc')
+    assert_equal(beeswax.hive_site.get_hiveserver2_kerberos_principal('localhost'), None)
+    assert_equal(beeswax.hive_site.get_hiveserver2_authentication(), 'NONE')
+  finally:
+    beeswax.hive_site.reset()
+    if saved is not None:
+      beeswax.conf.BEESWAX_HIVE_CONF_DIR = saved
+    shutil.rmtree(tmpdir)
+
+
+def test_hive_site_multi_metastore_uris():
+  """Test hive-site parsing"""
   tmpdir = tempfile.mkdtemp()
   saved = None
   try:
@@ -1976,8 +2141,25 @@ def search_log_line(component, expected_log, all_logs):
 
 
 def test_hiveserver2_get_security():
-  make_logged_in_client()
-  user = User.objects.get(username='test')
+  principal = get_query_server_config('beeswax')['principal']
+  assert_true(principal.startswith('hue/'), principal)
+
+  principal = get_query_server_config('impala')['principal']
+  assert_true(principal.startswith('impala/'), principal)
+
+  beeswax_query_server = {'server_name': 'beeswax', 'principal': 'hue'}
+  impala_query_server = {'server_name': 'impala', 'principal': 'impala', 'impersonation_enabled': False}
+
+  assert_equal((True, 'PLAIN', 'hue', False), HiveServerClient.get_security(beeswax_query_server))
+  assert_equal((False, 'GSSAPI', 'impala', False), HiveServerClient.get_security(impala_query_server))
+
+  cluster_conf = hadoop.cluster.get_cluster_conf_for_job_submission()
+  finish = cluster_conf.SECURITY_ENABLED.set_for_testing(True)
+  try:
+    assert_equal((True, 'GSSAPI', 'impala', False), HiveServerClient.get_security(impala_query_server))
+  finally:
+    finish()
+
   # Bad but easy mocking
   hive_site.get_conf()
 
@@ -2000,25 +2182,9 @@ def test_hiveserver2_get_security():
 
     hive_site._HIVE_SITE_DICT[hive_site._CNF_HIVESERVER2_AUTHENTICATION] = 'NOSASL'
     hive_site._HIVE_SITE_DICT[hive_site._CNF_HIVESERVER2_IMPERSONATION] = 'true'
-    assert_equal((False, 'NOSASL', 'hive', True), HiveServerClient(beeswax_query_server, user).get_security())
+    assert_equal((False, 'NOSASL', 'hue', True), HiveServerClient.get_security(beeswax_query_server))
     hive_site._HIVE_SITE_DICT[hive_site._CNF_HIVESERVER2_AUTHENTICATION] = 'KERBEROS'
-    assert_equal((True, 'GSSAPI', 'hive', True), HiveServerClient(beeswax_query_server, user).get_security())
-
-    # Impala
-    impala_query_server = {'server_name': 'impala', 'principal': 'impala', 'impersonation_enabled': False}
-    impala_query_server.update(default_query_server)
-    assert_equal((False, 'GSSAPI', 'impala', False), HiveServerClient(impala_query_server, user).get_security())
-
-    impala_query_server = {'server_name': 'impala', 'principal': 'impala', 'impersonation_enabled': True}
-    impala_query_server.update(default_query_server)
-    assert_equal((False, 'GSSAPI', 'impala', True), HiveServerClient(impala_query_server, user).get_security())
-
-    cluster_conf = hadoop.cluster.get_cluster_conf_for_job_submission()
-    finish = cluster_conf.SECURITY_ENABLED.set_for_testing(True)
-    try:
-      assert_equal((True, 'GSSAPI', 'impala', True), HiveServerClient(impala_query_server, user).get_security())
-    finally:
-      finish()
+    assert_equal((True, 'GSSAPI', 'hue', True), HiveServerClient.get_security(beeswax_query_server))
   finally:
     if prev is not None:
       hive_site._HIVE_SITE_DICT[hive_site._CNF_HIVESERVER2_AUTHENTICATION] = prev
@@ -2159,7 +2325,7 @@ def hive_site_xml(is_local=False, use_sasl=False, thrift_uris='thrift://darkside
       </property>
 
       <property>
-        <name>hive.server2.authentication</name>
+        <name>hive.metastore.sasl.enabled</name>
         <value>%(hs2_authentication)s</value>
       </property>
 

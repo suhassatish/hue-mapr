@@ -17,6 +17,7 @@
 
 from nose.tools import assert_true, assert_false, assert_equal
 
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.test.client import Client
 from django.conf import settings
@@ -70,170 +71,19 @@ class TestLoginWithHadoop(PseudoHdfsTestBase):
     # 'Could not create home directory.' won't show up because the messages are consumed before
 
 
-class TestLdapLogin(PseudoHdfsTestBase):
-  reset = []
-
-  @classmethod
-  def setup_class(cls):
-    PseudoHdfsTestBase.setup_class()
-
-    cls.backend = django_auth_ldap_backend.LDAPBackend
-    django_auth_ldap_backend.LDAPBackend = MockLdapBackend
-
-    # Need to recreate LdapBackend class with new monkey patched base class
-    reload(backend)
-
-    cls.old_backends = settings.AUTHENTICATION_BACKENDS
-    settings.AUTHENTICATION_BACKENDS = ("desktop.auth.backend.LdapBackend",)
-
-  @classmethod
-  def teardown_class(cls):
-    django_auth_ldap_backend.LDAPBackend = cls.backend
-
-    # Need to recreate LdapBackend class with old base class
-    reload(backend)
-
-    settings.AUTHENTICATION_BACKENDS = cls.old_backends
-
-  def tearDown(self):
-    for finish in self.reset:
-      finish()
-
-  def setUp(self):
-    # Simulate first login ever
-    User.objects.all().delete()
-    self.c = Client()
-
-    self.reset.append(conf.LDAP.LDAP_URL.set_for_testing('does not matter'))
-
-  def test_login(self):
-    response = self.c.get('/accounts/login/')
-    assert_equal(200, response.status_code, "Expected ok status.")
-    assert_false(response.context['first_login_ever'])
-
-    response = self.c.post('/accounts/login/', {
-        'username': "ldap1",
-        'password': "ldap1"
-    })
-    assert_equal(302, response.status_code, "Expected ok redirect status.")
-    assert_true(self.fs.exists("/user/ldap1"))
-
-    response = self.c.get('/accounts/login/')
-    assert_equal(200, response.status_code, "Expected ok status.")
-    assert_false(response.context['first_login_ever'])
-
-  def test_login_home_creation_failure(self):
-    response = self.c.get('/accounts/login/')
-    assert_equal(200, response.status_code, "Expected ok status.")
-    assert_false(response.context['first_login_ever'])
-
-    # Create home directory as a file in order to fail in the home creation later
-    cluster = pseudo_hdfs4.shared_cluster()
-    fs = cluster.fs
-    assert_false(cluster.fs.exists("/user/ldap2"))
-    fs.do_as_superuser(fs.create, "/user/ldap2")
-
-    response = self.c.post('/accounts/login/', {
-        'username':" ldap2",
-        'password': "ldap2"
-    }, follow=True)
-    assert_equal(200, response.status_code, "Expected ok status.")
-    assert_true('/beeswax' in response.content, response.content)
-    # Custom login process should not do 'http-equiv="refresh"' but call the correct view
-    # 'Could not create home directory.' won't show up because the messages are consumed before
-
-  def test_login_ignore_case(self):
-    self.reset.append(conf.LDAP.IGNORE_USERNAME_CASE.set_for_testing(True))
-
-    response = self.c.post('/accounts/login/', {
-        'username': "LDAP1",
-        'password': "ldap1"
-    })
-    assert_equal(302, response.status_code, "Expected ok redirect status.")
-    assert_equal(1, len(User.objects.all()))
-    assert_equal('LDAP1', User.objects.all()[0].username)
-
-    self.c.logout()
-
-    response = self.c.post('/accounts/login/', {
-        'username': "ldap1",
-        'password': "ldap1"
-    })
-    assert_equal(302, response.status_code, "Expected ok redirect status.")
-    assert_equal(1, len(User.objects.all()))
-    assert_equal('LDAP1', User.objects.all()[0].username)
-
-  def test_login_force_lower_case(self):
-    self.reset.append(conf.LDAP.FORCE_USERNAME_LOWERCASE.set_for_testing(True))
-
-    response = self.c.post('/accounts/login/', {
-        'username': "LDAP1",
-        'password': "ldap1"
-    })
-    assert_equal(302, response.status_code, "Expected ok redirect status.")
-    assert_equal(1, len(User.objects.all()))
-
-    self.c.logout()
-
-    response = self.c.post('/accounts/login/', {
-        'username': "ldap1",
-        'password': "ldap1"
-    })
-    assert_equal(302, response.status_code, "Expected ok redirect status.")
-    assert_equal(1, len(User.objects.all()))
-    assert_equal('ldap1', User.objects.all()[0].username)
-
-  def test_login_force_lower_case_and_ignore_case(self):
-    self.reset.append(conf.LDAP.IGNORE_USERNAME_CASE.set_for_testing(True))
-    self.reset.append(conf.LDAP.FORCE_USERNAME_LOWERCASE.set_for_testing(True))
-
-    response = self.c.post('/accounts/login/', {
-        'username': "LDAP1",
-        'password': "ldap1"
-    })
-    assert_equal(302, response.status_code, "Expected ok redirect status.")
-    assert_equal(1, len(User.objects.all()))
-    assert_equal('ldap1', User.objects.all()[0].username)
-
-    self.c.logout()
-
-    response = self.c.post('/accounts/login/', {
-        'username': "ldap1",
-        'password': "ldap1"
-    })
-    assert_equal(302, response.status_code, "Expected ok redirect status.")
-    assert_equal(1, len(User.objects.all()))
-    assert_equal('ldap1', User.objects.all()[0].username)
-
-  def test_import_groups_on_login(self):
-    self.reset.append(conf.LDAP.SYNC_GROUPS_ON_LOGIN.set_for_testing(True))
-    ldap_access.CACHED_LDAP_CONN = LdapTestConnection()
-
-    response = self.c.post('/accounts/login/', {
-      'username': "curly",
-      'password': "ldap1"
-    })
-    assert_equal(302, response.status_code, response.status_code)
-    assert_equal(1, len(User.objects.all()))
-    # The two curly are a part of in LDAP and the default group.
-    assert_equal(3, User.objects.all()[0].groups.all().count(), User.objects.all()[0].groups.all())
-
-
 class TestRemoteUserLogin(object):
   reset = []
 
   def setUp(self):
     User.objects.all().delete()
-    self.reset.append( conf.AUTH.BACKEND.set_for_testing('desktop.auth.backend.RemoteUserDjangoBackend') )
-    self.reset.append( conf.AUTH.REMOTE_USER_HEADER.set_for_testing('REMOTE_USER') ) # Set for middlware
     self.backends = settings.AUTHENTICATION_BACKENDS
     settings.AUTHENTICATION_BACKENDS = ('desktop.auth.backend.RemoteUserDjangoBackend',)
-    self.remote_user_middleware_header = middleware.HueRemoteUserMiddleware.header
-    middleware.HueRemoteUserMiddleware.header = conf.AUTH.REMOTE_USER_HEADER.get() # Set for middlware
+    self.reset.append( conf.AUTH.BACKEND.set_for_testing('desktop.auth.backend.RemoteUserDjangoBackend') )
+    self.reset.append( conf.AUTH.REMOTE_USER_HEADER.set_for_testing('REMOTE_USER') )
     self.c = Client()
 
   def tearDown(self):
-    middleware.HueRemoteUserMiddleware.header = self.remote_user_middleware_header
+    User.objects.all().delete()
     settings.AUTHENTICATION_BACKENDS = self.backends
     for finish in self.reset:
       finish()

@@ -20,6 +20,9 @@ import re
 
 from operator import itemgetter
 
+from operator import itemgetter
+
+from desktop.conf import KERBEROS
 from desktop.lib import thrift_util
 from desktop.conf import LDAP_PASSWORD
 from hadoop import cluster
@@ -106,7 +109,7 @@ class HiveServerTable(Table):
     except:
       # Impala use non extended describe and 'col' instead of 'col_name'
       return cols
-
+ 
   @property
   def comment(self):
     return HiveServerTRow(self.table, self.table_schema).col('REMARKS')
@@ -123,22 +126,6 @@ class HiveServerTable(Table):
       return describe_text + rows[detailed_row_index + 1]['col_name']
     except:
       return describe_text
-
-  @property
-  def properties(self):
-    # Ugly but would need a recursive parsing to be clean
-    no_table = re.sub('\)$', '', re.sub('^Table\(', '', self.extended_describe))
-    properties = re.sub(', sd:StorageDescriptor\(cols.+?\]', '', no_table).split(', ')
-    props = []
-
-    for prop in properties:
-      key_val = prop.rsplit(':', 1)
-      if len(key_val) == 1:
-        key_val = key_val[0].rsplit('=', 1)
-      if len(key_val) == 2:
-        props.append(key_val)
-
-    return props
 
 
 class HiveServerTRowSet:
@@ -299,21 +286,12 @@ class HiveServerClient:
     self.query_server = query_server
     self.user = user
 
-    use_sasl, mechanism, kerberos_principal_short_name, impersonation_enabled = self.get_security()
+    use_sasl, mechanism, kerberos_principal_short_name, impersonation_enabled = HiveServerClient.get_security(query_server)
     LOG.info('use_sasl=%s, mechanism=%s, kerberos_principal_short_name=%s, impersonation_enabled=%s' % (
              use_sasl, mechanism, kerberos_principal_short_name, impersonation_enabled))
 
     self.use_sasl = use_sasl
-    self.kerberos_principal_short_name = kerberos_principal_short_name
     self.impersonation_enabled = impersonation_enabled
-
-    if self.query_server['server_name'] == 'impala':
-      ssl_enabled = False
-      timeout = impala_conf.SERVER_CONN_TIMEOUT.get()
-    else:
-      ssl_enabled = beeswax_conf.SSL.ENABLED.get()
-      timeout = beeswax_conf.SERVER_CONN_TIMEOUT.get()
-
     self._client = thrift_util.get_client(TCLIService.Client,
                                           query_server['server_host'],
                                           query_server['server_port'],
@@ -330,8 +308,9 @@ class HiveServerClient:
                                           validate=beeswax_conf.SSL.VALIDATE.get())
 
 
-  def get_security(self):
-    principal = self.query_server['principal']
+  @classmethod
+  def get_security(cls, query_server):
+    principal = query_server['principal']
     impersonation_enabled = False
 
     if principal:
@@ -343,23 +322,31 @@ class HiveServerClient:
       cluster_conf = cluster.get_cluster_conf_for_job_submission()
       use_sasl = cluster_conf is not None and cluster_conf.SECURITY_ENABLED.get()
       mechanism = HiveServerClient.HS2_MECHANISMS['KERBEROS']
-      impersonation_enabled = self.query_server['impersonation_enabled']
+      impersonation_enabled = query_server['impersonation_enabled']
     else:
       hive_mechanism = hive_site.get_hiveserver2_authentication()
       if hive_mechanism not in HiveServerClient.HS2_MECHANISMS:
         raise Exception(_('%s server authentication not supported. Valid are %s.' % (hive_mechanism, HiveServerClient.HS2_MECHANISMS.keys())))
       use_sasl = hive_mechanism in ('KERBEROS', 'NONE')
-      mechanism = HiveServerClient.HS2_MECHANISMS[hive_mechanism]
+      mechanism = 'NOSASL'
+      if use_sasl:
+        mechanism = HiveServerClient.HS2_MECHANISMS[hive_mechanism]
       impersonation_enabled = hive_site.hiveserver2_impersonation_enabled()
+
+    if principal:
+      kerberos_principal_short_name = principal.split('/', 1)[0]
+    else:
+      kerberos_principal_short_name = None
 
     return use_sasl, mechanism, kerberos_principal_short_name, impersonation_enabled
 
 
   def open_session(self, user):
-    kwargs = {
-        'username': user.username, # If SASL, it gets the username from the authentication mechanism" since it dependents on it.
-        'configuration': {},
-    }
+    kwargs = {'username': user.username, 'configuration': {}}
+
+    if self.use_sasl:
+      kerberos_principal_short_name = KERBEROS.HUE_PRINCIPAL.get().split('/', 1)[0]
+      kwargs.update({'username': kerberos_principal_short_name})
 
     if self.impersonation_enabled:
       kwargs.update({'username': 'hue'})
@@ -369,9 +356,6 @@ class HiveServerClient:
 
     if self.query_server['server_name'] == 'beeswax': # All the time
       kwargs['configuration'].update({'hive.server2.proxy.user': user.username})
-      if LDAP_PASSWORD.get(): # HiveServer2 supports pass-through LDAP authentication.
-        kwargs['username'] = 'hue'
-        kwargs['password'] = LDAP_PASSWORD.get()
 
     req = TOpenSessionReq(**kwargs)
     res = self._client.OpenSession(req)
@@ -450,7 +434,7 @@ class HiveServerClient:
     req = TGetTablesReq(schemaName=database, tableName=table_names)
     res = self.call(self._client.GetTables, req)
 
-    results, schema = self.fetch_result(res.operationHandle, max_rows=5000)
+    results, schema = self.fetch_result(res.operationHandle)
     self.close_operation(res.operationHandle)
 
     return HiveServerTRowSet(results.results, schema.schema).cols(('TABLE_NAME',))
@@ -471,15 +455,27 @@ class HiveServerClient:
     (desc_results, desc_schema), operation_handle = self.execute_statement(query)
     self.close_operation(operation_handle)
 
+    if self.query_server['server_name'] == 'impala':
+      # Impala does not supported extended
+      query = 'DESCRIBE %s' % table_name
+    else:
+      query = 'DESCRIBE EXTENDED %s' % table_name
+    (desc_results, desc_schema), operation_handle = self.execute_statement(query)
+    self.close_operation(operation_handle)
+
     return HiveServerTable(table_results.results, table_schema.schema, desc_results.results, desc_schema.schema)
 
 
-  def execute_query(self, query, max_rows=1000):
+  def execute_query(self, query, max_rows=5000):
     configuration = self._get_query_configuration(query)
     return self.execute_query_statement(statement=query.query['query'], max_rows=max_rows, configuration=configuration)
 
 
-  def execute_query_statement(self, statement, max_rows=1000, configuration={}):
+  def execute_query_statement(self, statement, max_rows=5000, configuration={}):
+    # Only execute_async_query() supports configuration
+    if self.query_server['server_name'] == 'beeswax':
+      self.execute_statement(statement='SET hive.server2.blocking.query=true')
+
     (results, schema), operation_handle = self.execute_statement(statement=statement, max_rows=max_rows, configuration=configuration)
     return HiveServerDataTable(results, schema, operation_handle)
 
@@ -503,7 +499,8 @@ class HiveServerClient:
     return self.execute_async_statement(statement=query_statement, confOverlay=configuration)
 
 
-  def execute_statement(self, statement, max_rows=1000, configuration={}):
+
+  def execute_statement(self, statement, max_rows=5000, configuration={}):
     req = TExecuteStatementReq(statement=statement.encode('utf-8'), confOverlay=configuration)
     res = self.call(self._client.ExecuteStatement, req)
 
@@ -521,7 +518,8 @@ class HiveServerClient:
                                  modified_row_count=res.operationHandle.modifiedRowCount)
 
 
-  def fetch_data(self, operation_handle, orientation=TFetchOrientation.FETCH_NEXT, max_rows=1000):
+
+  def fetch_data(self, operation_handle, orientation=TFetchOrientation.FETCH_NEXT, max_rows=5000):
     # The client should check for hasMoreRows and fetch until the result is empty dues to a HS2 bug
     results, schema = self.fetch_result(operation_handle, orientation, max_rows)
     return HiveServerDataTable(results, schema, operation_handle)
@@ -605,9 +603,8 @@ class HiveServerTableCompatible(HiveServerTable):
   @property
   def cols(self):
     return [type('Col', (object,), {'name': col.get('col_name', '').strip(),
-                                    'type': col.get('data_type', col.get('col_type', '')).strip(), # Impala is col_type
+                                    'type': col.get('data_type', ''),
                                     'comment': col.get('comment', '').strip(), }) for col in HiveServerTable.cols.fget(self)]
-
 
 class ResultCompatible:
 
@@ -676,11 +673,6 @@ class HiveServerClientCompatible(object):
     return HiveServerQueryHistory.STATE_MAP[res.operationState]
 
 
-  def get_operation_status(self, handle):
-    operationHandle = handle.get_rpc_handle()
-    return self._client.get_operation_status(operationHandle)
-
-
   def use(self, query):
     data = self._client.execute_query(query)
     self._client.close_operation(data.operation_handle)
@@ -697,7 +689,7 @@ class HiveServerClientCompatible(object):
   def fetch(self, handle, start_over=False, max_rows=None):
     operationHandle = handle.get_rpc_handle()
     if max_rows is None:
-      max_rows = 1000
+      max_rows = 5000
 
     if start_over and not (self.query_server['server_name'] == 'impala' and self.query_server['querycache_rows'] == 0): # Backward compatibility for impala
       orientation = TFetchOrientation.FETCH_FIRST
@@ -707,7 +699,6 @@ class HiveServerClientCompatible(object):
     data_table = self._client.fetch_data(operationHandle, orientation=orientation, max_rows=max_rows)
 
     return ResultCompatible(data_table)
-
 
   def cancel_operation(self, handle):
     operationHandle = handle.get_rpc_handle()
@@ -721,11 +712,6 @@ class HiveServerClientCompatible(object):
   def close_operation(self, handle):
     operationHandle = handle.get_rpc_handle()
     return self._client.close_operation(operationHandle)
-
-
-  def close_session(self, session):
-    operationHandle = session.get_handle()
-    return self._client.close_session(operationHandle)
 
 
   def dump_config(self):

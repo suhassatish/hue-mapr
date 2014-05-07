@@ -16,13 +16,12 @@
 # limitations under the License.
 from optparse import make_option
 
+from useradmin.views import import_ldap_users
+
 from django.core.management.base import BaseCommand, CommandError
 from django.utils.translation import ugettext_lazy as _t, ugettext as _
 
-from desktop.conf import LDAP
-
-from useradmin import ldap_access
-from useradmin.views import import_ldap_users
+from django.utils.translation import ugettext_lazy as _t, ugettext as _
 
 class Command(BaseCommand):
   """
@@ -39,9 +38,6 @@ class Command(BaseCommand):
       make_option("--sync-groups", help=_t("Sync groups of the users."),
                                    action="store_true",
                                    default=False),
-      make_option("--server", help=_t("Server to connect to."),
-                              action="store_true",
-                              default=None),
   )
 
   args = "username"
@@ -52,8 +48,4 @@ class Command(BaseCommand):
 
     import_by_dn = options['dn']
     sync_groups = options['sync_groups']
-    server = options['server']
-
-    connection = ldap_access.get_connection_from_server(server)
-
-    import_ldap_users(connection, user, sync_groups, import_by_dn)
+    import_ldap_users(user, sync_groups, import_by_dn)

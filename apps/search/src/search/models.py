@@ -246,7 +246,7 @@ em {
   <div class="row-fluid">
     <div class="span12">%s</div>
   </div>
-  <br/>
+  <br/>  
 </div>""" % ' '.join(['{{%s}}' % field for field in collection.fields(user)])
 
       result.update_from_post({'template': json.dumps(template)})
@@ -280,52 +280,14 @@ class Collection(models.Model):
     return reverse('search:admin_collection', kwargs={'collection_id': self.id})
 
   def fields(self, user):
-    return sorted([str(field.get('name', '')) for field in self.fields_data(user)])
+    return sorted([field.get('name') for field in self.fields_data(user)])
 
   def fields_data(self, user):
-    schema_fields = SolrApi(SOLR_URL.get(), user).fields(self.name)
-    schema_fields = schema_fields['schema']['fields']
+    solr_schema = SolrApi(SOLR_URL.get(), user).schema(self.name)
+    schema = etree.fromstring(solr_schema)
 
-    dynamic_fields = []
-#    dynamic_fields = SolrApi(SOLR_URL.get(), user).fields(self.name, dynamic=True)
-#    dynamic_fields = dynamic_fields['fields']
-
-    schema_fields.update(dynamic_fields)
-
-    return sorted([{'name': str(field), 'type': str(attributes.get('type', ''))}
-                  for field, attributes in schema_fields.iteritems()])
-
-  @property
-  def properties_dict(self):
-    if not self.properties:
-      self.data = json.dumps({})
-    properties_python = json.loads(self.properties)
-    # Backward compatibility
-    if 'autocomplete' not in properties_python:
-      properties_python['autocomplete'] = False
-    return properties_python
-
-  @property
-  def autocomplete(self):
-    return self.properties_dict['autocomplete']
-
-  @autocomplete.setter
-  def autocomplete(self, autocomplete):
-    properties_ = self.properties_dict
-    properties_['autocomplete'] = autocomplete
-    self.properties = json.dumps(properties_)
-
-  @property
-  def icon(self):
-    if self.name == 'twitter_demo':
-      return '/search/static/art/icon_twitter.png'
-    elif self.name == 'yelp_demo':
-          return '/search/static/art/icon_yelp.png'
-    elif self.name == 'log_demo':
-          return '/search/static/art/icon_logs.png'
-    else:
-          return '/search/static/art/icon_search_24.png'
-
+    return sorted([{'name': field.get('name'), 'type': field.get('type')}
+                   for fields in schema.iter('fields') for field in fields.iter('field')])
 
 def get_facet_field_format(field, type, facets):
   format = ""

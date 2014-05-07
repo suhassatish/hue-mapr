@@ -299,51 +299,6 @@ $.extend(DecisionNode.prototype, ForkNode.prototype, {
  */
 var WorkflowModule = function($, NodeModelChooser, Node, ForkNode, DecisionNode, IdGeneratorTable) {
 
-  function addHooks(workflow, mapping, model, key) {
-    mapping.subscribe(function(value) {
-      workflow.is_dirty(true);
-    });
-  }
-
-  function updateData(mapping, model) {
-    // Unstructured data section.
-    // Assumes ko.mapping was used to create children.
-    // Assumes one of three structures:
-    //   - members are literals
-    //   - members are arrays of literals
-    //   - members are arrays of objects with literal members
-    // The point is to keep any parent containers and replace child observables.
-    // Templates will likely be tied to parent containers... so if we bubble changes
-    // to the parent container... the UI will reflect that.
-    $.each(mapping, function(member, value) {
-      if (member in model) {
-        if ($.isArray(value()) && $.isArray(model[member])) {
-          mapping[member].removeAll();
-          $.each(model[member], function(key, object_or_literal) {
-            if ($.isPlainObject(object_or_literal)) {
-              var obj = {};
-              $.each(object_or_literal, function(key, literal) {
-                obj[key] = ko.mapping.fromJS(literal);
-                obj[key].subscribe(function() {
-                  mapping[member].valueHasMutated();
-                });
-              });
-              mapping[member].push(obj);
-            } else {
-              var literal = ko.mapping.fromJS(object_or_literal);
-              mapping[member].push(literal);
-              literal.subscribe(function() {
-                mapping[member].valueHasMutated();
-              });
-            }
-          });
-        } else {
-          mapping[member](model[member]);
-        }
-      }
-    });
-  }
-
   var module = function(options) {
     var self = this;
 

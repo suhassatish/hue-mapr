@@ -100,11 +100,11 @@ ${ layout.menubar(section='history') }
           <div class="card card-small">
             <h1 class="card-heading simple">${_('History')}</h1>
 
-            <%actionbar:render>
-              <%def name="search()">
-                <input id="filter" type="text" class="input-xxlarge search-query" placeholder="${_('Search for name, query, etc.')}" value="${ filter }">
-              </%def>
-            </%actionbar:render>
+        <%actionbar:render>
+          <%def name="search()">
+            <input id="filter" type="text" class="input-xxlarge search-query" placeholder="${_('Search for name, query, etc.')}" value="${ filter }">
+          </%def>
+        </%actionbar:render>
 
             <div class="card-body">
               <p>

@@ -33,7 +33,7 @@ var Router = {
       multiple: false,
       onComplete: function (id, fileName, response) {
         if(response.response != null)
-          $(document).trigger("error", $(response.response).find('.alert strong').text());
+          $.jHueNotify.error($(response.response).find('.alert strong').text());
         else
           app.views.tabledata.reload();
       }

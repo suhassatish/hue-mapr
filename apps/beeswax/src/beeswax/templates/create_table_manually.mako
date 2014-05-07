@@ -79,74 +79,74 @@ ${ layout.metastore_menubar() }
         <form action="#" method="POST" id="mainForm" class="form-horizontal">
       <div class="steps">
 
-        <div id="step1" class="stepDetails">
-            <fieldset>
-                <div class="alert alert-info"><h3>${_('Create a table')}</h3>${_("Let's start with a name and description for where we'll store your data.")}</div>
-                <div class="control-group">
-                    ${comps.bootstrapLabel(table_form["name"])}
-                    <div class="controls">
-                        ${comps.field(table_form["name"], attrs=dict(
-                            placeholder=_('table_name'),
-                          )
-                        )}
-                        <span  class="help-inline error-inline hide">${_('This field is required. Spaces are not allowed.')}</span>
-                        <p class="help-block">
-                            ${_('Name of the new table. Table names must be globally unique. Table names tend to correspond to the directory where the data will be stored.')}
-                        </p>
-                    </div>
-                </div>
-                <div class="control-group">
-                    ${comps.bootstrapLabel(table_form["comment"])}
-                    <div class="controls">
-                        ${comps.field(table_form["comment"], attrs=dict(
-                          placeholder=_('Optional'),
-                          )
-                        )}
-                        <p class="help-block">
-                            ${_("Use a table comment to describe your table.  For example, note the data's provenance and any caveats users need to know.")}
-                        </p>
-                    </div>
-                </div>
-            </fieldset>
-        </div>
+  <div id="step1" class="stepDetails">
+      <fieldset>
+          <div class="alert alert-info"><h3>${_('Create a table')}</h3>${_("Let's start with a name and description for where we'll store your data.")}</div>
+          <div class="control-group">
+              ${comps.bootstrapLabel(table_form["name"])}
+              <div class="controls">
+                  ${comps.field(table_form["name"], attrs=dict(
+                      placeholder=_('table_name'),
+                    )
+                  )}
+                  <span  class="help-inline error-inline hide">${_('This field is required. Spaces are not allowed.')}</span>
+                  <p class="help-block">
+                      ${_('Name of the new table. Table names must be globally unique. Table names tend to correspond to the directory where the data will be stored.')}
+                  </p>
+              </div>
+          </div>
+          <div class="control-group">
+              ${comps.bootstrapLabel(table_form["comment"])}
+              <div class="controls">
+                  ${comps.field(table_form["comment"], attrs=dict(
+                    placeholder=_('Optional'),
+                    )
+                  )}
+                  <p class="help-block">
+                      ${_("Use a table comment to describe your table.  For example, note the data's provenance and any caveats users need to know.")}
+                  </p>
+              </div>
+          </div>
+      </fieldset>
+  </div>
 
-        <div id="step2" class="stepDetails hide">
-            <fieldset>
-                <div class="alert alert-info"><h3>${_('Choose Your Record Format')}</h3>
-                    ${_("Individual records are broken up into columns either with delimiters (e.g., CSV or TSV) or using a specific serialization/deserialization (SerDe) implementation. (One common specialized SerDe is for parsing out columns with a regular expression.)")}
-                </div>
-                <%
-                    selected = table_form["row_format"].data or table_form["row_format"].field.initial
-                %>
-                <div class="control-group">
-                    <label class="control-label" id="formatRadio">${_('Record format')}</label>
-                    <div class="controls">
-                        <label class="radio">
-                            <input type="radio" name="table-row_format" value="Delimited"
-                                % if selected == "Delimited":
-                                   checked
-                                % endif
-                                    >
-                            ${_('Delimited')}
-                            <span class="help-inline">
-                            ${_('(Data files use delimiters, like commas (CSV) or tabs.)')}
-                            </span>
-                        </label>
-                        <label class="radio">
-                            <input type="radio" name="table-row_format" value="SerDe"
-                                % if selected == "SerDe":
-                                   checked
-                                % endif
-                                    >
-                            ${_('SerDe')}
-                            <span class="help-inline">
-                            ${_('(Enter a specialized serialization implementation.)')}
-                            </span>
-                        </label>
-                    </div>
-                </div>
-            </fieldset>
-        </div>
+  <div id="step2" class="stepDetails hide">
+      <fieldset>
+          <div class="alert alert-info"><h3>${_('Choose Your Record Format')}</h3>
+              ${_("Individual records are broken up into columns either with delimiters (e.g., CSV or TSV) or using a specific serialization/deserialization (SerDe) implementation. (One common specialized SerDe is for parsing out columns with a regular expression.)")}
+          </div>
+          <%
+              selected = table_form["row_format"].data or table_form["row_format"].field.initial
+          %>
+          <div class="control-group">
+              <label class="control-label" id="formatRadio">${_('Record format')}</label>
+              <div class="controls">
+                  <label class="radio">
+                      <input type="radio" name="table-row_format" value="Delimited"
+                          % if selected == "Delimited":
+                             checked
+                          % endif
+                              >
+                      ${_('Delimited')}
+                      <span class="help-inline">
+                      ${_('(Data files use delimiters, like commas (CSV) or tabs.)')}
+                      </span>
+                  </label>
+                  <label class="radio">
+                      <input type="radio" name="table-row_format" value="SerDe"
+                          % if selected == "SerDe":
+                             checked
+                          % endif
+                              >
+                      ${_('SerDe')}
+                      <span class="help-inline">
+                      ${_('(Enter a specialized serialization implementation.)')}
+                      </span>
+                  </label>
+              </div>
+          </div>
+      </fieldset>
+  </div>
 
         <div id="step3" class="stepDetails hide">
             <fieldset>
@@ -225,46 +225,46 @@ ${ layout.metastore_menubar() }
                     <br/>
                 </div>
 
-                <div class="control-group">
-                    <label id="fileFormatRadio" class="control-label">${_('File format')}</label>
-                    <div class="controls">
-                        ${comps.field(table_form["file_format"],
-                        render_default=True,
-                        klass="bw-file_formats",
-                        notitle=True
-                        )}
-                    </div>
-                </div>
-                <div id="inputFormatDetails" class="hide">
-                    <div class="control-group">
-                        ${comps.bootstrapLabel(table_form["input_format_class"])}
-                        <div class="controls">
-                            ${comps.field(table_form["input_format_class"], attrs=dict(
-                            placeholder='com.acme.data.MyInputFormat',
-                            )
-                            )}
-                            <span  class="help-inline error-inline hide">${_('This field is required. Spaces are not allowed.')}</span>
-                            <span class="help-block">
-                                ${_('Java class used to read data.')}
-                            </span>
-                        </div>
-                    </div>
-                    <div class="control-group">
-                        ${comps.bootstrapLabel(table_form["output_format_class"])}
-                        <div class="controls">
-                            ${comps.field(table_form["output_format_class"], attrs=dict(
-                            placeholder='com.acme.data.MyOutputFormat',
-                            )
-                            )}
-                            <span  class="help-inline error-inline hide">${_('This field is required. Spaces are not allowed.')}</span>
-                            <span class="help-block">
-                                ${_('Java class used to write data.')}
-                            </span>
-                        </div>
-                    </div>
-                </div>
-            </fieldset>
-        </div>
+          <div class="control-group">
+              <label id="fileFormatRadio" class="control-label">${_('File format')}</label>
+              <div class="controls">
+                  ${comps.field(table_form["file_format"],
+                  render_default=True,
+                  klass="bw-file_formats",
+                  notitle=True
+                  )}
+              </div>
+          </div>
+          <div id="inputFormatDetails" class="hide">
+              <div class="control-group">
+                  ${comps.bootstrapLabel(table_form["input_format_class"])}
+                  <div class="controls">
+                      ${comps.field(table_form["input_format_class"], attrs=dict(
+                      placeholder='com.acme.data.MyInputFormat',
+                      )
+                      )}
+                      <span  class="help-inline error-inline hide">${_('This field is required. Spaces are not allowed.')}</span>
+                      <span class="help-block">
+                          ${_('Java class used to read data.')}
+                      </span>
+                  </div>
+              </div>
+              <div class="control-group">
+                  ${comps.bootstrapLabel(table_form["output_format_class"])}
+                  <div class="controls">
+                      ${comps.field(table_form["output_format_class"], attrs=dict(
+                      placeholder='com.acme.data.MyOutputFormat',
+                      )
+                      )}
+                      <span  class="help-inline error-inline hide">${_('This field is required. Spaces are not allowed.')}</span>
+                      <span class="help-block">
+                          ${_('Java class used to write data.')}
+                      </span>
+                  </div>
+              </div>
+          </div>
+      </fieldset>
+  </div>
 
         <div id="step5" class="stepDetails hide">
             <fieldset>

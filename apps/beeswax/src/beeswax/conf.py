@@ -131,14 +131,6 @@ def config_validator(user):
       server = dbms.get(user)
       server.get_databases()
   except:
-    res.append((NICE_NAME, _("The application won't work without a running HiveServer2.")))
-
-  try:
-    from hadoop import cluster
-    warehouse = '/user/hive/warehouse'
-    fs = cluster.get_hdfs()
-    fs.stats(warehouse)
-  except Exception:
-    return [(NICE_NAME, _('Failed to access Hive warehouse: %s') % warehouse)]
+    res.append((NICE_NAME, _("The application won't work without a running Beeswax/HiveServer2 server and/or Hive Metastore.")))
 
   return res

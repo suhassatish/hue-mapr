@@ -16,7 +16,7 @@
 # limitations under the License.
 
 from django.utils.translation import ugettext_lazy as _t
-from desktop.lib.conf import Config, UnspecifiedConfigSection, ConfigSection, coerce_bool
+from desktop.lib.conf import Config, UnspecifiedConfigSection, ConfigSection, validate_path, coerce_bool
 import fnmatch
 import logging
 import os
@@ -160,6 +160,10 @@ def config_validator(user):
   mr_down = []
   for name in MR_CLUSTERS.keys():
     cluster = MR_CLUSTERS[name]
+    res.extend(validate_path(cluster.HADOOP_MAPRED_HOME, is_dir=True))
+    res.extend(validate_path(cluster.HADOOP_CONF_DIR, is_dir=True))
+    res.extend(validate_path(cluster.HADOOP_BIN, is_dir=False))
+    mr_down.extend(job_tracker.test_jt_configuration(cluster))
     if cluster.SUBMIT_TO.get():
       mr_down.extend(job_tracker.test_jt_configuration(cluster))
       submit_to.append('mapred_clusters.' + name)

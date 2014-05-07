@@ -118,8 +118,15 @@ class SaveResultsTableForm(forms.Form):
 
   target_table = common.HiveIdentifierField(
                                   label=_t("Table Name"),
-                                  required=True,
-                                  help_text=_t("Name of the new table")) # Can also contain a DB prefixed table name, e.g. DB_NAME.TABLE_NAME
+                                  required=False,
+                                  help_text=_t("Name of the new table"))
+  target_dir = PathField(label=_t("Results Location"),
+                         required=False,
+                         help_text=_t("Empty directory in HDFS to store results."))
+  dependencies = [
+    ('save_target', SAVE_TYPE_TBL, 'target_table'),
+    ('save_target', SAVE_TYPE_DIR, 'target_dir'),
+  ]
 
   def __init__(self, *args, **kwargs):
     self.db = kwargs.pop('db', None)
@@ -129,23 +136,22 @@ class SaveResultsTableForm(forms.Form):
   def clean(self):
     cleaned_data = super(SaveResultsTableForm, self).clean()
 
-    target_table = cleaned_data.get('target_table')
-    if target_table:
-      try:
-        if self.db is not None:
-          name_parts = target_table.split(".")
-          if len(name_parts) == 1:
-            pass
-          elif len(name_parts) == 2:
-            self.target_database, target_table = name_parts
-          else:
-            self._errors['target_table'] = self.error_class([_('Invalid table prefix name')])
-          cleaned_data['target_table'] = target_table # Update table name without the DB prefix
-          self.db.get_table(self.target_database, target_table)
-        self._errors['target_table'] = self.error_class([_('Table already exists')])
-        del cleaned_data['target_table']
-      except Exception:
-        pass
+    if cleaned_data.get('save_target') == SaveResultsForm.SAVE_TYPE_TBL:
+      tbl = cleaned_data.get('target_table')
+      if tbl:
+        try:
+          if self.db is not None:
+            self.db.get_table('default', tbl) # Assumes 'default' DB
+          self._errors['target_table'] = self.error_class([_('Table already exists')])
+          del cleaned_data['target_table']
+        except Exception:
+          pass
+    elif cleaned_data['save_target'] == SaveResultsForm.SAVE_TYPE_DIR:
+      target_dir = cleaned_data['target_dir']
+      if not target_dir.startswith('/'):
+        self._errors['target_dir'] = self.error_class([_('Directory should start with /')])
+      elif self.fs.exists(target_dir):
+        self._errors['target_dir'] = self.error_class([_('Directory already exists.')]) # Overwrite destination directory content
 
     return cleaned_data
 
@@ -368,7 +374,7 @@ PartitionTypeFormSet = simple_formset_factory(PartitionTypeForm, add_label=_t("A
 
 def _clean_databasename(name):
   try:
-    if name in db.get_databases(): # Will always fail
+    if name in db.get_databases():
       raise forms.ValidationError(_('Database "%(name)s" already exists.') % {'name': name})
   except Exception:
     return name

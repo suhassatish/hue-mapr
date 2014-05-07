@@ -20,10 +20,10 @@ import base64
 import json
 import logging
 import re
+import base64
 import StringIO
-import urllib
 
-from avro import datafile, io
+from avro import schema, datafile, io
 
 from django.http import HttpResponse
 from django.utils.translation import ugettext as _
@@ -66,20 +66,14 @@ def api_router(request, url): # On split, deserialize anything
       for i, item in enumerate(data):
         data[i] = deserialize(item) # Sets local binding, needs to set in data
     return data
-
-  decoded_url_params = [urllib.unquote(arg) for arg in re.split(r'(?<!\\)/', url.strip('/'))]
-  url_params = [safe_json_load((arg, request.POST.get(arg[0:16], arg))[arg[0:15] == 'hbase-post-key-'])
-                for arg in decoded_url_params] # Deserialize later
-
+  url_params = [safe_json_load((arg, request.POST.get(arg[0:16], arg))[arg[0:15] == 'hbase-post-key-']) for arg in re.split(r'(?<!\\)/', url.strip('/'))] #deserialize later
   if request.POST.get('dest', False):
     url_params += [request.FILES.get(request.REQUEST.get('dest'))]
-
   return api_dump(HbaseApi().query(*url_params))
 
 def api_dump(response):
-  ignored_fields = ('thrift_spec', '__.+__')
+  ignored_fields = ('thrift_spec', "__.+__")
   trunc_limit = conf.TRUNCATE_LIMIT.get()
-
   def clean(data):
     try:
       json.dumps(data)
@@ -87,7 +81,7 @@ def api_dump(response):
     except:
       cleaned = {}
       lim = [0]
-      if isinstance(data, str): # Not JSON dumpable, meaning some sort of bytestring or byte data
+      if isinstance(data, str): #not JSON dumpable, meaning some sort of bytestring or byte data
         #detect if avro file
         if(data[:3] == '\x4F\x62\x6A'):
           #write data to file in memory
@@ -118,21 +112,4 @@ def api_dump(response):
                                                                            for ignore in ignored_fields]) == 0:
             cleaned[key] = clean(value)
       return cleaned
-
   return HttpResponse(json.dumps({ 'data': clean(response), 'truncated': True, 'limit': trunc_limit }), content_type="application/json")
-
-
-def install_examples(request):
-  result = {'status': -1, 'message': ''}
-
-  if request.method != 'POST':
-    result['message'] = _('A POST request is required.')
-  else:
-    try:
-      hbase_setup.Command().handle_noargs()
-      result['status'] = 0
-    except Exception, e:
-      LOG.exception(e)
-      result['message'] = str(e)
-
-  return HttpResponse(json.dumps(result), mimetype="application/json")

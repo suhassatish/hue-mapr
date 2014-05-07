@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Hue VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2014-03-05 15:04-0800\n"
+"POT-Creation-Date: 2013-08-02 20:43-0700\n"
 "PO-Revision-Date: 2012-11-07 13:08-0800\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: pt_BR <LL@li.org>\n"
@@ -27,7 +27,7 @@ msgstr "Se o Oozie precisa de um cliente para realizar a autenticação no Kerbe
 
 #: src/liboozie/conf.py:40
 msgid "Location on HDFS where the workflows/coordinators are deployed when submitted by a non-owner."
-msgstr "Localização no HDFS em que os fluxos de trabalho/coordinators são implantados quando enviados por um não proprietário."
+msgstr "Localização no HDFS em que os fluxos de trabalho/coordenadores são implantados quando enviados por um não proprietário."
 
 #: src/liboozie/conf.py:68
 msgid "The Oozie server is not available"

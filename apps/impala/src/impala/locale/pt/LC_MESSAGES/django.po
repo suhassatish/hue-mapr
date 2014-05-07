@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2014-03-05 15:05-0800\n"
+"POT-Creation-Date: 2013-08-02 20:43-0700\n"
 "PO-Revision-Date: 2012-07-30 18:50-0700\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: pt <LL@li.org>\n"
@@ -26,8 +26,17 @@ msgid "Port of the Impala Server."
 msgstr "Porta do servidor Impala."
 
 #: src/impala/conf.py:40
+#, fuzzy
+msgid "Beeswax or Hive Server 2 Thrift API used. Choices are: 'beeswax' or 'hiveserver2'."
+msgstr "Beeswax ou Hive Server 2 Thrift API utilizado. As opções são: \"beeswax\" ou \"hiveserver2\"."
+
+#: src/impala/conf.py:45
 msgid "Kerberos principal name for Impala. Typically 'impala/hostname.foo.com'."
-msgstr "Nome principal do Kerberos para o Impala. Normalmente \"'impala/hostname.foo.com\"."
+msgstr "Nome principal do Kerberos para o Impala. Normalmente \"impala/hostname.foo.com\"."
+
+#: src/impala/conf.py:63
+msgid "No available Impalad to send queries to."
+msgstr "Sem Impala disponível para enviar consultas."
 
 #: src/impala/conf.py:46
 msgid "Turn on/off impersonation mechanism when talking to Impala."

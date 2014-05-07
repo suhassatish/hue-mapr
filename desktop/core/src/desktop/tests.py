@@ -28,8 +28,7 @@ import desktop.views as views
 import proxy.conf
 
 from nose.plugins.attrib import attr
-from nose.plugins.skip import SkipTest
-from nose.tools import assert_true, assert_false, assert_equal, assert_not_equal, assert_raises
+from nose.tools import assert_true, assert_equal, assert_not_equal, assert_raises
 from django.conf.urls.defaults import patterns, url
 from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
@@ -498,7 +497,7 @@ def test_error_handling_failure():
   try:
     # Make sure we are showing default 500.html page.
     # See django.test.client#L246
-    assert_raises(AttributeError, c.get, reverse('desktop.views.dump_config'))
+    assert_raises(AttributeError, c.get, '/dump_config')
   finally:
     # Restore the world
     restore_django_debug()

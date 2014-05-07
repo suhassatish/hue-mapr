@@ -137,7 +137,7 @@ ${ components.menubar() }
     $(document).ajaxError(function (event, jqxhr, settings, exception) {
       if (jqxhr.status == 500) {
         window.clearInterval(_runningInterval);
-        $(document).trigger("error", "${_('There was a problem communicating with the server. Refresh the page.')}");
+        $.jHueNotify.error("${_('There was a problem communicating with the server. Refresh the page.')}");
       }
     });
 
@@ -167,14 +167,16 @@ ${ components.menubar() }
 
     function updateRunning(data) {
       if (data != null && data.length > 0) {
-        // Update finished jobs from updateableRows.
-        // jobs missing from response are finished.
-        $.each(updateableRows, function(job_id, job) {
-          if ($.grep(data, function(new_job) {
-            return new_job.shortId == job_id;
-          }).length == 0 ) {
-            callJobDetails(job, true);
-            delete updateableRows[job_id];
+        for (var i = 0; i < newRows.length; i++) {
+          var isDone = true;
+          $(data).each(function (cnt, job) {
+            if (job.id == newRows[i].id) {
+              isDone = false;
+            }
+          });
+          if (isDone) {
+            callJobDetails(newRows[i]);
+            newRows.splice(i, 1);
           }
         });
 
@@ -207,6 +209,15 @@ ${ components.menubar() }
               updateJobRow(job, foundRow);
             }
           }
+          else {
+            updateJobRow(job, foundRow);
+          }
+        });
+      }
+      else {
+        for (var i = 0; i < newRows.length; i++) {
+          callJobDetails(newRows[i]);
+          newRows.splice(i, 1);
         }
       } else {
         // Update finished jobs from updateableRows.

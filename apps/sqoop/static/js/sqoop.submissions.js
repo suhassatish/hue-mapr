@@ -75,8 +75,7 @@ var submissions = (function($) {
       url: '/sqoop/api/submissions/',
       dataType: 'json',
       type: 'GET',
-      success: fetcher_success('submissions', Submission, options),
-      error: fetcher_error('submissions', Submission, options)
+      success: fetcher_success('submissions', Submission, options)
     }, options || {});
     $.ajax(request);
   }

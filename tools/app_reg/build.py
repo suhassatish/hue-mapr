@@ -54,9 +54,9 @@ def make_syncdb():
   """
   make_syncdb() -> True/False
   """
-  statuses = []
+  status = -1
   hue_exec = os.path.join(common.INSTALL_ROOT, 'build', 'env', 'bin', 'hue')
   if os.path.exists(hue_exec):
-    statuses.append( runcmd([ hue_exec, 'syncdb', '--noinput' ]) )
-    statuses.append( runcmd([ hue_exec, 'migrate' ]) )
-  return not any(statuses)
+    cmdv = [ hue_exec, 'syncdb', '--noinput' ]
+    status = runcmd(cmdv)
+  return status == 0

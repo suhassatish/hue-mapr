@@ -34,13 +34,9 @@
       </div>
 
       <div class="modal-content">
-        <div class="container-fluid">
-          <div class="row-fluid">
-            <fieldset class="span12">
-              ${ action_form_fields(action_form, node_type) }
-            </fieldset>
-          </div>
-        </div>
+        <fieldset class="span12">
+          ${ action_form_fields(action_form, node_type) }
+        </fieldset>
       </div>
 
       <div class="modal-footer">
@@ -59,46 +55,22 @@
 % if show_primary:
   % for field in action_form:
     % if field.html_name in ('name', 'description'):
-      ${ utils.render_field_with_error_js(field, field.name, extra_attrs={'class': 'input-xlarge', 'data-bind': 'disable: $root.context().read_only, value: %s' % field.name}) }
+      ${ utils.render_field_with_error_js(field, field.name, extra_attrs={'data-bind': 'disable: $root.context().read_only, value: %s' % field.name}) }
     % endif
   % endfor
 
   ${ utils.render_constant(_('Action type'), node_type) }
 
-
+  <!-- ko if: $root.context().nodes && $root.context().error_node -->
   <div class="control-group ">
     <label class="control-label">
       <a href="javascript:void(0);" id="advanced-btn" onclick="$('#node-advanced-container').toggle('hide')">
-        <i class="fa fa-share"></i> ${ _('Advanced') }</a>
+        <i class="icon-share-alt"></i> ${ _('Advanced') }</a>
     </label>
     <div class="controls"></div>
   </div>
 
   <div id="node-advanced-container" class="hide">
-
-    <div class="control-group">
-      <label class="control-label">${ _('SLA Configuration') }</label>
-      <div class="controls">
-          ${ utils.slaForm() }
-      </div>
-    </div>
-
-    <div class="control-group" data-bind="visible: credentials().length > 0">
-      <label class="control-label">${ _('Credentials') }</label>
-      <div class="controls">
-          <div data-bind="foreach: credentials">
-            <div class="control-group control-row" style="margin-bottom: 2px">
-              <label class="control-label" data-bind="text: name"></label>
-              <div class="controls">
-                <input type="checkbox" data-bind="checked: value"/>
-                <span data-bind="visible: name() == 'hbase'">${ _('Requires hbase-site.xml in job-xml field') }</span>
-              </div>
-            </div>
-          </div>
-      </div>
-    </div>
-
-    <!-- ko if: $root.context().nodes && $root.context().error_node -->
     <div class="control-group">
       <label class="control-label">${_('Error link to')}</label>
       <div class="controls">
@@ -110,15 +82,12 @@
                              optionsValue: function(item) {
                                return item.id();
                              },
-                             value: $root.context().error_node">
-           </select>
+                             value: $root.context().error_node"></select>
         </div>
       </div>
     </div>
-    <!-- /ko -->
-
   </div>
-
+  <!-- /ko -->
 
   <hr/>
 % endif
@@ -141,7 +110,7 @@
     </p>
   % endif
   % if node_type == 'java':
-    % if get_oozie(user).security_enabled:
+    % if get_oozie().security_enabled:
     <br style="clear: both" />
       <p class="alert alert-warn span5">
         ${ _('The delegation token needs to be propagated from the launcher job to the MR job') }.
@@ -161,9 +130,9 @@
 % for field in action_form:
   % if field.html_name not in ('name', 'description', 'node_type', 'job_xml'):
     % if field.html_name in ('capture_output', 'is_single', 'sub_workflow', 'propagate_configuration'):
-      ${ utils.render_field_with_error_js(field, field.name, extra_attrs={'class': 'span11', 'data-bind': 'disable: $root.context().read_only, checked: %s' % field.name}) }
+      ${ utils.render_field_with_error_js(field, field.name, extra_attrs={'data-bind': 'disable: $root.context().read_only, checked: %s' % field.name}) }
     % else:
-      ${ utils.render_field_with_error_js(field, field.name, extra_attrs={'class': 'span11', 'data-bind': 'disable: $root.context().read_only, valueUpdate:"afterkeydown", value: %s' % field.name}) }
+      ${ utils.render_field_with_error_js(field, field.name, extra_attrs={'data-bind': 'disable: $root.context().read_only, valueUpdate:"afterkeydown", value: %s' % field.name}) }
     % endif
   % endif
 % endfor

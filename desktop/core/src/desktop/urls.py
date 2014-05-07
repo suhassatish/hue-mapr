@@ -38,7 +38,8 @@ def static_pattern(urlprefix, root):
   First argument is the url mapping, and second argument is the
   directory to serve.
   """
-  return (r'^%s/(?P<path>.*)$' % urlprefix, 'django.views.static.serve', { 'document_root': root, 'show_indexes': False })
+  return (r'^%s/(?P<path>.*)$' % urlprefix, 'django.views.static.serve',
+   { 'document_root': root, 'show_indexes': False })
 
 
 admin.autodiscover()
@@ -103,15 +104,6 @@ static_patterns = []
 # SAML specific
 if settings.SAML_AUTHENTICATION:
   static_patterns.append((r'^saml2/', include('libsaml.urls')))
-
-# OpenId specific
-if settings.OPENID_AUTHENTICATION:
-    static_patterns.append((r'^openid/', include('libopenid.urls')))
-
-if settings.OAUTH_AUTHENTICATION:
-  static_patterns.append((r'^oauth/', include('liboauth.urls')))
-  static_patterns.append(static_pattern("liboauth_static",
-        os.path.join(os.path.dirname(__file__), "..", '..', '..', "libs/liboauth/src/liboauth/static/")))
 
 # Root each app at /appname if they have a "urls" module
 for app in appmanager.DESKTOP_APPS:

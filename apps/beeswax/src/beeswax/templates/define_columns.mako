@@ -117,7 +117,7 @@ ${ layout.metastore_menubar() }
                                           ${unicode(form["_exists"]) | n}
                                         </td>
                                         % for row in fields_list[:n_rows]:
-                                          ${ comps.getEllipsifiedCell(row[col], "bottom", "dataSample cols-%s" % (loop.index + 1)) }
+                                          ${ comps.getEllipsifiedCell(row[col], "bottom", "dataSample") }
                                         % endfor
                                       </tr>
                                       %endfor

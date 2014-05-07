@@ -41,7 +41,6 @@ function showSection(mainSection, section) {
     $(".section").hide();
     $("#" + section).show();
     highlightMenu(section);
-    $(document).trigger('shown_section', section);
   }
 }
 
@@ -84,7 +83,6 @@ var viewModel = new (function() {
   var self = this;
 
   self.jobWizard = new wizard.Wizard();
-  self.sqoop_errors = ko.observableArray([]);
   self.errors = ko.observable({});
   self.warnings = ko.observable({});
   self.framework = ko.observable();
@@ -134,16 +132,6 @@ var viewModel = new (function() {
     return ko.utils.arrayFilter(self.persistedJobs(), function (job) {
       if (job.name()) {
         return job.name().toLowerCase().indexOf(filter) > -1 || job.type().toLowerCase().indexOf(filter) > -1;
-      } else {
-        return false;
-      }
-    });
-  });
-  self.filteredConnections = ko.computed(function() {
-    var filter = self.filter().toLowerCase();
-    return ko.utils.arrayFilter(self.persistedConnections(), function (connection) {
-      if (connection.name()) {
-        return connection.name().toLowerCase().indexOf(filter) > -1 || connection.type().toLowerCase().indexOf(filter) > -1;
       } else {
         return false;
       }
@@ -318,12 +306,8 @@ var viewModel = new (function() {
   self.saveJob = function() {
     var job = self.job();
     if (job) {
-      if (!self.connection()) {
-        $(document).trigger('connection_missing.job', [self, null, {}]);
-        return;
-      }
-      job.connector_id((self.connector()) ? self.connector().id() : null);
-      job.connection_id((self.connection()) ? self.connection().id() : null);
+      job.connector_id(self.connector().id());
+      job.connection_id(self.connection().id());
       job.save();
     }
   };

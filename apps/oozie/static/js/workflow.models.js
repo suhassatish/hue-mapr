@@ -291,67 +291,61 @@ var MAPPING_OPTIONS = {
       };
       return map_params(options, subscribe);
     }
-  },
-  chmods: {
-    create: function(options) {
-      var parent = options.parent;
-      var subscribe = function(mapping) {
-        mapping.path.subscribe(function(value) {
-          parent.chmods.valueHasMutated();
-        });
-        mapping.permissions.subscribe(function(value) {
-          parent.chmods.valueHasMutated();
-        });
-        mapping.recursive.subscribe(function(value) {
-          parent.chmods.valueHasMutated();
-        });
-      };
-      return map_params(options, subscribe);
-    },
-    update: function(options) {
-      var parent = options.parent;
-      var subscribe = function(mapping) {
-        mapping.path.subscribe(function(value) {
-          parent.chmods.valueHasMutated();
-        });
-        mapping.permissions.subscribe(function(value) {
-          parent.chmods.valueHasMutated();
-        });
-        mapping.recursive.subscribe(function(value) {
-          parent.chmods.valueHasMutated();
-        });
-      };
-      return map_params(options, subscribe);
-    },
-  },
-  touchzs: {
-    create: function(options) {
-      var parent = options.parent;
-      var subscribe = function(mapping) {
-        mapping.name.subscribe(function(value) {
-          parent.touchzs.valueHasMutated();
-        });
-      };
-      return map_params(options, subscribe);
-    },
-    update: function(options) {
-      var parent = options.parent;
-      var subscribe = function(mapping) {
-        mapping.name.subscribe(function(value) {
-          parent.touchzs.valueHasMutated();
-        });
-      };
-      return map_params(options, subscribe);
-    }
-  },
-  data: {
-    create: function(options) {
-      return map_data(options);
-    },
-    update: function(options) {
-      return map_data(options);
-    }
-  }
+   },
+   chmods: {
+     create: function(options) {
+       var parent = options.parent;
+       var subscribe = function(mapping) {
+         mapping.path.subscribe(function(value) {
+           parent.chmods.valueHasMutated();
+         });
+         mapping.permissions.subscribe(function(value) {
+           parent.chmods.valueHasMutated();
+         });
+         mapping.recursive.subscribe(function(value) {
+           parent.chmods.valueHasMutated();
+         });
+       };
+
+       return map_params(options, subscribe);
+     },
+     update: function(options) {
+       var parent = options.parent;
+       var subscribe = function(mapping) {
+         mapping.path.subscribe(function(value) {
+           parent.chmods.valueHasMutated();
+         });
+         mapping.permissions.subscribe(function(value) {
+           parent.chmods.valueHasMutated();
+         });
+         mapping.recursive.subscribe(function(value) {
+           parent.chmods.valueHasMutated();
+         });
+       };
+
+       return map_params(options, subscribe);
+     },
+   },
+   touchzs: {
+     create: function(options) {
+       var parent = options.parent;
+        var subscribe = function(mapping) {
+          mapping.name.subscribe(function(value) {
+            parent.touchzs.valueHasMutated();
+          });
+        };
+        return map_params(options, subscribe);
+     },
+     update: function(options) {
+       var parent = options.parent;
+        var subscribe = function(mapping) {
+          mapping.name.subscribe(function(value) {
+            parent.touchzs.valueHasMutated();
+          });
+        };
+        return map_params(options, subscribe);
+     }
+   }
 };
 
 var ModelModule = function($) {
