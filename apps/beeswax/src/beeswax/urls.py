@@ -21,9 +21,13 @@ from django.conf.urls.defaults import patterns, url
 urlpatterns = patterns('beeswax.views',
   url(r'^$', 'index', name='index'),
 
-  url(r'^execute/?$', 'execute_query', name='execute_query'),
-  url(r'^execute/design/(?P<design_id>\d+)$', 'execute_query', name='execute_design'),
-  url(r'^execute/query/(?P<query_history_id>\d+)$', 'execute_query', name='watch_query_history'),
+  url(r'^execute/(?P<design_id>\d+)?$', 'execute_query', name='execute_query'),
+  url(r'^explain_parameterized/(?P<design_id>\d+)$', 'explain_parameterized_query', name='explain_parameterized_query'),
+  url(r'^execute_parameterized/(?P<design_id>\d+)$', 'execute_parameterized_query', name='execute_parameterized_query'),
+  url(r'^watch/(?P<id>\d+)$', 'watch_query', name='watch_query'),
+  url(r'^watch/json/(?P<id>\d+)$', 'watch_query_refresh_json', name='watch_query_refresh_json'),
+  url(r'^cancel_operation/(?P<query_id>\d+)?$', 'cancel_operation', name='cancel_operation'),
+  url(r'^close_operation/(?P<query_id>\d+)?$', 'close_operation', name='close_operation'),
   url(r'^results/(?P<id>\d+)/(?P<first_row>\d+)$', 'view_results', name='view_results'),
   url(r'^download/(?P<id>\d+)/(?P<format>\w+)$', 'download', name='download'),
 

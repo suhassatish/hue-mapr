@@ -16,7 +16,7 @@ Hue User Guide
 -   [Job Designer](jobdesigner.html)
 -   [Oozie Editor and Dashboard](oozie.html)
 -   [Solr Search](search.html)
--   [ZooKeeper Browser](zookeeper.html)
+-   [Hue Shell](shell.html)
 -   [HBase Browser](hbase.html)
 -   [User Admin](admin.html)
 

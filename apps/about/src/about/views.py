@@ -46,7 +46,7 @@ def admin_wizard(request):
       'apps': dict([(app.name, app) for app in apps]),
       'app_names': app_names,
       'tours_and_tutorials': tours_and_tutorials,
-      'collect_usage': collect_usage(),
+      'trash_enabled': get_trash_interval()
   })
 
 
@@ -57,11 +57,9 @@ def update_preferences(request):
     try:
       settings = Settings.get_settings()
       settings.tours_and_tutorials = request.POST.get('tours_and_tutorials', False)
-      settings.collect_usage = request.POST.get('collect_usage', False)
       settings.save()
       response['status'] = 0
       response['tours_and_tutorials'] = settings.tours_and_tutorials
-      response['collect_usage'] = settings.collect_usage
     except Exception, e:
       response['data'] = str(e)
   else:

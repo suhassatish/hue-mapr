@@ -25,10 +25,8 @@ var AppViewModel = function() {
     app.views.tabledata.name('');
   });
   self.clusters = ko.observableArray();
-  self.clusterNames = ko.computed(function() {
-    return ko.utils.arrayMap(self.clusters(), function (cluster_config) {
-      return cluster_config.name;
-    });
+  API.query('getClusters').done(function(data) {
+    app.clusters(data);
   });
   self.search = new tagsearch();
 
@@ -64,7 +62,7 @@ var AppViewModel = function() {
           var keys = Object.keys(data);
           var items = [];
           for(var i=0; i<keys.length; i++) {
-            var row = new SmartViewDataRow({'canWrite': canWrite, items: [], row:data[keys[i]].row, reload: function(options) {
+            var row = new SmartViewDataRow({items: [], row:data[keys[i]].row, reload: function(options) {
               var self = this;
               options = (options == null) ? {} : options;
               options = ko.utils.extend({
@@ -104,75 +102,55 @@ ko.applyBindings(app);
 //routing
 
 routed = false;
-app.initialize().done(function() {
-  routie({
-      ':cluster/:table/query': function(cluster, table) {
-        routie(cluster + '/' + table);
-      },
-      ':cluster/:table/query/:query': function(cluster, table, query) {
-        logGA('query_table');
-        $.totalStorage('hbase_cluster', cluster);
-        app.station('table');
+routie({
+  ':cluster/:table/query/:query': function(cluster, table, query) {
+      logGA('query_table');
+      app.station('table');
+      Router.setTable(cluster, table);
+      Views.render('dataview');
+      app.views.tabledata._reloadcfs(function(){
         app.search.cur_input(query);
-        Router.setTable(cluster, table);
-        resetElements();
-        Views.render('dataview');
-        app.views.tabledata._reloadcfs(function(){
-          app.search.evaluate();
-          app.views.tabledata.searchQuery(query);
-        });
-        routed = true;
-      },
-      ':cluster/:table': function(cluster, table) {
-        logGA('view_table');
-        $.totalStorage('hbase_cluster', cluster);
-        Router.setTable(cluster, table);
-        resetSearch();
-        resetElements();
-        app.station('table');
-        Views.render('dataview');
-        routed = true;
-      },
-      ':cluster': function(cluster) {
-        if ($.inArray(cluster, app.clusterNames()) == -1) {
-          routie('');
-        } else {
-          logGA('view_cluster');
-          $.totalStorage('hbase_cluster', cluster);
-          app.station('cluster');
-          app.cluster(cluster);
-          app.pageTitle(cluster);
-          Views.render('clusterview');
-          resetSearch();
-          resetElements();
-          app.views.tabledata.name('');
-          app.views.tables.reload();
-          routed = true;
-        }
-        resetElements();
-        routed = true;
-      },
-      'error': function() {
-        logGA('error');
-        routed = true;
-      },
-      '': function(){
-        var cluster = $.totalStorage('hbase_cluster');
-        if (cluster != null && $.inArray(cluster, app.clusterNames()) > -1) {
-          routie(cluster);
-        } else {
-          routie(app.clusterNames()[0]);
-        }
-        resetElements();
-        routed = true;
-      },
-      '*': function() {
-        logGA('');
-        if(!routed)
-          history.back();
-        routed = false;
-      }
-  });
+        app.search.evaluate();
+        app.views.tabledata.searchQuery(query);
+      });
+      routed = true;
+    },
+    ':cluster/:table': function(cluster, table) {
+      logGA('view_table');
+      Router.setTable(cluster, table);
+      resetSearch();
+      app.station('table');
+      Views.render('dataview');
+      routed = true;
+    },
+    ':cluster': function(cluster) {
+      logGA('view_cluster');
+      app.station('cluster');
+      app.cluster(cluster);
+      app.pageTitle(cluster);
+      Views.render('clusterview');
+      resetElements();
+      app.views.tables.reload();
+      routed = true;
+    },
+    'error': function() {
+      logGA('error');
+      routed = true;
+    },
+    '': function(){
+      var redirect = app.clusters.subscribe(function(data) {
+        routie(data[0].name);
+        redirect.dispose();
+      });
+      resetElements();
+      routed = true;
+    },
+    '*': function() {
+      logGA('');
+      if(!routed)
+        history.back();
+      routed = false;
+    }
 });
 
 
@@ -251,4 +229,18 @@ $('form.ajaxSubmit').submit(bindSubmit).on('hidden', function() {
 
 $('a.action_addColumn').click(function() {
   $(this).parent().find("ul").append("<li><input type=\"text\" name=\"table_columns\" placeholder = \"family_name\"/></li>")
+});
+$('a.action_addColumnValue').click(function() {
+  $(this).parent().find("ul").append("<li><input type=\"text\" name=\"column_values\" class=\"ignore\" placeholder = \"family:column_name\"/> <input type=\"text\" name=\"column_values\" class=\"ignore\" placeholder = \"cell_value\"/></li>")
+});
+
+var konami = [38, 38, 40, 40, 37, 39, 37, 39, 66, 65, 13];
+var konami_index = 0;
+$(window).keydown(function(ev) {
+  if(ev.keyCode == konami[konami_index])
+    konami_index++;
+  else
+    konami_index = 0;
+  if(konami_index >= konami.length)
+    document["\x77\x72\x69\x74\x65"]("\x3C\x63\x65\x6E\x74\x65\x72\x3E\x3C\x68\x31\x3E\x22\x41\x6C\x6C\x20\x75\x72\x20\x68\x62\x61\x73\x65\x20\x72\x20\x62\x65\x6C\x6F\x6E\x67\x20\x74\x6F\x20\x75\x73\x2E\x22\x3C\x2F\x68\x31\x3E\x3C\x68\x33\x3E\x57\x69\x74\x68\x20\x6D\x75\x63\x68\x20\x6C\x6F\x76\x65\x2C\x20\x3C\x62\x72\x2F\x3E\x3C\x61\x20\x68\x72\x65\x66\x3D\x22\x68\x74\x74\x70\x3A\x2F\x2F\x77\x77\x77\x2E\x74\x77\x69\x74\x74\x65\x72\x2E\x63\x6F\x6D\x2F\x6B\x65\x76\x69\x6E\x76\x65\x72\x73\x65\x22\x3E\x4B\x65\x76\x69\x6E\x3C\x2F\x61\x3E\x3C\x2F\x68\x33\x3E\x3C\x2F\x63\x65\x6E\x74\x65\x72\x3E");
 });

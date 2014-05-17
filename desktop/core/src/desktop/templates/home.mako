@@ -280,9 +280,7 @@ ${ commonheader(_('Welcome Home'), "home", user) | n,unicode }
     </div>
     <div class="modal-body">
       <p>
-          <label>
-            ${_('Project name')} <input id="tagsNew" type="text" class="input-xlarge">
-          </label>
+        ${ _('Hue is a Web UI for Apache Hadoop. Select an application below.') }
       </p>
     </div>
     <div class="modal-footer">
@@ -306,22 +304,22 @@ ${ commonheader(_('Welcome Home'), "home", user) | n,unicode }
     </div>
 </div>
 
-<div id="documentMoveModal" class="modal hide fade">
-    <div class="modal-header">
-        <a href="#" class="close" data-dismiss="modal">&times;</a>
-        <h3>${_('Move to a project')}</h3>
-    </div>
-    <div class="modal-body">
-        <p>
-          ${_('Select the project you want to move this document to')}
-          <ul class="unstyled">
-            <!-- ko foreach: myTags -->
-              <li>
-                <a href="javascript:void(0)" style="padding-left: 4px" data-bind="click: moveDocFinal">
-                  <i class="fa fa-tag"></i> <span data-bind="text: name"></span>
-                </a>
-              </li>
-            <!-- /ko -->
+    <div class="span4">
+      <div class="widget-box">
+        <div class="widget-title">
+          <span class="icon">
+            <i class="icon-th-list"></i>
+          </span>
+          <h5>${_('Query')}</h5>
+        </div>
+        <div class="widget-content">
+          <ul>
+            ${ app_link("beeswax", "Hive") }
+            ${ app_link("impala", "Impala") }
+            ${ app_link("pig", "Pig") }
+            ${ app_link("search", _('Search')) }
+            ${ app_link("hbase", _('HBase')) }
+            ${ app_link("shell", _('Shell')) }
           </ul>
         </p>
     </div>
@@ -330,23 +328,21 @@ ${ commonheader(_('Welcome Home'), "home", user) | n,unicode }
     </div>
 </div>
 
-
-<div id="documentShareModal" class="modal hide fade">
-  <div class="modal-header">
-    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-    <h3>${_('Sharing settings')}</h3>
-  </div>
-  <div class="modal-body">
-    <p>
-      <div class="row-fluid">
-        <div class="span6">
-          <h4 class="muted" style="margin-top:0px">${_('Read')}</h4>
-          <div data-bind="visible: (selectedDoc().perms.read.users.length == 0 && selectedDoc().perms.read.groups.length == 0)">${_('The document is not shared for read.')}</div>
-          <ul class="unstyled airy" data-bind="foreach: selectedDoc().perms.read.users">
-            <li><span class="badge badge-info badge-left"><i class="fa fa-user"></i> <span data-bind="text: prettifyUsername(id)"></span></span><span class="badge badge-right trash-share" data-bind="click: removeUserReadShare"> <i class="fa fa-times"></i></li>
-          </ul>
-          <ul class="unstyled airy" data-bind="foreach: selectedDoc().perms.read.groups">
-            <li><span class="badge badge-info badge-left"><i class="fa fa-users"></i> ${ _('Group') } &quot;<span data-bind="text: name"></span>&quot;</span><span class="badge badge-right trash-share" data-bind="click: removeGroupReadShare"> <i class="fa fa-times"></i></li>
+    <div class="span4">
+      <div class="widget-box">
+        <div class="widget-title">
+          <span class="icon">
+            <i class="icon-th-list"></i>
+          </span>
+          <h5>${_('Hadoop')}</h5>
+        </div>
+        <div class="widget-content">
+          <ul>
+            ${ app_link("filebrowser", _('Files')) }
+            ${ app_link("jobbrowser", _('Jobs')) }
+            ${ app_link("metastore", _('Tables')) }
+            ${ app_link("sqoop", _('Sqoop 2')) }
+            ${ app_link("jobsub", _('Designs')) }
           </ul>
         </div>
 

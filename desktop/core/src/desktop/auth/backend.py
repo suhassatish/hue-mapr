@@ -323,6 +323,8 @@ class LdapBackend(object):
 
     self._backend = _LDAPBackend()
 
+    self._backend = _LDAPBackend()
+
   def add_ldap_config(self, ldap_config):
     if ldap_config.LDAP_URL.get() is None:
       LOG.warn("Could not find LDAP URL required for authentication.")
@@ -352,16 +354,38 @@ class LdapBackend(object):
         search_bind_results = LDAPSearch(base_dn,
             ldap.SCOPE_SUBTREE, "(&(" + user_name_attr + "=%(user)s)" + user_filter + ")")
 
-      setattr(self._backend.settings, 'USER_SEARCH', search_bind_results)
+    if desktop.conf.LDAP.SEARCH_BIND_AUTHENTICATION.get():
+      # New Search/Bind Auth
+      base_dn = desktop.conf.LDAP.BASE_DN.get()
+      user_name_attr = desktop.conf.LDAP.USERS.USER_NAME_ATTR.get()
+      user_filter = desktop.conf.LDAP.USERS.USER_FILTER.get()
+      if not user_filter.startswith('('):
+        user_filter = '(' + user_filter + ')'
+
+      if desktop.conf.LDAP.BIND_DN.get():
+        bind_dn = desktop.conf.LDAP.BIND_DN.get()
+        ldap_settings.AUTH_LDAP_BIND_DN = bind_dn
+        bind_password = desktop.conf.LDAP.BIND_PASSWORD.get()
+        ldap_settings.AUTH_LDAP_BIND_PASSWORD = bind_password
+
+      if user_filter is None:
+        search_bind_results = LDAPSearch(base_dn,
+            ldap.SCOPE_SUBTREE, "(" + user_name_attr + "=%(user)s)")
+
+      else:
+        search_bind_results = LDAPSearch(base_dn,
+            ldap.SCOPE_SUBTREE, "(&(" + user_name_attr + "=%(user)s)" + user_filter + ")")
+
+      ldap_settings.AUTH_LDAP_USER_SEARCH = search_bind_results
     else:
-      nt_domain = ldap_config.NT_DOMAIN.get()
+      nt_domain = desktop.conf.LDAP.NT_DOMAIN.get()
       if nt_domain is None:
-        pattern = ldap_config.LDAP_USERNAME_PATTERN.get()
+        pattern = desktop.conf.LDAP.LDAP_USERNAME_PATTERN.get()
         pattern = pattern.replace('<username>', '%(user)s')
-        setattr(self._backend.settings, 'USER_DN_TEMPLATE', pattern)
+        ldap_settings.AUTH_LDAP_USER_DN_TEMPLATE = pattern
       else:
         # %(user)s is a special string that will get replaced during the authentication process
-        setattr(self._backend.settings, 'USER_DN_TEMPLATE', "%(user)s@" + nt_domain)
+        ldap_settings.AUTH_LDAP_USER_DN_TEMPLATE = "%(user)s@" + nt_domain
 
     # Certificate-related config settings
     if ldap_config.LDAP_CERT.get():
@@ -372,17 +396,7 @@ class LdapBackend(object):
       setattr(self._backend.settings, 'START_TLS', False)
       ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_NEVER)
 
-  def add_ldap_config_for_server(self, server):
-    if desktop.conf.LDAP.LDAP_SERVERS.get():
-      # Choose from multiple server configs
-      if server in desktop.conf.LDAP.LDAP_SERVERS.get():
-        self.add_ldap_config(desktop.conf.LDAP.LDAP_SERVERS.get()[server])
-    else:
-      self.add_ldap_config(desktop.conf.LDAP)
-
-  def authenticate(self, username=None, password=None, server=None):
-    self.add_ldap_config_for_server(server)
-
+  def authenticate(self, username=None, password=None):
     username_filter_kwargs = ldap_access.get_ldap_user_kwargs(username)
 
     # Do this check up here, because the auth call creates a django user upon first login per user

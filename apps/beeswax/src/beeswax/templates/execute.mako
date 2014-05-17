@@ -936,21 +936,25 @@ ${layout.menubar(section='query')}
 <script src="/static/ext/js/jquery/plugins/jquery-fieldselection.js" type="text/javascript"></script>
 <script src="/beeswax/static/js/autocomplete.utils.js" type="text/javascript" charset="utf-8"></script>
 
-<link rel="stylesheet" href="/static/ext/chosen/chosen.min.css">
-<script src="/static/ext/chosen/chosen.jquery.min.js" type="text/javascript" charset="utf-8"></script>
-
 <script type="text/javascript" charset="utf-8">
-var codeMirror, renderNavigator, resetNavigator, resizeNavigator, dataTable, renderRecent;
+    var HIVE_AUTOCOMPLETE_BASE_URL = "${ autocomplete_base_url | n,unicode }";
+
+    $(document).ready(function(){
+      var queryPlaceholder = "${_('Example: SELECT * FROM tablename, or press CTRL + space')}";
 
 var HIVE_AUTOCOMPLETE_BASE_URL = "${ autocomplete_base_url | n,unicode }";
 var HIVE_AUTOCOMPLETE_FAILS_QUIETLY_ON = [500]; // error codes from beeswax/views.py - autocomplete
 var HIVE_AUTOCOMPLETE_USER = "${ user }";
 
-var HIVE_AUTOCOMPLETE_GLOBAL_CALLBACK = function (data) {
-  if (data != null && data.error) {
-    resetNavigator();
-  }
-};
+      $("#query-name").editable({
+        validate: function (value) {
+          if ($.trim(value) == '') {
+            return "${ _('This field is required.') }";
+          }
+        },
+        success: successfunction,
+        emptytext: "${ _('Query name') }"
+      });
 
 function placeResizePanelHandle() {
   // dynamically positioning the resize panel handle since IE doesn't play well with styles.
@@ -1069,14 +1073,10 @@ $(document).ready(function () {
     });
   });
 
-  $("#columnFilter").jHueDelayedInput(function(){
-    $(".columnRow").removeClass("hide");
-    $(".columnRow").each(function () {
-      if ($(this).text().toLowerCase().indexOf($("#columnFilter").val().toLowerCase()) == -1) {
-        $(this).addClass("hide");
-      }
-    });
-  });
+      $("#id_query-database").change(function () {
+        $.cookie("hueBeeswaxLastDatabase", $(this).val(), {expires: 90});
+        hac_getTables($("#id_query-database").val(), function(){}); //preload tables for the default db
+      });
 
   resizeNavigator = function () {
     $("#navigator .card").css("min-height", ($(window).height() - 150) + "px");
@@ -1395,11 +1395,7 @@ $(document).ready(function () {
       e.preventDefault(); // prevents native menu on FF for Mac from being shown
     });
 
-    var pos = cm.cursorCoords();
-    if ($(".CodeMirror-spinner").length == 0) {
-      $("<i class='fa fa-spinner fa-spin CodeMirror-spinner'></i>").appendTo($("body"));
-    }
-    $(".CodeMirror-spinner").css("top", pos.top + "px").css("left", (pos.left - 4) + "px").show();
+      var queryEditor = $("#queryField")[0];
 
     if ($.totalStorage(hac_getTotalStorageUserPrefix() + 'tables_' + viewModel.database()) == null) {
       CodeMirror.showHint(cm, AUTOCOMPLETE_SET);
@@ -1458,35 +1454,53 @@ $(document).ready(function () {
     }
   }
 
-  function fieldsAutocomplete(cm) {
-    CodeMirror.possibleSoloField = true;
-    try {
-      var _value = getStatementAtCursor().statement;
-      var _from = _value.toUpperCase().indexOf("FROM");
-      if (_from > -1) {
-        var _match = _value.toUpperCase().substring(_from).match(/ ON| LIMIT| WHERE| GROUP| SORT| ORDER BY|;/);
-        var _to = _value.length;
-        if (_match) {
-          _to = _match.index;
-        }
-        var _found = _value.substr(_from, _to).replace(/(\r\n|\n|\r)/gm, "").replace(/from/gi, "").replace(/join/gi, ",").split(",");
-      }
+      % if app_name == 'impala':
+        var AUTOCOMPLETE_SET = CodeMirror.impalaSQLHint;
+      % else:
+        var AUTOCOMPLETE_SET = CodeMirror.hiveQLHint;
+      % endif
 
-      var _foundTable = "";
-      for (var i = 0; i < _found.length; i++) {
-        if ($.trim(_found[i]) != "" && _foundTable == "") {
-          _foundTable = $.trim(_found[i]).split(" ")[0];
+      CodeMirror.onAutocomplete = function (data, from, to) {
+        if (CodeMirror.tableFieldMagic) {
+          codeMirror.replaceRange(" ", from, from);
+          codeMirror.setCursor(from);
+          codeMirror.execCommand("autocomplete");
         }
-      }
-      if (_foundTable != "") {
-        if (hac_tableHasAlias(_foundTable, _value)) {
-          CodeMirror.possibleSoloField = false;
+      };
+
+      CodeMirror.commands.autocomplete = function (cm) {
+        $(document.body).on("contextmenu", function (e) {
+          e.preventDefault(); // prevents native menu on FF for Mac from being shown
+        });
+        if ($.totalStorage('tables_' + $("#id_query-database").val()) == null) {
           CodeMirror.showHint(cm, AUTOCOMPLETE_SET);
+          hac_getTables($("#id_query-database").val(), function () {}); // if preload didn't work, tries again
         }
         else {
-          hac_getTableColumns(viewModel.database(), _foundTable, _value,
-              function (columns) {
-                CodeMirror.catalogFields = columns;
+          hac_getTables($("#id_query-database").val(), function (tables) {
+            CodeMirror.catalogTables = tables;
+            var _before = codeMirror.getRange({line: 0, ch: 0}, {line: codeMirror.getCursor().line, ch: codeMirror.getCursor().ch}).replace(/(\r\n|\n|\r)/gm, " ");
+            CodeMirror.possibleTable = false;
+            CodeMirror.tableFieldMagic = false;
+            if (_before.toUpperCase().indexOf(" FROM ") > -1 && _before.toUpperCase().indexOf(" ON ") == -1 && _before.toUpperCase().indexOf(" WHERE ") == -1 ||
+                _before.toUpperCase().indexOf("REFRESH") > -1 || _before.toUpperCase().indexOf("METADATA") > -1 ) {
+              CodeMirror.possibleTable = true;
+            }
+            CodeMirror.possibleSoloField = false;
+            if (_before.toUpperCase().indexOf("SELECT ") > -1 && _before.toUpperCase().indexOf(" FROM ") == -1 && !CodeMirror.fromDot) {
+              if (codeMirror.getValue().toUpperCase().indexOf("FROM") > -1) {
+                fieldsAutocomplete(cm);
+              }
+              else {
+                CodeMirror.tableFieldMagic = true;
+                CodeMirror.showHint(cm, AUTOCOMPLETE_SET);
+              }
+            }
+            else {
+              if (_before.toUpperCase().indexOf("WHERE ") > -1 && !CodeMirror.fromDot && _before.match(/ON|GROUP|SORT/) == null) {
+                fieldsAutocomplete(cm);
+              }
+              else {
                 CodeMirror.showHint(cm, AUTOCOMPLETE_SET);
               });
         }
@@ -1669,64 +1683,17 @@ $(document).ready(function () {
           if (typeof console != "undefined") {
             console.error(err);
           }
-        }
-      }
-      $("#blueprint").attr("class", "").attr("style", "").empty();
-      $("#blueprint").data("plugin_jHueBlueprint", null);
-      if (graphType == $.jHueBlueprint.TYPES.MAP) {
-        L.DomUtil.get("blueprint")._leaflet = false;
-        if ($("#blueprintLat").val() != "-1" && $("#blueprintLng").val() != "-1") {
-          var _latCol = $("#blueprintLat").val() * 1;
-          var _lngCol = $("#blueprintLng").val() * 1;
-          var _descCol = $("#blueprintDesc").val() * 1;
-          var _lats = [];
-          var _lngs = [];
-          $("#resultTable>tbody>tr>td:nth-child(" + _latCol + ")").each(function (cnt) {
-            _lats.push($.trim($(this).text()) * 1);
-          });
-          $("#resultTable>tbody>tr>td:nth-child(" + _lngCol + ")").each(function (cnt) {
-            _lngs.push($.trim($(this).text()) * 1);
-          });
-          $("#blueprint").height($("#blueprint").parent().height() - 100);
-          try {
-            map = L.map("blueprint").fitBounds(getMapBounds(_lats, _lngs));
-
-            L.tileLayer("http://{s}.tile.osm.org/{z}/{x}/{y}.png", {
-              attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
-            }).addTo(map);
-
-            $("#resultTable>tbody>tr>td:nth-child(" + _latCol + ")").each(function (cnt) {
-              if (cnt < 1000) {
-                if (_descCol != "-1") {
-                  L.marker([$.trim($(this).text()) * 1, $.trim($("#resultTable>tbody>tr:nth-child(" + (cnt + 1) + ")>td:nth-child(" + _lngCol + ")").text()) * 1]).addTo(map).bindPopup($.trim($("#resultTable>tbody>tr:nth-child(" + (cnt + 1) + ")>td:nth-child(" + _descCol + ")").text()));
-                }
-                else {
-                  L.marker([$.trim($(this).text()) * 1, $.trim($("#resultTable>tbody>tr:nth-child(" + (cnt + 1) + ")>td:nth-child(" + _lngCol + ")").text()) * 1]).addTo(map);
-                }
-              }
-            });
-          }
-          catch (err) {
-            if (typeof console != "undefined") {
-              console.error(err);
+          if (_foundTable != "") {
+            if (hac_tableHasAlias(_foundTable, codeMirror.getValue())) {
+              CodeMirror.possibleSoloField = false;
+              CodeMirror.showHint(cm, AUTOCOMPLETE_SET);
             }
-          }
-          if ($("#resultTable>tbody>tr>td:nth-child(" + _latCol + ")").length > 1000){
-            $("#chart .alert").removeClass("hide");
-          }
-        }
-        else {
-          $("#blueprint").addClass("empty").css("text-align", "center").text("${_("Please select the latitude and longitude columns.")}");
-        }
-      }
-      else {
-        if ($("#blueprintX").val() != "-1" && $("#blueprintY").val() != "-1") {
-          var _x = $("#blueprintX").val() * 1;
-          var _y = $("#blueprintY").val() * 1;
-          var _data = [];
-          $("#resultTable>tbody>tr>td:nth-child(" + _x + ")").each(function (cnt) {
-            if (cnt < 1000) {
-              _data.push([$.trim($(this).text()), $.trim($("#resultTable>tbody>tr:nth-child(" + (cnt + 1) + ")>td:nth-child(" + _y + ")").text()) * 1]);
+            else {
+              hac_getTableColumns($("#id_query-database").val(), _foundTable, codeMirror.getValue(),
+                  function (columns) {
+                    CodeMirror.catalogFields = columns;
+                    CodeMirror.showHint(cm, AUTOCOMPLETE_SET);
+                  });
             }
           });
           if ($("#resultTable>tbody>tr>td:nth-child(" + _x + ")").length > 1000){
@@ -1778,8 +1745,27 @@ $(document).ready(function () {
           if (_firstAllString == null && !isNumericColumn(col.type)) {
             _firstAllString = cnt + 1;
           }
-          if (_firstAllNumeric == null && isNumericColumn(col.type)) {
-            _firstAllNumeric = cnt + 1;
+        },
+        onKeyEvent: function (e, s) {
+          if (s.type == "keyup") {
+            if (s.keyCode == 190) {
+              var _line = codeMirror.getLine(codeMirror.getCursor().line);
+              var _partial = _line.substring(0, codeMirror.getCursor().ch);
+              var _table = _partial.substring(_partial.lastIndexOf(" ") + 1, _partial.length - 1);
+              if (codeMirror.getValue().toUpperCase().indexOf("FROM") > -1) {
+                hac_getTableColumns($("#id_query-database").val(), _table, codeMirror.getValue(), function (columns) {
+                  var _cols = columns.split(" ");
+                  for (var col in _cols){
+                    _cols[col] = "." + _cols[col];
+                  }
+                  CodeMirror.catalogFields = _cols.join(" ");
+                  CodeMirror.fromDot = true;
+                  window.setTimeout(function () {
+                    codeMirror.execCommand("autocomplete");
+                  }, 100);  // timeout for IE8
+                });
+              }
+            }
           }
         }
       });
@@ -1815,14 +1801,13 @@ $(document).ready(function () {
     generateGraph($.jHueBlueprint.TYPES.MAP)
   });
 
-  $("#log pre:eq(1)").scroll(function () {
-    if ($(this).scrollTop() + $(this).height() + 20 >= $(this)[0].scrollHeight) {
-      logsAtEnd = true;
-    }
-    else {
-      logsAtEnd = false;
-    }
-  });
+      codeMirror.on("blur", function () {
+        $(document.body).off("contextmenu");
+      });
+
+      codeMirror.on("change", function () {
+        $(".query").val(codeMirror.getValue());
+      });
 
   viewModel.design.watch.logs.subscribe(function(val){
     var _logsEl = $("#log pre:eq(1)");

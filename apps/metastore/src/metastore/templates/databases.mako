@@ -45,37 +45,52 @@ ${ components.menubar() }
             <input id="filterInput" type="text" class="input-xlarge search-query" placeholder="${_('Search for database name')}">
           </%def>
 
-          <%def name="actions()">
-            % if has_write_access:
-              <button id="dropBtn" class="btn toolbarBtn" title="${_('Drop the selected databases')}" disabled="disabled"><i class="fa fa-trash-o"></i>  ${_('Drop')}</button>
-            % endif
-          </%def>
-        </%actionbar:render>
+    <div class="row-fluid">
+        <div class="span3">
+            <div class="well sidebar-nav">
+              % if has_write_access:
+                <ul class="nav nav-list">
+                    <li><a href="${ url('beeswax:create_database') }">${_('Create a new database')}</a></li>
+                </ul>
+              % endif
+            </div>
+        </div>
+        <div class="span9">
+          <%actionbar:render>
+            <%def name="search()">
+              <input id="filterInput" type="text" class="input-xlarge search-query" placeholder="${_('Search for database name')}">
+            </%def>
 
-        <table class="table table-condensed datatables">
-          <thead>
-            <tr>
-              <th width="1%"><div class="hueCheckbox selectAll fa" data-selectables="databaseCheck"></div></th>
-              <th>${_('Database Name')}</th>
-            </tr>
-          </thead>
-          <tbody>
-          % for database in databases:
-            <tr>
-              <td data-row-selector-exclude="true" width="1%">
-                <div class="hueCheckbox databaseCheck fa"
-                   data-view-url="${ url('metastore:show_tables', database=database) }"
-                   data-drop-name="${ database }"
-                   data-row-selector-exclude="true"></div>
-              </td>
-              <td>
-                <a href="${ url('metastore:show_tables', database=database) }" data-row-selector="true">${ database }</a>
-              </td>
-            </tr>
-          % endfor
-          </tbody>
-        </table>
-      </div>
+            <%def name="actions()">
+              % if has_write_access:
+                <button id="dropBtn" class="btn toolbarBtn" title="${_('Drop the selected databases')}" disabled="disabled"><i class="icon-trash"></i>  ${_('Drop')}</button>
+              % endif
+            </%def>
+          </%actionbar:render>
+            <table class="table table-condensed table-striped datatables">
+                <thead>
+                  <tr>
+                    <th width="1%"><div class="hueCheckbox selectAll" data-selectables="databaseCheck"></div></th>
+                    <th>${_('Database Name')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                % for database in databases:
+                  <tr>
+                    <td data-row-selector-exclude="true" width="1%">
+                      <div class="hueCheckbox databaseCheck"
+                           data-view-url="${ url('metastore:show_tables', database=database) }"
+                           data-drop-name="${ database }"
+                           data-row-selector-exclude="true"></div>
+                    </td>
+                    <td>
+                      <a href="${ url('metastore:show_tables', database=database) }" data-row-selector="true">${ database }</a>
+                    </td>
+                  </tr>
+                % endfor
+                </tbody>
+            </table>
+        </div>
     </div>
   </div>
 </div>

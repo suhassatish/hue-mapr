@@ -47,28 +47,6 @@ IMPERSONATION_ENABLED=Config(
   type=coerce_bool,
   default=False)
 
-QUERYCACHE_ROWS=Config(
-  key='querycache_rows',
-  help=_t("Number of initial rows of a resultset to ask Impala to cache in order to"
-          " support re-fetching them for downloading them."
-          " Set to 0 for disabling the option and backward compatibility."),
-  type=int,
-  default=50000)
-
-SERVER_CONN_TIMEOUT = Config(
-  key='server_conn_timeout',
-  default=120,
-  type=int,
-  help=_t('Timeout in seconds for Thrift calls.'))
-
-CLOSE_QUERIES = Config(
-  key="close_queries",
-  help=_t("Hue will try to close the Impala query when the user leaves the editor page. "
-          "This will free all the query resources in Impala, but also make its results inaccessible."),
-  type=coerce_bool,
-  default=True
-)
-
 
 def config_validator(user):
   # dbms is dependent on beeswax.conf (this file)

@@ -284,11 +284,11 @@ class SavedQuery(models.Model):
     try:
       design = SavedQuery.objects.get(id=id)
     except SavedQuery.DoesNotExist, err:
-      msg = _('Cannot retrieve query id %(id)s.') % {'id': id}
+      msg = _('Cannot retrieve Beeswax design id %(id)s.') % {'id': id}
       raise err
 
     if owner is not None and design.owner != owner:
-      msg = _('Query id %(id)s does not belong to user %(user)s.') % {'id': id, 'user': owner}
+      msg = _('Design id %(id)s does not belong to user %(user)s.') % {'id': id, 'user': owner}
       LOG.error(msg)
       raise PopupException(msg)
 

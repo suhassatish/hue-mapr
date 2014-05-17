@@ -43,22 +43,31 @@ class Resource(object):
       return self._path
     return self._path + posixpath.normpath('/' + relpath)
 
-  def _format_response(self, resp):
+  def _get_body(self, resp):
+    try:
+      body = resp.read()
+    except Exception, ex:
+      raise Exception("Command '%s %s' failed: %s" %
+                      (method, path, ex))
+    return body
+
+  def _format_body(self, resp, body):
     """
     Decide whether the body should be a json dict or string
     """
-
-    if len(resp.content) != 0 and resp.headers.get('content-type') and \
-          'application/json' in resp.headers.get('content-type'):
+    if len(body) != 0 and \
+          resp.info().getmaintype() == "application" and \
+          resp.info().getsubtype() == "json":
       try:
-        return resp.json()
+        json_dict = json.loads(body)
+        return json_dict
       except Exception, ex:
-        self._client.logger.exception('JSON decode error: %s' % resp.content)
+        self._client.logger.exception('JSON decode error: %s' % (body,))
         raise ex
     else:
-      return resp.content
+      return body
 
-  def invoke(self, method, relpath=None, params=None, data=None, headers=None, allow_redirects=False):
+  def invoke(self, method, relpath=None, params=None, data=None, headers=None):
     """
     Invoke an API method.
     @return: Raw body or JSON dictionary (if response content type is JSON).
@@ -68,15 +77,14 @@ class Resource(object):
                                 path,
                                 params=params,
                                 data=data,
-                                headers=headers,
-                                allow_redirects=allow_redirects,
-                                urlencode=self._urlencode)
+                                headers=headers)
+    body = self._get_body(resp)
 
     self._client.logger.debug(
         "%s Got response: %s%s" %
-        (method, resp.content[:32], len(resp.content) > 32 and "..." or ""))
+        (method, body[:32], len(body) > 32 and "..." or ""))
 
-    return self._format_response(resp)
+    return self._format_body(resp, body)
 
 
   def get(self, relpath=None, params=None, headers=None):

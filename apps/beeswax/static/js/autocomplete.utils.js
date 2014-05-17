@@ -37,17 +37,12 @@ function hac_jsoncalls(options) {
   }
 }
 
-function hac_hasExpired(timestamp){
-  var TIME_TO_LIVE_IN_MILLIS = 600000; // 10 minutes
-  return (new Date()).getTime() - timestamp > TIME_TO_LIVE_IN_MILLIS;
-}
-
 function hac_getTableAliases(textScanned) {
   var _aliases = {};
-  var _val = textScanned.split("\n").join(" ");
-  var _from = _val.toUpperCase().indexOf("FROM ");
+  var _val = textScanned; //codeMirror.getValue();
+  var _from = _val.toUpperCase().indexOf("FROM");
   if (_from > -1) {
-    var _match = _val.toUpperCase().substring(_from).match(/ ON| LIMIT| WHERE| GROUP| SORT| ORDER BY|;/);
+    var _match = _val.toUpperCase().substring(_from).match(/ON|WHERE|GROUP|SORT/);
     var _to = _val.length;
     if (_match) {
       _to = _match.index;
@@ -99,19 +94,19 @@ function hac_getTableColumns(databaseName, tableName, textScanned, callback) {
             $.totalStorage(hac_getTotalStorageUserPrefix() + 'timestamp_columns_' + databaseName + '_' + tableName, (new Date()).getTime());
           }
         }
-      });
-    }
+        else {
+          $.totalStorage('columns_' + databaseName + '_' + tableName, (data.columns ? data.columns.join(" ") : ""));
+        }
+      }
+    });
   }
   else {
     hac_jsoncalls({
       database: databaseName,
       table: tableName,
       onDataReceived: function (data) {
-        if (typeof HIVE_AUTOCOMPLETE_GLOBAL_CALLBACK == "function") {
-          HIVE_AUTOCOMPLETE_GLOBAL_CALLBACK(data);
-        }
         if (data.error) {
-          hac_errorHandler(data);
+          $.jHueNotify.error(data.error);
         }
         else {
           $.totalStorage(hac_getTotalStorageUserPrefix() + 'columns_' + databaseName + '_' + tableName, (data.columns ? "* " + data.columns.join(" ") : "*"));
@@ -152,18 +147,18 @@ function hac_getTables(databaseName, callback) {
             $.totalStorage(hac_getTotalStorageUserPrefix() + 'timestamp_tables_' + databaseName, (new Date()).getTime());
           }
         }
-      });
-    }
+        else {
+          $.totalStorage('tables_' + databaseName, data.tables.join(" "));
+        }
+      }
+    });
   }
   else {
     hac_jsoncalls({
       database: databaseName,
       onDataReceived: function (data) {
-        if (typeof HIVE_AUTOCOMPLETE_GLOBAL_CALLBACK == "function") {
-          HIVE_AUTOCOMPLETE_GLOBAL_CALLBACK(data);
-        }
         if (data.error) {
-          hac_errorHandler(data);
+          $.jHueNotify.error(data.error);
         }
         else {
           if (data.tables) {
@@ -174,17 +169,5 @@ function hac_getTables(databaseName, callback) {
         }
       }
     });
-  }
-}
-
-function hac_errorHandler(data) {
-  $(document).trigger('error.autocomplete');
-  if (typeof HIVE_AUTOCOMPLETE_FAILS_SILENTLY_ON == "undefined" || data.code == null || HIVE_AUTOCOMPLETE_FAILS_SILENTLY_ON.indexOf(data.code) == -1){
-    if (typeof HIVE_AUTOCOMPLETE_FAILS_QUIETLY_ON != "undefined" && HIVE_AUTOCOMPLETE_FAILS_QUIETLY_ON.indexOf(data.code) > -1){
-      $(document).trigger('info', data.error);
-    }
-    else {
-      $(document).trigger('error', data.error);
-    }
   }
 }

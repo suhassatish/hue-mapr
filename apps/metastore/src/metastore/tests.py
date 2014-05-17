@@ -198,7 +198,7 @@ class TestMetastoreWithHadoop(BeeswaxSampleProvider):
     # Try it with partitions
     resp = self.client.post("/metastore/table/default/test_partitions/load", dict(path="/tmp/foo", partition_0="alpha", partition_1="beta"), follow=True)
     query = QueryHistory.objects.latest('id')
-    assert_equal_mod_whitespace(query.query, "LOAD DATA INPATH '/tmp/foo' INTO TABLE `default.test_partitions` PARTITION (baz='alpha', boom='beta')")
+    assert_equal_mod_whitespace("LOAD DATA INPATH '/tmp/foo' INTO TABLE `default.test_partitions` PARTITION (baz='alpha', boom='beta')", query.query)
 
 
   def test_has_write_access_frontend(self):
@@ -215,14 +215,14 @@ class TestMetastoreWithHadoop(BeeswaxSampleProvider):
       assertz("Drop</button>" in response.content, response.content)
       assertz("Create a new table" in response.content, response.content)
 
-    check(client, assert_false)
+    check(client, assert_true)
 
-    # Add access
+    # Remove access
     group, created = Group.objects.get_or_create(name='write_access_frontend')
-    perm, created = HuePermission.objects.get_or_create(app='metastore', action='write')
+    perm, created = HuePermission.objects.get_or_create(app='metastore', action='read_only_access')
     GroupPermission.objects.get_or_create(group=group, hue_permission=perm)
 
-    check(client, assert_true)
+    check(client, assert_false)
 
 
   def test_has_write_access_backend(self):
@@ -231,21 +231,22 @@ class TestMetastoreWithHadoop(BeeswaxSampleProvider):
     grant_access("write_access_backend", "write_access_backend", "beeswax")
     user = User.objects.get(username='write_access_backend')
 
-    resp = _make_query(client, 'CREATE TABLE test_perm_1 (a int);') # Only fails if we were using Sentry and won't allow SELECT to user
-    resp = wait_for_query_to_finish(client, resp, max=30.0)
+    def check(client, http_code):
+      resp = _make_query(client, 'CREATE TABLE test_perm_1 (a int);')
+      resp = wait_for_query_to_finish(client, resp, max=30.0)
 
-    def check(client, http_codes):
-      resp = client.get('/metastore/tables/drop/default')
-      assert_true(resp.status_code in http_codes, resp.content)
+      resp = client.get('/metastore/tables/drop/default', follow=True)
+      #assert_true('want to delete' in resp.content, resp.content)
+      assert_equal(resp.status_code, http_code, resp.content)
 
-      resp = client.post('/metastore/tables/drop/default', {u'table_selection': [u'test_perm_1']})
-      assert_true(resp.status_code in http_codes, resp.content)
+      resp = client.post('/metastore/tables/drop/default', {u'table_selection': [u'test_perm_1']}, follow=True)
+      assert_equal(resp.status_code, http_code, resp.content)
 
-    check(client, [301]) # Denied
+    check(client, 200)
 
-    # Add access
+    # Remove access
     group, created = Group.objects.get_or_create(name='write_access_backend')
-    perm, created = HuePermission.objects.get_or_create(app='metastore', action='write')
+    perm, created = HuePermission.objects.get_or_create(app='metastore', action='read_only_access')
     GroupPermission.objects.get_or_create(group=group, hue_permission=perm)
 
-    check(client, [200, 302]) # Ok
+    check(client, 500)

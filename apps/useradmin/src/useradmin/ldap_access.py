@@ -45,18 +45,20 @@ def get_connection(ldap_config, search_bind_authentication):
   if CACHED_LDAP_CONN is not None:
     return CACHED_LDAP_CONN
 
-  ldap_url = ldap_config.LDAP_URL.get()
-  username = ldap_config.BIND_DN.get()
-  password = ldap_config.BIND_PASSWORD.get()
-  ldap_cert = ldap_config.LDAP_CERT.get()
+  ldap_url = desktop.conf.LDAP.LDAP_URL.get()
+  nt_domain = desktop.conf.LDAP.NT_DOMAIN.get()
+  username = desktop.conf.LDAP.BIND_DN.get()
+  password = desktop.conf.LDAP.BIND_PASSWORD.get()
+  ldap_cert = desktop.conf.LDAP.LDAP_CERT.get()
+  search_bind_authentication = desktop.conf.LDAP.SEARCH_BIND_AUTHENTICATION.get()
 
   if ldap_url is None:
     raise Exception('No LDAP URL was specified')
 
   if search_bind_authentication:
-    return LdapConnection(ldap_config, ldap_url, username, password, ldap_cert)
+    return LdapConnection(ldap_url, username, password, ldap_cert)
   else:
-    return LdapConnection(ldap_config, ldap_url, get_ldap_username(username, ldap_config.NT_DOMAIN.get()), password, ldap_cert)
+    return LdapConnection(ldap_url, get_ldap_username(username, nt_domain), password, ldap_cert)
 
 def get_ldap_username(username, nt_domain):
   if nt_domain:
@@ -211,8 +213,9 @@ class LdapConnection(object):
             'name': data[group_name_attr][0]
           }
 
-          if group_member_attr in data and 'posixGroup' not in data['objectClass']:
-            ldap_info['members'] = data[group_member_attr]
+          member_attr = desktop.conf.LDAP.GROUPS.GROUP_MEMBER_ATTR.get()
+          if member_attr in data and 'posixGroup' not in data['objectClass']:
+            ldap_info['members'] = data[member_attr]
           else:
             ldap_info['members'] = []
 
@@ -345,17 +348,16 @@ class LdapConnection(object):
       return []
 
   def find_users_of_group(self, dn):
-    ldap_filter = self.ldap_config.USERS.USER_FILTER.get()
-    name_attr = self.ldap_config.USERS.USER_NAME_ATTR.get()
+    ldap_filter = desktop.conf.LDAP.USERS.USER_FILTER.get()
+    name_attr = desktop.conf.LDAP.USERS.USER_NAME_ATTR.get()
     result_data = self.find_members_of_group(dn, name_attr, ldap_filter)
     return self._transform_find_user_results(result_data, name_attr)
 
   def find_groups_of_group(self, dn):
-    ldap_filter = self.ldap_config.GROUPS.GROUP_FILTER.get()
-    name_attr = self.ldap_config.GROUPS.GROUP_NAME_ATTR.get()
-    member_attr = self.ldap_config.GROUPS.GROUP_MEMBER_ATTR.get()
+    ldap_filter = desktop.conf.LDAP.GROUPS.GROUP_FILTER.get()
+    name_attr = desktop.conf.LDAP.GROUPS.GROUP_NAME_ATTR.get()
     result_data = self.find_members_of_group(dn, name_attr, ldap_filter)
-    return self._transform_find_group_results(result_data, name_attr, member_attr)
+    return self._transform_find_group_results(result_data, name_attr)
 
   def _get_root_dn(self):
     return self.ldap_config.BASE_DN.get()

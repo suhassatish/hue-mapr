@@ -27,9 +27,7 @@ from beeswax import hive_site
 from beeswax.conf import HIVE_SERVER_HOST, HIVE_SERVER_PORT,\
   BROWSE_PARTITIONED_TABLE_LIMIT
 from beeswax.design import hql_query
-from beeswax.models import QueryHistory, HIVE_SERVER2, BEESWAX, QUERY_TYPES
-
-from filebrowser.views import location_to_url
+from beeswax.models import QueryHistory, HIVE_SERVER2, BEESWAX
 from desktop.lib.django_util import format_preserving_redirect
 from desktop.lib.exceptions_renderable import PopupException
 
@@ -64,19 +62,26 @@ def get(user, query_server=None):
 
 def get_query_server_config(name='beeswax', server=None):
   if name == 'impala':
-    from impala.conf import SERVER_HOST as IMPALA_SERVER_HOST, SERVER_PORT as IMPALA_SERVER_PORT, \
-        IMPALA_PRINCIPAL, IMPERSONATION_ENABLED, QUERYCACHE_ROWS
-
+    from impala.conf import SERVER_HOST, SERVER_PORT, IMPALA_PRINCIPAL, SERVER_INTERFACE as IMPALA_SERVER_INTERFACE, IMPERSONATION_ENABLED
+    # Backward compatibility until Hue 3.0
+    # If no interface specified and port is beeswax, switch port to HS2 default as we want to use HS2 from now on
+    if IMPALA_SERVER_INTERFACE.get() == 'hiveserver2' and SERVER_PORT.get() == 21000:
+      port = 21050
+    else:
+      port = SERVER_PORT.get()
     query_server = {
         'server_name': 'impala',
         'server_host': IMPALA_SERVER_HOST.get(),
         'server_port': IMPALA_SERVER_PORT.get(),
         'principal': IMPALA_PRINCIPAL.get(),
-        'impersonation_enabled': IMPERSONATION_ENABLED.get(),
-        'querycache_rows': QUERYCACHE_ROWS.get()
+        'impersonation_enabled': IMPERSONATION_ENABLED.get()
     }
   else:
-    kerberos_principal = hive_site.get_hiveserver2_kerberos_principal(HIVE_SERVER_HOST.get())
+    if SERVER_INTERFACE.get() == 'hiveserver2':
+      kerberos_principal = hive_site.get_hiveserver2_kerberos_principal(BEESWAX_SERVER_HOST.get())
+    else:
+      # Beeswaxd runs as 'hue'
+      kerberos_principal = KERBEROS.HUE_PRINCIPAL.get()
 
     query_server = {
         'server_name': 'beeswax', # Aka HiveServer2 now
@@ -151,16 +156,12 @@ class HiveServer2Dbms(object):
 
 
   def close_operation(self, query_handle):
+    # Beeswax does not support close_operation
     if self.server_type == BEESWAX:
-      raise PopupException(_('%s interface does not support close_operation. %s interface does.') % (BEESWAX, HIVE_SERVER2))
+      pass
+    else:
+      return self.client.close_operation(query_handle)
 
-    return self.client.close_operation(query_handle)
-
-  def open_session(self, user):
-    return self.client.open_session(user)
-
-  def close_session(self, session):
-    return self.client.close_session(session)
 
   def cancel_operation(self, query_handle):
     resp = self.client.cancel_operation(query_handle)
@@ -178,7 +179,7 @@ class HiveServer2Dbms(object):
       handle = self.execute_and_wait(query, timeout_sec=5.0)
 
       if handle:
-        result = self.fetch(handle, rows=100)
+        result = self.fetch(handle)
         self.close(handle)
         return result
 
@@ -326,8 +327,10 @@ class HiveServer2Dbms(object):
 
 
   def use(self, database):
-    query = hql_query('USE %s' % database)
-    return self.client.use(query)
+    """Beeswax interface does not support use directly."""
+    if self.server_type == HIVE_SERVER2:
+      query = hql_query('USE %s' % database)
+      return self.client.use(query)
 
 
   def get_log(self, query_handle):
@@ -338,15 +341,9 @@ class HiveServer2Dbms(object):
     return self.client.get_state(handle)
 
 
-  def get_operation_status(self, handle):
-    return self.client.get_operation_status(handle)
-
-
   def execute_and_wait(self, query, timeout_sec=30.0, sleep_interval=0.5):
     """
     Run query and check status until it finishes or timeouts.
-
-    Check status until it finishes or timeouts.
     """
     handle = self.client.query(query)
     curr = time.time()
@@ -504,7 +501,7 @@ def expand_exception(exc, db, handle=None):
     elif hasattr(exc, 'get_rpc_handle') or hasattr(exc, 'log_context'):
       log = db.get_log(exc)
     else:
-      log = ''
+      log = _("No server logs for this query.")
   except Exception, e:
     # Always show something, even if server has died on the job.
     log = _("Could not retrieve logs: %s." % e)

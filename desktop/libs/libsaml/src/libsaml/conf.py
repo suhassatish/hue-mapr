@@ -15,18 +15,29 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import json
+ 
+try:
+  import json
+except ImportError:
+  import simplejson as json
 import os
 
 from django.utils.translation import ugettext_lazy as _t, ugettext as _
 
-from desktop.lib.conf import Config, coerce_bool, coerce_csv
+from desktop.lib.conf import Config, coerce_bool
 
 
 BASEDIR = os.path.dirname(os.path.abspath(__file__))
 
 USERNAME_SOURCES = ('attributes', 'nameid')
 
+
+def csv(value):
+  if isinstance(value, str):
+    return value.split(',')
+  elif isinstance(value, list):
+    return value
+  return None
 
 def dict_list_map(value):
   if isinstance(value, str):
@@ -74,13 +85,13 @@ ALLOW_UNSOLICITED = Config(
 REQUIRED_ATTRIBUTES = Config(
   key="required_attributes",
   default=['uid'],
-  type=coerce_csv,
+  type=csv,
   help=_t("Required attributes to ask for from IdP."))
 
 OPTIONAL_ATTRIBUTES = Config(
   key="optional_attributes",
   default=[],
-  type=coerce_csv,
+  type=csv,
   help=_t("Optional attributes to ask for from IdP."))
 
 METADATA_FILE = Config(

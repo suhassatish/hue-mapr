@@ -59,30 +59,30 @@ ${ components.menubar() }
 </%def>
 
 <div class="container-fluid">
-  <div class="row-fluid">
-    <div class="span3">
-      <div class="sidebar-nav card-small">
-        <ul class="nav nav-list">
-          <li class="nav-header">${_('Actions')}</li>
-          % if has_write_access:
-          <li><a href="#" id="import-data-btn"><i class="fa fa-arrow-circle-o-down"></i> ${_('Import Data')}</a></li>
-          % endif
-          <li><a href="${ url('metastore:read_table', database=database, table=table.name) }"><i class="fa fa-list"></i> ${_('Browse Data')}</a></li>
-          % if has_write_access:
-          <li><a href="#dropTable" data-toggle="modal"><i class="fa fa-trash-o"></i> ${_('Drop')} ${view_or_table_noun}</a></li>
-          % endif
-          <li><a href="${ table.hdfs_link }" rel="${ table.path_location }"><i class="fa fa-share-square-o"></i> ${_('View File Location')}</a></li>
-          % if table.partition_keys:
-          <li><a href="${ url('metastore:describe_partitions', database=database, table=table.name) }"><i class="fa fa-sitemap"></i> ${_('Show Partitions')} (${ len(partitions) })</a></li>
-          % endif
-        </ul>
-      </div>
-    </div>
-    <div class="span9">
-      <div class="card card-small">
-        <h1 class="card-heading simple">${ components.breadcrumbs(breadcrumbs) }</h1>
-        <div class="card-body">
-          <p>
+    <h1>${_('Table')} ${table.name}</h1>
+
+    ${ components.breadcrumbs(breadcrumbs) }
+
+    <div class="row-fluid">
+        <div class="span2">
+            <div class="well sidebar-nav">
+                <ul class="nav nav-list">
+                    <li class="nav-header">${_('Actions')}</li>
+                    % if has_write_access:
+                    <li><a href="#" id="import-data-btn">${_('Import Data')}</a></li>
+                    % endif
+                    <li><a href="${ url('metastore:read_table', database=database, table=table.name) }">${_('Browse Data')}</a></li>
+                    % if has_write_access:
+                    <li><a href="#dropTable" data-toggle="modal">${_('Drop')} ${view_or_table_noun}</a></li>
+                    % endif
+                    <li><a href="${ table.hdfs_link }" rel="${ table.path_location }">${_('View File Location')}</a></li>
+                    % if table.partition_keys:
+                      <li><a href="${ url('metastore:describe_partitions', database=database, table=table.name) }">${_('Show Partitions')} (${ len(partitions) })</a></li>
+                    % endif
+                </ul>
+            </div>
+        </div>
+        <div class="span10">
             % if table.comment:
             <div class="alert alert-info">${ _('Comment:') } ${ table.comment }</div>
             % endif
@@ -224,16 +224,11 @@ ${ components.menubar() }
       ],
     });
 
-    $(".column-selector").on("click", function () {
-      var _t = $("#sample");
-      var _text = $.trim($(this).text().split("(")[0]);
-      var _col = _t.find("th").filter(function() {
-        return $.trim($(this).text()) == _text;
-      });
-      _t.find(".columnSelected").removeClass("columnSelected");
-      _t.find("tr td:nth-child(" + (_col.index() + 1) + ")").addClass("columnSelected");
-      $("a[href='#sample']").click();
-    });
+     % if has_write_access:
+     $.getJSON("${ url('metastore:drop_table', database=database) }", function(data) {
+       $("#dropTableMessage").text(data.title);
+     });
+     % endif
 
     % if has_write_access:
         $.getJSON("${ url('metastore:drop_table', database=database) }", function (data) {

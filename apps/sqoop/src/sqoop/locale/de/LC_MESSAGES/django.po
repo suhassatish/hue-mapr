@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2014-03-05 15:05-0800\n"
+"POT-Creation-Date: 2013-08-02 20:43-0700\n"
 "PO-Revision-Date: 2012-07-30 18:56-0700\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: de <LL@li.org>\n"
@@ -21,38 +21,38 @@ msgstr ""
 msgid "The sqoop server URL."
 msgstr "Die Sqoop-Server-URL."
 
-#: src/sqoop/api/connection.py:54
+#: src/sqoop/api/connection.py:53
 msgid "Could not get connections."
 msgstr "Verbindungen konnten nicht abgerufen werden."
 
-#: src/sqoop/api/connection.py:66 src/sqoop/api/connection.py:90
+#: src/sqoop/api/connection.py:64 src/sqoop/api/connection.py:87
 msgid "Error saving connection"
 msgstr "Fehler beim Speichern der Verbindung"
 
-#: src/sqoop/api/connection.py:75
+#: src/sqoop/api/connection.py:73
 msgid "Could not create connection."
-msgstr "Verbindung konnte nicht erstellt werden."
+msgstr "Verbindung konnte nicht hergestellt werden."
 
-#: src/sqoop/api/connection.py:98
+#: src/sqoop/api/connection.py:95
 msgid "Could not update connection."
 msgstr "Verbindung konnte nicht aktualisiert werden."
 
-#: src/sqoop/api/connection.py:111 src/sqoop/api/connection.py:127
-#: src/sqoop/api/job.py:119 src/sqoop/api/job.py:135
+#: src/sqoop/api/connection.py:107 src/sqoop/api/connection.py:122
+#: src/sqoop/api/job.py:115 src/sqoop/api/job.py:130
 msgid "GET or POST request required."
-msgstr "Eine GET- oder POST-Anforderung ist erforderlich."
+msgstr "GET- oder POST-Anforderung ist erforderlich."
 
-#: src/sqoop/api/connection.py:133 src/sqoop/api/connection.py:157
-#: src/sqoop/api/job.py:62 src/sqoop/api/job.py:89 src/sqoop/api/job.py:141
-#: src/sqoop/api/job.py:165 src/sqoop/api/job.py:187 src/sqoop/api/job.py:209
+#: src/sqoop/api/connection.py:127 src/sqoop/api/connection.py:150
+#: src/sqoop/api/job.py:59 src/sqoop/api/job.py:85 src/sqoop/api/job.py:135
+#: src/sqoop/api/job.py:158 src/sqoop/api/job.py:179 src/sqoop/api/job.py:200
 msgid "POST request required."
 msgstr "Eine POST-Anforderung ist erforderlich."
 
-#: src/sqoop/api/connection.py:147
+#: src/sqoop/api/connection.py:141
 msgid "Could not clone connection."
 msgstr "Verbindung konnte nicht geklont werden."
 
-#: src/sqoop/api/connection.py:168
+#: src/sqoop/api/connection.py:161
 msgid "Could not delete connection."
 msgstr "Verbindung konnte nicht gelöscht werden."
 
@@ -60,11 +60,11 @@ msgstr "Verbindung konnte nicht gelöscht werden."
 msgid "Could not get connectors."
 msgstr "Konnektoren konnten nicht abgerufen werden."
 
-#: src/sqoop/api/connector.py:59 src/sqoop/api/connector.py:73
-#: src/sqoop/api/framework.py:54 src/sqoop/api/job.py:231
-#: src/sqoop/api/submission.py:62
+#: src/sqoop/api/connector.py:59 src/sqoop/api/connector.py:72
+#: src/sqoop/api/framework.py:54 src/sqoop/api/job.py:221
+#: src/sqoop/api/submission.py:61
 msgid "GET request required."
-msgstr "Eine GET-Anforderung ist erforderlich."
+msgstr "GET-Anfrage ist erforderlich."
 
 #: src/sqoop/api/decorators.py:53
 msgid "Could not get connector."
@@ -80,395 +80,350 @@ msgstr "Job konnte nicht abgerufen werden."
 
 #: src/sqoop/api/decorators.py:110
 msgid "Could not get submission."
-msgstr "Übermittlung konnte nicht abgerufen werden."
+msgstr "Übermittlungen konnten nicht abgerufen werden."
 
 #: src/sqoop/api/exception.py:37
 #, python-format
 msgid "Could not connect to sqoop server. %s (%s)"
-msgstr "Verbindung mit Scoop-Server konnte nicht hergestellt werden. %s (%s)"
+msgstr "Verbindung mit Squoop-Server nicht möglich. %s (%s)"
 
 #: src/sqoop/api/framework.py:51
 msgid "Could not get framework."
 msgstr "Framework konnte nicht abgerufen werden."
 
-#: src/sqoop/api/job.py:56
+#: src/sqoop/api/job.py:54
 msgid "Could not get jobs."
 msgstr "Jobs konnten nicht abgerufen werden."
 
-#: src/sqoop/api/job.py:71 src/sqoop/api/job.py:98
+#: src/sqoop/api/job.py:68 src/sqoop/api/job.py:94
 msgid "Error saving job"
 msgstr "Fehler beim Speichern des Jobs"
 
-#: src/sqoop/api/job.py:80
+#: src/sqoop/api/job.py:77
 msgid "Could not create job."
-msgstr "Der Job konnte nicht erstellt werden."
+msgstr "Job konnte nicht erstellt werden."
 
-#: src/sqoop/api/job.py:106
+#: src/sqoop/api/job.py:102
 msgid "Could not update job."
-msgstr "Der Job konnte nicht aktualisiert werden."
+msgstr "Job konnte nicht aktualisiert werden."
 
-#: src/sqoop/api/job.py:155
+#: src/sqoop/api/job.py:149
 msgid "Could not clone job."
-msgstr "Der Job konnte nicht geklont werden."
+msgstr "Job konnte nicht geklont werden."
 
-#: src/sqoop/api/job.py:177
+#: src/sqoop/api/job.py:170
 msgid "Could not delete job."
-msgstr "Der Job konnte nicht gelöscht werden."
+msgstr "Job konnte nicht gelöscht werden."
 
-#: src/sqoop/api/job.py:199
+#: src/sqoop/api/job.py:191
 msgid "Could not start job."
-msgstr "Der Job konnte nicht gestartet werden."
+msgstr "Job konnte nicht gestartet werden."
 
-#: src/sqoop/api/job.py:221 src/sqoop/templates/app.mako:803
+#: src/sqoop/api/job.py:212 src/sqoop/templates/app.mako:661
 msgid "Could not stop job."
-msgstr "Der Job konnte nicht gestoppt werden."
+msgstr "Job konnte nicht gestoppt werden."
 
-#: src/sqoop/api/job.py:243
+#: src/sqoop/api/job.py:233
 msgid "Could not get job status."
-msgstr "Der Jobstatus konnte nicht abgerufen werden."
+msgstr "Jobstatus konnte nicht abgerufen werden."
 
 #: src/sqoop/api/submission.py:54
 msgid "Could not get submissions."
-msgstr "Einsendungen konnten nicht abgerufen werden."
+msgstr "Übermittlungen konnten nicht abgerufen werden."
 
-#: src/sqoop/templates/app.mako:28 src/sqoop/templates/app.mako:51
+#: src/sqoop/templates/app.mako:28 src/sqoop/templates/app.mako:36
 msgid "Create a new job"
-msgstr "Einen neuen Job erstellen"
+msgstr "Neuen Job erstellen"
 
-#: src/sqoop/templates/app.mako:28 src/sqoop/templates/app.mako:51
+#: src/sqoop/templates/app.mako:28 src/sqoop/templates/app.mako:36
 msgid "New job"
 msgstr "Neuer Job"
 
-#: src/sqoop/templates/app.mako:31
-msgid "Manage connections"
-msgstr "Verbindungen verwalten"
-
-#: src/sqoop/templates/app.mako:33 src/sqoop/templates/app.mako:53
-#: src/sqoop/templates/app.mako:54 src/sqoop/templates/app.mako:58
-#: src/sqoop/templates/app.mako:59
+#: src/sqoop/templates/app.mako:30 src/sqoop/templates/app.mako:38
+#: src/sqoop/templates/app.mako:39 src/sqoop/templates/app.mako:43
+#: src/sqoop/templates/app.mako:44
 msgid "Sqoop Jobs"
 msgstr "Sqoop-Jobs"
 
-#: src/sqoop/templates/app.mako:34
+#: src/sqoop/templates/app.mako:31
 msgid "Search for job name or content"
 msgstr "Nach Jobnamen oder -inhalt suchen"
 
-#: src/sqoop/templates/app.mako:39
-msgid "Create a new connection"
-msgstr "Eine neue Verbindung erstellen"
-
-#: src/sqoop/templates/app.mako:39
-msgid "New connection"
-msgstr "Neue Verbindung"
-
-#: src/sqoop/templates/app.mako:42
-msgid "Manage jobs"
-msgstr "Jobs verwalten"
-
-#: src/sqoop/templates/app.mako:44
-msgid "Sqoop Connections"
-msgstr "Sqoop-Verbindungen"
-
-#: src/sqoop/templates/app.mako:45
-msgid "Search for connection name or content"
-msgstr "Nach Skriptnamen oder -inhalt suchen"
-
-#: src/sqoop/templates/app.mako:53 src/sqoop/templates/app.mako:54
-#: src/sqoop/templates/app.mako:58 src/sqoop/templates/app.mako:59
+#: src/sqoop/templates/app.mako:38 src/sqoop/templates/app.mako:39
+#: src/sqoop/templates/app.mako:43 src/sqoop/templates/app.mako:44
 msgid "Back to jobs list"
 msgstr "Zurück zur Jobliste"
 
-#: src/sqoop/templates/app.mako:53
+#: src/sqoop/templates/app.mako:38
+#, fuzzy
 msgid "New Job"
 msgstr "Neuer Job"
 
-#: src/sqoop/templates/app.mako:58
+#: src/sqoop/templates/app.mako:43
+#, fuzzy
 msgid "New Connection"
 msgstr "Neue Verbindung"
 
-#: src/sqoop/templates/app.mako:68
+#: src/sqoop/templates/app.mako:50
 msgid "Sqoop error"
 msgstr "Sqoop-Fehler"
 
-#: src/sqoop/templates/app.mako:89 src/sqoop/templates/app.mako:107
-#: src/sqoop/templates/app.mako:226
+#: src/sqoop/templates/app.mako:64 src/sqoop/templates/app.mako:82
 msgid "Click to edit"
 msgstr "Zum Bearbeiten klicken"
 
-#: src/sqoop/templates/app.mako:92 src/sqoop/templates/app.mako:98
+#: src/sqoop/templates/app.mako:67 src/sqoop/templates/app.mako:73
 msgid "Last run: "
 msgstr "Letzte Ausführung: "
 
-#: src/sqoop/templates/app.mako:115
+#: src/sqoop/templates/app.mako:90
 msgid "There are currently no jobs."
 msgstr "Derzeit sind keine Jobs vorhanden."
 
-#: src/sqoop/templates/app.mako:115 src/sqoop/templates/app.mako:233
-msgid "Click here to add one."
-msgstr "Hier klicken, um einen hinzuzufügen."
+#: src/sqoop/templates/app.mako:90
+#, fuzzy
+msgid "Please click on New Job to add one."
+msgstr "Klicken Sie auf \"Neuer Job\", um einen Job hinzuzufügen."
 
-#: src/sqoop/templates/app.mako:126
+#: src/sqoop/templates/app.mako:99
 msgid "Actions"
 msgstr "Aktionen"
 
-#: src/sqoop/templates/app.mako:128
+#: src/sqoop/templates/app.mako:101
 msgid "Run the job"
 msgstr "Job ausführen"
 
-#: src/sqoop/templates/app.mako:129
+#: src/sqoop/templates/app.mako:102
 msgid "Run"
 msgstr "Ausführen"
 
-#: src/sqoop/templates/app.mako:133
+#: src/sqoop/templates/app.mako:106
 msgid "Stop the job"
 msgstr "Job stoppen"
 
-#: src/sqoop/templates/app.mako:134
+#: src/sqoop/templates/app.mako:107
 msgid "Stop"
 msgstr "Anhalten"
 
-#: src/sqoop/templates/app.mako:138
+#: src/sqoop/templates/app.mako:111
 msgid "Copy the job"
 msgstr "Job kopieren"
 
-#: src/sqoop/templates/app.mako:139
+#: src/sqoop/templates/app.mako:112
 msgid "Copy"
 msgstr "Kopieren"
 
-#: src/sqoop/templates/app.mako:143
+#: src/sqoop/templates/app.mako:116
 msgid "Delete the job"
 msgstr "Job löschen"
 
-#: src/sqoop/templates/app.mako:144 src/sqoop/templates/app.mako:414
-#: src/sqoop/templates/app.mako:473 src/sqoop/templates/app.mako:567
+#: src/sqoop/templates/app.mako:117 src/sqoop/templates/app.mako:354
 msgid "Delete"
 msgstr "Löschen"
 
-#: src/sqoop/templates/app.mako:147
+#: src/sqoop/templates/app.mako:120
 msgid "Submissions"
 msgstr "Übermittlungen"
 
-#: src/sqoop/templates/app.mako:149
+#: src/sqoop/templates/app.mako:122
 msgid "Browse output directory"
-msgstr "Ausgangsverzeichnis durchsuchen"
+msgstr "Output-Verzeichnis durchsuchen"
 
-#: src/sqoop/templates/app.mako:150
+#: src/sqoop/templates/app.mako:123
 msgid "Output directory"
-msgstr "Ausgangsverzeichnis"
+msgstr "Output-Verzeichnis"
 
-#: src/sqoop/templates/app.mako:154
+#: src/sqoop/templates/app.mako:127
 msgid "Browse input directory"
-msgstr "Eingangsverzeichnis durchsuchen"
+msgstr "Input-Verzeichnis durchsuchen"
 
-#: src/sqoop/templates/app.mako:155
+#: src/sqoop/templates/app.mako:128
 msgid "Input directory"
-msgstr "Eingangsverzeichnis"
+msgstr "Input-Verzeichnis"
 
-#: src/sqoop/templates/app.mako:159 src/sqoop/templates/app.mako:161
+#: src/sqoop/templates/app.mako:132 src/sqoop/templates/app.mako:134
 msgid "Logs"
 msgstr "Protokolle"
 
-#: src/sqoop/templates/app.mako:164
+#: src/sqoop/templates/app.mako:137
 msgid "Last status"
 msgstr "Letzter Status"
 
-#: src/sqoop/templates/app.mako:202
+#: src/sqoop/templates/app.mako:173
 msgid "Back"
 msgstr "Zurück"
 
-#: src/sqoop/templates/app.mako:206
+#: src/sqoop/templates/app.mako:177
 msgid "Next"
-msgstr "Weiter"
+msgstr "Nächste"
 
-#: src/sqoop/templates/app.mako:209 src/sqoop/templates/app.mako:268
+#: src/sqoop/templates/app.mako:180 src/sqoop/templates/app.mako:219
 msgid "Save"
 msgstr "Speichern"
 
-#: src/sqoop/templates/app.mako:211
+#: src/sqoop/templates/app.mako:182
 msgid "Save and run"
 msgstr "Speichern und ausführen"
 
-#: src/sqoop/templates/app.mako:233
-msgid "There are currently no connections."
-msgstr "Derzeit sind keine Verbindungen vorhanden."
-
-#: src/sqoop/templates/app.mako:244 src/sqoop/templates/app.mako:382
+#: src/sqoop/templates/app.mako:195 src/sqoop/templates/app.mako:322
 msgid "Name"
 msgstr "Name"
 
-#: src/sqoop/templates/app.mako:250
+#: src/sqoop/templates/app.mako:201
 msgid "Connector"
 msgstr "Konnektor"
 
-#: src/sqoop/templates/app.mako:267
-msgid "Cancel"
-msgstr "Abbrechen"
+#: src/sqoop/templates/app.mako:218
+msgid "Cancel and return to job"
+msgstr "Abbrechen und zu Job zurückkehren"
 
-#: src/sqoop/templates/app.mako:281
+#: src/sqoop/templates/app.mako:232
 msgid "Choose a folder"
-msgstr "Einen Ordner auswählen"
+msgstr "Ordner auswählen"
 
-#: src/sqoop/templates/app.mako:292
+#: src/sqoop/templates/app.mako:245
 msgid "Are you sure you'd like to delete this job?"
-msgstr "Soll dieser Job wirklich gelöscht werden?"
+msgstr "Möchten Sie diesen Job wirklich löschen?"
 
-#: src/sqoop/templates/app.mako:296 src/sqoop/templates/app.mako:308
+#: src/sqoop/templates/app.mako:249 src/sqoop/templates/app.mako:261
 msgid "No"
 msgstr "Nein"
 
-#: src/sqoop/templates/app.mako:297 src/sqoop/templates/app.mako:309
+#: src/sqoop/templates/app.mako:250 src/sqoop/templates/app.mako:262
 msgid "Yes, delete it"
 msgstr "Ja, löschen"
 
-#: src/sqoop/templates/app.mako:304
+#: src/sqoop/templates/app.mako:257
 msgid "Are you sure you'd like to delete this connection?"
-msgstr "Soll diese Verbindung wirklich gelöscht werden?"
+msgstr "Möchten Sie diese Verbindung wirklich löschen?"
 
-#: src/sqoop/templates/app.mako:319
-msgid "server at "
-msgstr "Server bei "
-
-#: src/sqoop/templates/app.mako:329 src/sqoop/templates/app.mako:338
+#: src/sqoop/templates/app.mako:271 src/sqoop/templates/app.mako:280
 msgid "from "
-msgstr "von "
+msgstr "Von "
 
-#: src/sqoop/templates/app.mako:331 src/sqoop/templates/app.mako:340
+#: src/sqoop/templates/app.mako:273 src/sqoop/templates/app.mako:282
+#, fuzzy
 msgid "to "
-msgstr "bis "
+msgstr "An "
 
-#: src/sqoop/templates/app.mako:389
+#: src/sqoop/templates/app.mako:329
+#, fuzzy
 msgid "Job type"
 msgstr "Jobtyp"
 
-#: src/sqoop/templates/app.mako:391
+#: src/sqoop/templates/app.mako:331
 msgid "Import from a Database to Hadoop"
-msgstr "Aus einer Datenbank in Hadoop importieren"
+msgstr "Aus einer Datenbank zu Hadoop importieren"
 
-#: src/sqoop/templates/app.mako:393
+#: src/sqoop/templates/app.mako:333
 msgid "Import"
 msgstr "Importieren"
 
-#: src/sqoop/templates/app.mako:395
+#: src/sqoop/templates/app.mako:335
 msgid "Import from Hadoop to a Database"
-msgstr "Aus Hadoop in eine Datenbank importieren"
+msgstr "Aus Hadoop in eine Datenbak importieren"
 
-#: src/sqoop/templates/app.mako:397
+#: src/sqoop/templates/app.mako:337
+#, fuzzy
 msgid "Export"
 msgstr "Exportieren"
 
-#: src/sqoop/templates/app.mako:404 src/sqoop/templates/app.mako:687
+#: src/sqoop/templates/app.mako:344
+#, fuzzy
 msgid "Connection"
 msgstr "Verbindung"
 
-#: src/sqoop/templates/app.mako:411
+#: src/sqoop/templates/app.mako:351
 msgid "Edit"
 msgstr "Bearbeiten"
 
-#: src/sqoop/templates/app.mako:420
+#: src/sqoop/templates/app.mako:360
+#, fuzzy
 msgid "Add a new connection"
 msgstr "Neue Verbindung hinzufügen"
 
-#: src/sqoop/templates/app.mako:456 src/sqoop/templates/app.mako:550
-msgid "Property name"
-msgstr "Name der Eigenschaft"
-
-#: src/sqoop/templates/app.mako:457 src/sqoop/templates/app.mako:551
-msgid "Value"
-msgstr "Wert"
-
-#: src/sqoop/templates/app.mako:479 src/sqoop/templates/app.mako:573
-msgid "Add"
-msgstr "Hinzufügen"
-
-#: src/sqoop/templates/app.mako:488 src/sqoop/templates/app.mako:585
+#: src/sqoop/templates/app.mako:389 src/sqoop/templates/app.mako:460
 msgid "Choose..."
-msgstr "Wählen Sie eine(n)"
+msgstr "Wählen Sie..."
 
-#: src/sqoop/templates/app.mako:529 src/sqoop/templates/app.mako:626
+#: src/sqoop/templates/app.mako:443 src/sqoop/templates/app.mako:514
 msgid "True"
 msgstr "Wahr"
 
-#: src/sqoop/templates/app.mako:530 src/sqoop/templates/app.mako:627
+#: src/sqoop/templates/app.mako:444 src/sqoop/templates/app.mako:515
 msgid "False"
 msgstr "Falsch"
 
-#: src/sqoop/templates/app.mako:671
+#: src/sqoop/templates/app.mako:557
 msgid "Step 1: From"
 msgstr "Schritt 1: Von"
 
-#: src/sqoop/templates/app.mako:671
-msgid "Step 1: To"
-msgstr "Schritt 1: Bis"
+#: src/sqoop/templates/app.mako:563
+#, fuzzy
+msgid "Step 2: to"
+msgstr "Schritt 2: An"
 
-#: src/sqoop/templates/app.mako:672 src/sqoop/templates/app.mako:694
-msgid "Database"
-msgstr "Datenbank"
+#: src/sqoop/templates/app.mako:570
+msgid "Step 1: Manage connections"
+msgstr "Schritt 1: Verbindungen verwalten"
 
-#: src/sqoop/templates/app.mako:678
-msgid "Step 2: To"
-msgstr "Schritt 2: Bis"
-
-#: src/sqoop/templates/app.mako:678 src/sqoop/templates/app.mako:693
+#: src/sqoop/templates/app.mako:576
 msgid "Step 2: From"
 msgstr "Schritt 2: Von"
 
-#: src/sqoop/templates/app.mako:679 src/sqoop/templates/app.mako:701
-msgid "HDFS"
-msgstr "HDFS"
-
-#: src/sqoop/templates/app.mako:686
-msgid "Step 1: Type"
-msgstr "Schritt 1: Typ"
-
-#: src/sqoop/templates/app.mako:700
+#: src/sqoop/templates/app.mako:582
 msgid "Step 3: To"
-msgstr "Schritt 3: Bis"
+msgstr "Schritt 3: An"
 
-#: src/sqoop/templates/app.mako:773
-msgid "Please specify a connection."
-msgstr "Geben Sie eine Verbindung an."
-
-#: src/sqoop/templates/app.mako:782
+#: src/sqoop/templates/app.mako:640
 msgid "Cannot connect to sqoop server."
-msgstr "Verbindung zu Scoop-Server nicht möglich."
+msgstr "Verbindung mit dem Squoop-Server nicht möglich."
 
-#: src/sqoop/templates/app.mako:787
+#: src/sqoop/templates/app.mako:645
 msgid "The job is starting..."
-msgstr "Der Job beginnt..."
+msgstr "Job wird gestartet..."
 
-#: src/sqoop/templates/app.mako:791
+#: src/sqoop/templates/app.mako:649
 msgid "Started job."
 msgstr "Gestarteter Job."
 
-#: src/sqoop/templates/app.mako:795
+#: src/sqoop/templates/app.mako:653
 msgid "Error: "
 msgstr "Fehler: "
 
-#: src/sqoop/templates/app.mako:799
+#: src/sqoop/templates/app.mako:657
 msgid "Stopped job."
 msgstr "Gestoppter Job."
 
-#: src/sqoop/templates/app.mako:807
+#: src/sqoop/templates/app.mako:665
+#, fuzzy
 msgid "Could not load node."
 msgstr "Knoten konnte nicht geladen werden."
 
-#: src/sqoop/templates/app.mako:856
-msgid "Did you know? You can use the tab key or CTRL + Space to autocomplete file and folder names"
-msgstr "Wussten Sie das? Sie können Datei- und Ordnernamen mit der Tabulatortaste oder mit STRG + Leerzeichen automatisch vervollständigen."
-
-#: src/sqoop/templates/app.mako:923
-msgid "There was a problem with the server. Look at the Sqoop2 server logs for more details."
-msgstr "Mit dem Server ist ein Problem aufgetreten. Die Sqoop2-Serverprotokolle enthalten weitere Informationen."
-
-#: src/sqoop/templates/app.mako:926
-msgid "Unknown error."
-msgstr "Unbekannter Fehler."
-
-#: src/sqoop/templates/app.mako:1027
+#: src/sqoop/templates/app.mako:728
 msgid "Watch out! This path currently does not exist."
-msgstr "Vorsicht! Dieser Pfad ist derzeit nicht vorhanden."
+msgstr "Vorsicht! Dieser Pfad existiert momentan nicht."
 
-#: src/sqoop/templates/app.mako:1108
+#: src/sqoop/templates/app.mako:807
+#, fuzzy
 msgid "Untitled Job"
-msgstr "Job ohne Titel"
+msgstr "Unbenannter Job"
 
+#~ msgid "Create a job"
+#~ msgstr "Job erstellen"
+#~ msgid "Previous"
+#~ msgstr "Vorherige"
+#~ msgid "Back to job"
+#~ msgstr "Zurück zum Job"
+#~ msgid "Cancel"
+#~ msgstr "Abbrechen"
+#~ msgid "Back to editing a job"
+#~ msgstr "Zurück zur Bearbeitung eines Jobs"
+#~ msgid "Step 1: Job info"
+#~ msgstr "Schritt 1: Jobinfo"
+#~ msgid "Step 2: Sqoop specific"
+#~ msgstr "Schritt 2: Spezifisch für Sqoop"
+#~ msgid "Step 3: Sqoop specific job info"
+#~ msgstr "Schritt 3: Für Sqoop spezifische Jobinfo"
+#~ msgid "Could not start job: "
+#~ msgstr "Job konnte nicht gestartet werden: "

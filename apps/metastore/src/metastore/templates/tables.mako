@@ -28,66 +28,67 @@ ${ components.menubar() }
 <script src="/static/ext/chosen/chosen.jquery.min.js" type="text/javascript" charset="utf-8"></script>
 
 <div class="container-fluid" id="tables">
-  <div class="row-fluid">
-    <div class="span3">
-      <div class="sidebar-nav card-small">
-        <ul class="nav nav-list">
-          <li class="nav-header">${_('database')}</li>
-          <li class="white">
-            <form action="${ url('metastore:show_tables') }" id="db_form" method="POST" style="margin-bottom: 0">
-              ${ db_form | n,unicode }
-            </form>
-          </li>
-          % if has_write_access:
-          <li class="nav-header">${_('Actions')}</li>
-          <li><a href="${ url('beeswax:import_wizard', database=database) }"><i class="fa fa-files-o"></i> ${_('Create a new table from a file')}</a></li>
-          <li><a href="${ url('beeswax:create_table', database=database) }"><i class="fa fa-wrench"></i> ${_('Create a new table manually')}</a></li>
-          % endif
-        </ul>
-      </div>
-    </div>
-    <div class="span9">
-      <div class="card card-small">
-        <h1 class="card-heading simple">${ components.breadcrumbs(breadcrumbs) }</h1>
-        <%actionbar:render>
-          <%def name="search()">
-            <input id="filterInput" type="text" class="input-xlarge search-query" placeholder="${_('Search for table name')}">
-          </%def>
+    <h1>${_('Database %s') % database}</h1>
+    ${ components.breadcrumbs(breadcrumbs) }
+    <div class="row-fluid">
+        <div class="span3">
+            <div class="well sidebar-nav">
+                <ul class="nav nav-list">
+                    <span>
+                    <li class="nav-header">${_('database')}</li>
+                    <li>
+                       <form action="${ url('metastore:show_tables') }" id="db_form" method="POST">
+                         ${ db_form | n,unicode }
+                       </form>
+                    </li>
+                    </span>
+                    % if has_write_access:
+                    <li class="nav-header">${_('Actions')}</li>
+                    <li><a href="${ url('beeswax:import_wizard', database=database) }">${_('Create a new table from a file')}</a></li>
+                    <li><a href="${ url('beeswax:create_table', database=database) }">${_('Create a new table manually')}</a></li>
+                    % endif
+                </ul>
+            </div>
+        </div>
+        <div class="span9">
+          <%actionbar:render>
+            <%def name="search()">
+              <input id="filterInput" type="text" class="input-xlarge search-query" placeholder="${_('Search for table name')}">
+            </%def>
 
-          <%def name="actions()">
-            <button id="viewBtn" class="btn toolbarBtn" title="${_('Browse the selected table')}" disabled="disabled"><i class="fa fa-eye"></i> ${_('View')}</button>
-            <button id="browseBtn" class="btn toolbarBtn" title="${_('Browse the selected table')}" disabled="disabled"><i class="fa fa-list"></i> ${_('Browse Data')}</button>
-            % if has_write_access:
-            <button id="dropBtn" class="btn toolbarBtn" title="${_('Delete the selected tables')}" disabled="disabled"><i class="fa fa-trash-o"></i>  ${_('Drop')}</button>
-            % endif
-          </%def>
-        </%actionbar:render>
-
-          <table class="table table-condensed datatables" data-tablescroller-disable="true">
-          <thead>
-            <tr>
-              <th width="1%"><div class="hueCheckbox selectAll fa" data-selectables="tableCheck"></div></th>
-              <th>${_('Table Name')}</th>
-            </tr>
-          </thead>
-          <tbody>
-          % for table in tables:
-            <tr>
-              <td data-row-selector-exclude="true" width="1%">
-                <div class="hueCheckbox tableCheck fa"
-                     data-view-url="${ url('metastore:describe_table', database=database, table=table) }"
-                     data-browse-url="${ url('metastore:read_table', database=database, table=table) }"
-                     data-drop-name="${ table }"
-                     data-row-selector-exclude="true"></div>
-              </td>
-              <td>
-                <a href="${ url('metastore:describe_table', database=database, table=table) }" data-row-selector="true">${ table }</a>
-              </td>
-            </tr>
-          % endfor
-          </tbody>
-        </table>
-      </div>
+            <%def name="actions()">
+                <button id="viewBtn" class="btn toolbarBtn" title="${_('Browse the selected table')}" disabled="disabled"><i class="icon-eye-open"></i> ${_('View')}</button>
+                <button id="browseBtn" class="btn toolbarBtn" title="${_('Browse the selected table')}" disabled="disabled"><i class="icon-list"></i> ${_('Browse Data')}</button>
+                % if has_write_access:
+                <button id="dropBtn" class="btn toolbarBtn" title="${_('Delete the selected tables')}" disabled="disabled"><i class="icon-trash"></i>  ${_('Drop')}</button>
+                % endif
+            </%def>
+          </%actionbar:render>
+            <table class="table table-condensed table-striped datatables">
+                <thead>
+                  <tr>
+                    <th width="1%"><div class="hueCheckbox selectAll" data-selectables="tableCheck"></div></th>
+                    <th>${_('Table Name')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                % for table in tables:
+                  <tr>
+                    <td data-row-selector-exclude="true" width="1%">
+                      <div class="hueCheckbox tableCheck"
+                           data-view-url="${ url('metastore:describe_table', database=database, table=table) }"
+                           data-browse-url="${ url('metastore:read_table', database=database, table=table) }"
+                           data-drop-name="${ table }"
+                           data-row-selector-exclude="true"></div>
+                    </td>
+                    <td>
+                      <a href="${ url('metastore:describe_table', database=database, table=table) }" data-row-selector="true">${ table }</a>
+                    </td>
+                  </tr>
+                % endfor
+                </tbody>
+            </table>
+        </div>
     </div>
   </div>
 </div>

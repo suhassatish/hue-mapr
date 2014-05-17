@@ -155,35 +155,12 @@ class Submission(object):
 
     return deployment_dir
 
-
-  def get_external_parameters(self, application_path):
-    """From XML and job.properties HDFS files"""
-    deployment_dir = os.path.dirname(application_path)
-    xml = self.fs.do_as_user(self.user, self.fs.read, application_path, 0, 1 * 1024**2)
-
-    properties_file = deployment_dir + '/job.properties'
-    if self.fs.do_as_user(self.user, self.fs.exists, properties_file):
-      properties = self.fs.do_as_user(self.user, self.fs.read, properties_file, 0, 1 * 1024**2)
-    else:
-      properties = None
-
-    return self._get_external_parameters(xml, properties)
-
-  def _get_external_parameters(self, xml, properties=None):
-    from oozie.models import DATASET_FREQUENCY
-    parameters = dict([(var, '') for var in find_variables(xml, include_named=False) if not self._is_coordinator() or var not in DATASET_FREQUENCY])
-
-    if properties:
-      parameters.update(dict([line.strip().split('=')
-                              for line in properties.split('\n') if not line.startswith('#') and len(line.strip().split('=')) == 2]))
-    return parameters
-
-  def _update_properties(self, jobtracker_addr, deployment_dir=None):
+  def _update_properties(self, jobtracker_addr, deployment_dir):
     LOG.info('Using FS %s and JT %s' % (self.fs, self.jt))
     if self.jt and self.jt.logical_name:
       jobtracker_addr = self.jt.logical_name
 
-    if self.fs.logical_name:
+    if self.fs and self.fs.logical_name:
       fs_defaultfs = self.fs.logical_name
     else:
       fs_defaultfs = self.fs.fs_defaultfs
@@ -193,17 +170,12 @@ class Submission(object):
       'nameNode': fs_defaultfs,
     })
 
-    if self.job and deployment_dir:
+    if self.job:
       self.properties.update({
         self.job.get_application_path_key(): self.fs.get_hdfs_path(deployment_dir),
         self.job.HUE_ID: self.job.id
       })
 
-    # Generate credentials when using security
-    if self.api.security_enabled:
-      credentials = Credentials()
-      credentials.fetch(self.api)
-      self.properties['credentials'] = credentials.get_properties()
 
   def _create_deployment_dir(self):
     """

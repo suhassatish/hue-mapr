@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: VERSION DU PROJET\n"
 "Report-Msgid-Bugs-To: ADRESSE@MAIL\n"
-"POT-Creation-Date: 2014-03-05 15:04-0800\n"
+"POT-Creation-Date: 2013-08-02 20:43-0700\n"
 "PO-Revision-Date: 2012-07-30 18:51-0700\n"
 "Last-Translator: NOM COMPLET <ADRESSE@MAIL>\n"
 "Language-Team: fr <LL@li.org>\n"
@@ -17,7 +17,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 0.9.6\n"
 
-#: src/metastore/forms.py:46
+#: src/metastore/forms.py:48
 #: src/metastore/templates/describe_partitions.mako:48
 msgid "Path"
 msgstr "Chemin d'accès"
@@ -31,46 +31,45 @@ msgstr "Remplacer ?"
 msgid "%(column_name)s (partition key with type %(column_type)s)"
 msgstr "%(column_name)s (clé de partition avec type %(column_type)s)"
 
-#: src/metastore/views.py:50
+#: src/metastore/views.py:49
 msgid "You are not allowed to modify the metastore."
-msgstr "Vous n'êtes pas autorisé à modifier le metastore."
+msgstr "Vous n'avez pas le droit de modifier le metastore."
 
-#: src/metastore/views.py:50
-msgid "You have must have metastore:write permissions"
-msgstr "Vous devez disposer de droits metastore:write"
+#: src/metastore/views.py:49
+msgid "You have metastore:read_only_access permissions"
+msgstr "Vous ne pouvez accéder au metastore qu'en lecture seule."
 
-#: src/metastore/views.py:91
+#: src/metastore/views.py:90
 #, python-format
 msgid "Failed to remove %(databases)s.  Error: %(error)s"
 msgstr "Echec de la suppression de %(databases)s.  Erreur : %(error)s"
 
-#: src/metastore/views.py:92 src/metastore/views.py:150
-#: src/metastore/views.py:199
-msgid "Hive Error"
-msgstr "Erreur Hive"
+#: src/metastore/views.py:91 src/metastore/views.py:184
+msgid "Beeswax Error"
+msgstr "Erreur Beeswax"
 
-#: src/metastore/views.py:94
+#: src/metastore/views.py:93
 msgid "Do you really want to delete the database(s)?"
 msgstr "Voulez-vous vraiment supprimer la ou les base(s) de données ?"
 
-#: src/metastore/views.py:198
+#: src/metastore/views.py:183
 #, python-format
 msgid "Failed to remove %(tables)s.  Error: %(error)s"
 msgstr "Echec de la suppression de %(tables)s.  Erreur : %(error)s"
 
-#: src/metastore/views.py:201
+#: src/metastore/views.py:186
 msgid "Do you really want to delete the table(s)?"
 msgstr "Voulez-vous vraiment supprimer la ou les table(s) ?"
 
-#: src/metastore/views.py:215 src/metastore/views.py:225
+#: src/metastore/views.py:200 src/metastore/views.py:210
 msgid "Cannot read table"
 msgstr "Impossible de lire la table"
 
-#: src/metastore/views.py:247
+#: src/metastore/views.py:232
 msgid "Can't load the data: "
 msgstr "Impossible de charger les données : "
 
-#: src/metastore/views.py:268
+#: src/metastore/views.py:253
 #, python-format
 msgid "Table '%(table)s' is not partitioned."
 msgstr "La table '%(table)s' n'est pas partitionnée."
@@ -92,68 +91,56 @@ msgstr "Gestionnaire Metastore"
 msgid "Databases"
 msgstr "Bases de données"
 
-#: src/metastore/templates/confirm.mako:24
-#: src/metastore/templates/databases.mako:87
-#: src/metastore/templates/tables.mako:99
-msgid "Confirm action"
-msgstr "Confirmer l'action"
-
-#: src/metastore/templates/confirm.mako:32
-#: src/metastore/templates/databases.mako:91
-#: src/metastore/templates/tables.mako:103
-msgid "Yes"
-msgstr "Oui"
-
-#: src/metastore/templates/confirm.mako:33
-msgid "No"
-msgstr "Non"
-
-#: src/metastore/templates/databases.mako:32
-msgid "actions"
-msgstr "actions"
-
-#: src/metastore/templates/databases.mako:33
+#: src/metastore/templates/databases.mako:34
 msgid "Create a new database"
 msgstr "Créer une base de données"
 
-#: src/metastore/templates/databases.mako:45
+#: src/metastore/templates/databases.mako:42
 msgid "Search for database name"
 msgstr "Rechercher un nom de base de données"
 
-#: src/metastore/templates/databases.mako:50
+#: src/metastore/templates/databases.mako:47
 msgid "Drop the selected databases"
-msgstr "Supprimer les bases de données sélectionnées"
+msgstr "Déposer les bases de données sélectionnées"
 
-#: src/metastore/templates/databases.mako:50
-#: src/metastore/templates/describe_table.mako:65
-#: src/metastore/templates/tables.mako:61
+#: src/metastore/templates/databases.mako:47
+#: src/metastore/templates/describe_table.mako:69
+#: src/metastore/templates/tables.mako:59
 msgid "Drop"
 msgstr "Supprimer"
 
-#: src/metastore/templates/databases.mako:59
+#: src/metastore/templates/databases.mako:55
 msgid "Database Name"
 msgstr "Nom de la base de données"
 
-#: src/metastore/templates/databases.mako:90
-#: src/metastore/templates/describe_table.mako:179
-#: src/metastore/templates/tables.mako:102
+#: src/metastore/templates/databases.mako:82
+#: src/metastore/templates/tables.mako:95
+msgid "Confirm action"
+msgstr "Confirmer l'action"
+
+#: src/metastore/templates/databases.mako:85
+#: src/metastore/templates/describe_table.mako:152
+#: src/metastore/templates/tables.mako:98
 #: src/metastore/templates/popups/load_data.mako:60
 msgid "Cancel"
 msgstr "Annuler"
 
-#: src/metastore/templates/databases.mako:123
+#: src/metastore/templates/databases.mako:86
+#: src/metastore/templates/tables.mako:99
+msgid "Yes"
+msgstr "Oui"
+
+#: src/metastore/templates/databases.mako:118
+#: src/metastore/templates/describe_table.mako:184
 #: src/metastore/templates/describe_table.mako:209
-#: src/metastore/templates/describe_table.mako:234
-#: src/metastore/templates/sample.mako:63
-#: src/metastore/templates/tables.mako:135
+#: src/metastore/templates/tables.mako:131
 msgid "No data available"
 msgstr "Aucune donnée disponible"
 
-#: src/metastore/templates/databases.mako:124
+#: src/metastore/templates/databases.mako:119
+#: src/metastore/templates/describe_table.mako:185
 #: src/metastore/templates/describe_table.mako:210
-#: src/metastore/templates/describe_table.mako:235
-#: src/metastore/templates/sample.mako:64
-#: src/metastore/templates/tables.mako:136
+#: src/metastore/templates/tables.mako:132
 msgid "No matching records"
 msgstr "Aucun enregistrement correspondant"
 
@@ -162,23 +149,26 @@ msgstr "Aucun enregistrement correspondant"
 msgid "Table Partitions: %(tableName)s"
 msgstr "Partitions de table : %(tableName)s"
 
-#: src/metastore/templates/describe_partitions.mako:32
-#: src/metastore/templates/describe_table.mako:59
+#: src/metastore/templates/describe_partitions.mako:27
+msgid "Partitions"
+msgstr "Partitions"
+
+#: src/metastore/templates/describe_partitions.mako:35
+#: src/metastore/templates/describe_table.mako:63
 #: src/metastore/templates/tables.mako:42
 msgid "Actions"
 msgstr "Actions"
 
-#: src/metastore/templates/describe_partitions.mako:33
+#: src/metastore/templates/describe_partitions.mako:36
 msgid "Show Table"
 msgstr "Afficher la table"
 
-#: src/metastore/templates/describe_partitions.mako:69
-#, python-format
-msgid "The table %s has no partitions."
-msgstr "La table %s n'a pas de partitions."
+#: src/metastore/templates/describe_partitions.mako:68
+msgid "Table has no partitions."
+msgstr "La table ne contient aucune partition."
 
 #: src/metastore/templates/describe_table.mako:26
-#: src/metastore/templates/tables.mako:58
+#: src/metastore/templates/tables.mako:56
 msgid "View"
 msgstr "Afficher"
 
@@ -204,20 +194,20 @@ msgstr "Type"
 msgid "Comment"
 msgstr "Commentaire"
 
-#: src/metastore/templates/describe_table.mako:61
+#: src/metastore/templates/describe_table.mako:65
 msgid "Import Data"
 msgstr "Importer des données"
 
-#: src/metastore/templates/describe_table.mako:63
-#: src/metastore/templates/tables.mako:59
+#: src/metastore/templates/describe_table.mako:67
+#: src/metastore/templates/tables.mako:57
 msgid "Browse Data"
 msgstr "Parcourir les données"
 
-#: src/metastore/templates/describe_table.mako:67
+#: src/metastore/templates/describe_table.mako:71
 msgid "View File Location"
 msgstr "Afficher l'emplacement du fichier"
 
-#: src/metastore/templates/describe_table.mako:69
+#: src/metastore/templates/describe_table.mako:73
 msgid "Show Partitions"
 msgstr "Afficher les partitions"
 
@@ -237,24 +227,15 @@ msgstr "Colonnes de partition"
 msgid "Sample"
 msgstr "Exemple"
 
-#: src/metastore/templates/describe_table.mako:91
-msgid "Properties"
-msgstr "Propriétés"
-
-#: src/metastore/templates/describe_table.mako:109
-#: src/metastore/templates/sample.mako:24
+#: src/metastore/templates/describe_table.mako:108
 msgid "Error!"
 msgstr "Erreur !"
 
-#: src/metastore/templates/describe_table.mako:146
-msgid "Value"
-msgstr "Valeur"
-
-#: src/metastore/templates/describe_table.mako:172
+#: src/metastore/templates/describe_table.mako:145
 msgid "Drop Table"
 msgstr "Supprimer une table"
 
-#: src/metastore/templates/describe_table.mako:180
+#: src/metastore/templates/describe_table.mako:153
 msgid "Yes, drop this table"
 msgstr "Oui, supprimer cette table"
 
@@ -262,7 +243,12 @@ msgstr "Oui, supprimer cette table"
 msgid "Tables"
 msgstr "Tables"
 
-#: src/metastore/templates/tables.mako:35
+#: src/metastore/templates/tables.mako:27
+#, python-format
+msgid "Database %s"
+msgstr "Base de données %s"
+
+#: src/metastore/templates/tables.mako:34
 msgid "database"
 msgstr "base de données"
 
@@ -274,20 +260,20 @@ msgstr "Créer une table à partir d'un fichier"
 msgid "Create a new table manually"
 msgstr "Créer une table manuellement"
 
-#: src/metastore/templates/tables.mako:54
+#: src/metastore/templates/tables.mako:52
 msgid "Search for table name"
 msgstr "Rechercher un nom de table"
 
-#: src/metastore/templates/tables.mako:58
-#: src/metastore/templates/tables.mako:59
+#: src/metastore/templates/tables.mako:56
+#: src/metastore/templates/tables.mako:57
 msgid "Browse the selected table"
 msgstr "Parcourir la table sélectionnée"
 
-#: src/metastore/templates/tables.mako:61
+#: src/metastore/templates/tables.mako:59
 msgid "Delete the selected tables"
 msgstr "Supprimer les tables sélectionnées"
 
-#: src/metastore/templates/tables.mako:70
+#: src/metastore/templates/tables.mako:67
 msgid "Table Name"
 msgstr "Nom de la table"
 

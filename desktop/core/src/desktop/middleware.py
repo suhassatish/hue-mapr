@@ -30,7 +30,7 @@ from django.contrib.auth import REDIRECT_FIELD_NAME, BACKEND_SESSION_KEY, authen
 from django.contrib.auth.middleware import RemoteUserMiddleware
 from django.core import exceptions, urlresolvers
 import django.db
-from django.http import HttpResponseNotAllowed
+from django.http import HttpResponseNotAllowed, HttpResponseForbidden
 from django.core.urlresolvers import resolve
 from django.http import HttpResponseRedirect, HttpResponse
 from django.utils.translation import ugettext as _
@@ -672,8 +672,9 @@ class EnsureSafeRedirectURLMiddleware(object):
   """
   def process_response(self, request, response):
     if response.status_code == 302:
-      if any([regexp.match(response['Location']) for regexp in desktop.conf.REDIRECT_WHITELIST.get()]):
-        return response
+      for regexp in desktop.conf.REDIRECT_WHITELIST.get():
+        if regexp.match(response['Location']):
+          return response
 
       response = render("error.mako", request, dict(error=_('Redirect to %s is not allowed.') % response['Location']))
       response.status_code = 403

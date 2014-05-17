@@ -68,12 +68,8 @@
   # Filename of SSL RSA Private Key
   ## ssl_private_key=
 
-  # List of allowed and disallowed ciphers in cipher list format.
-  # See http://www.openssl.org/docs/apps/ciphers.html for more information on cipher list format.
+  # List of allowed and disallowed ciphers
   ## ssl_cipher_list=DEFAULT:!aNULL:!eNULL:!LOW:!EXPORT:!SSLv2
-
-  # LDAP password of the hue user used for LDAP authentications. For example for LDAP Authentication with HiveServer2.
-  # ldap_password=
 
   # Default encoding for site data
   ## default_site_encoding=utf-8
@@ -82,28 +78,10 @@
   # Use Google Analytics to see how many times an application or specific section of an application is used, nothing more.
   ## collect_usage=true
 
-  # Support for HTTPS termination at the load-balancer level with SECURE_PROXY_SSL_HEADER.
-  ## secure_proxy_ssl_header=false
-
-  # Comma-separated list of Django middleware classes to use.
-  # See https://docs.djangoproject.com/en/1.4/ref/middleware/ for more details on middlewares in Django.
-  ## middleware=desktop.auth.backend.LdapSynchronizationBackend
-
-  # Comma-separated list of regular expressions, which match the redirect URL.
-  # For example, to restrict to your local domain and FQDN, the following value can be used:
-  # ^\/.*$,^http:\/\/www.mydomain.com\/.*$
-  ## redirect_whitelist=
-
-  # Comma separated list of apps to not load at server startup.
-  # e.g.: pig,zookeeper
-  ## app_blacklist=
-
-  # The directory where to store the auditing logs. Auditing is disable if the value is empty.
-  # e.g. /var/log/hue/audit.log
-  ## audit_event_log_dir=
-
-  # Size in KB/MB/GB for audit log to rollover.
-  ## audit_log_max_file_size=100MB
+  ## Comma-separated list of regular expressions, which match the redirect URL.
+  ## For example, to restrict to your local domain and FQDN, the following value can be used:
+  ##   ^\/.*$,^http:\/\/www.mydomain.com\/.*$
+  # redirect_whitelist=
 
   # Administrators
   # ----------------
@@ -132,10 +110,8 @@
     # - desktop.auth.backend.PamBackend
     # - desktop.auth.backend.SpnegoDjangoBackend
     # - desktop.auth.backend.RemoteUserDjangoBackend
+    # - desktop.auth.backend.OAuthBackend
     # - libsaml.backend.SAML2Backend
-    # - libopenid.backend.OpenIDBackend
-    # - liboauth.backend.OAuthBackend
-    #     (New oauth, support Twitter, Facebook, Google+ and Linkedin
     ## backend=desktop.auth.backend.AllowFirstUserDjangoBackend
 
     # The service to use when querying PAM.
@@ -159,19 +135,15 @@
     # Only supported in remoteUserDjangoBackend.
     ## force_username_lowercase=false
 
-    # Users will expire after they have not logged in for 'n' amount of seconds.
-    # A negative number means that users will never expire.
-    ## expires_after=-1
-
-    # Apply 'expires_after' to superusers.
-    ## expire_superusers=true
-
   # Configuration options for connecting to LDAP and Active Directory
   # -------------------------------------------------------------------
   [[ldap]]
 
     # The search base for finding users and groups
     ## base_dn="DC=mycompany,DC=com"
+
+    # The NT domain to connect to (only for use with Active Directory)
+    ## nt_domain=mycompany.com
 
     # URL of the LDAP server
     ## ldap_url=ldap://auth.mycompany.com
@@ -199,9 +171,6 @@
     # Create users in Hue when they try to login with their LDAP credentials
     # For use when using LdapBackend for Hue authentication
     ## create_users_on_login = true
-
-    # Synchronize a users groups when they login
-    ## sync_groups_on_login=false
 
     # Ignore the case of usernames when searching for existing users in Hue.
     ## ignore_username_case=false
@@ -297,24 +266,17 @@
     ## name=desktop/desktop.db
     ## options={}
 
+
   # Configuration options for specifying the Desktop session.
   # For more info, see https://docs.djangoproject.com/en/1.4/topics/http/sessions/
   # ------------------------------------------------------------------------
   [[session]]
     # The cookie containing the users' session ID will expire after this amount of time in seconds.
-    # Default is 2 weeks.
-    ## ttl=1209600
+    ## ttl=60*60*24*14
 
     # The cookie containing the users' session ID will be secure.
     # Should only be enabled with HTTPS.
     ## secure=false
-
-    # The cookie containing the users' session ID will use the HTTP only flag.
-    ## http_only=false
-
-    # Use session-length cookies. Logs out the user when she closes the browser window.
-    ## expire_at_browser_close=false
-
 
   # Configuration options for connecting to an external SMTP server
   # ------------------------------------------------------------------------
@@ -401,7 +363,7 @@
 
   # Have Hue initiated authn requests be signed and provide a certificate.
   ## authn_requests_signed=false
-
+  
   # Have Hue initiated logout requests be signed and provide a certificate.
   ## logout_requests_signed=false
 
@@ -561,8 +523,16 @@
       # Enter the filesystem uri
       fs_defaultfs=hdfs://localhost:8020
 
+      # Use WebHdfs/HttpFs as the communication mechanism. To fallback to
+      # using the Thrift plugin (used in Hue 1.x), this must be uncommented
+      # and explicitly set to the empty value.
       # NameNode logical name.
       ## logical_name=
+
+      # Use WebHdfs/HttpFs as the communication mechanism.
+      # This should be the web service root URL, such as
+      # http://namenode:50070/webhdfs/v1
+      ## webhdfs_url=
 
       # Use WebHdfs/HttpFs as the communication mechanism.
       # Domain should be the NameNode or HttpFs host.
@@ -641,6 +611,9 @@
 
       # Whether to submit jobs to this cluster
       submit_to=False
+
+      # NameNode logical name.
+      ## logical_name=
 
       # Change this if your MapReduce cluster is Kerberos-secured
       ## security_enabled=false
@@ -778,8 +751,6 @@
 ###########################################################################
 
 [sqoop]
-  # For autocompletion, fill out the librdbms section.
-
   # Sqoop server URL
   ## server_url=http://localhost:12000/sqoop
 
@@ -815,18 +786,6 @@
 
   # Turn on/off impersonation mechanism when talking to Impala
   ## impersonation_enabled=False
-
-  # Number of initial rows of a result set to ask Impala to cache in order
-  # to support re-fetching them for downloading them.
-  # Set to 0 for disabling the option and backward compatibility.
-  ## querycache_rows=50000
-
-  # Timeout in seconds for thrift calls
-  ## server_conn_timeout=120
-
-  # Hue will try to close the Impala query when the user leaves the editor page.
-  # This will free all the query resources in Impala, but also make its results inaccessible.
-  ## close_queries=true
 
 
 ###########################################################################

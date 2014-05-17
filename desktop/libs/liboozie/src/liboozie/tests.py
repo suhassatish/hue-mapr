@@ -22,9 +22,13 @@ from nose.tools import assert_equal
 
 from desktop.lib.test_utils import reformat_xml
 
+from desktop.lib.test_utils import reformat_xml
+
+from hadoop import cluster
+from hadoop.conf import HDFS_CLUSTERS, MR_CLUSTERS, YARN_CLUSTERS
 from liboozie.types import WorkflowAction, Coordinator
+from liboozie.submittion import Submission
 from liboozie.utils import config_gen
-from oozie.tests import MockOozieApi
 
 
 LOG = logging.getLogger(__name__)
@@ -57,3 +61,64 @@ def test_config_gen():
   <value><![CDATA[hue]]></value>
 </property>
 </configuration>"""), reformat_xml(config_gen(properties)))
+
+
+class MockFs(object):
+  def __init__(self, logical_name=None):
+
+    self.fs_defaultfs = 'hdfs://curacao:8020'
+    if logical_name:
+      self.logical_name = logical_name
+    else:
+      self.logical_name = ''
+
+
+def test_update_properties():
+  finish = []
+  finish.append(MR_CLUSTERS['default'].SUBMIT_TO.set_for_testing(True))
+  finish.append(YARN_CLUSTERS['default'].SUBMIT_TO.set_for_testing(True))
+  try:
+    properties = {
+        'user.name': 'hue',
+        'test.1': 'http://localhost/test?test1=test&test2=test',
+        'nameNode': 'hdfs://curacao:8020',
+        'jobTracker': 'jtaddress'
+    }
+
+    final_properties = properties.copy()
+    submission = Submission(None, properties=properties, oozie_id='test', fs=MockFs())
+    assert_equal(properties, submission.properties)
+    submission._update_properties('jtaddress', 'deployment-directory')
+    assert_equal(final_properties, submission.properties)
+
+    cluster.clear_caches()
+    fs = cluster.get_hdfs()
+    jt = cluster.get_next_ha_mrcluster()[1]
+    final_properties = properties.copy()
+    final_properties.update({
+      'jobTracker': 'jtaddress',
+      'nameNode': fs.fs_defaultfs
+    })
+    submission = Submission(None, properties=properties, oozie_id='test', fs=fs, jt=jt)
+    assert_equal(properties, submission.properties)
+    submission._update_properties('jtaddress', 'deployment-directory')
+    assert_equal(final_properties, submission.properties)
+
+    finish.append(HDFS_CLUSTERS['default'].LOGICAL_NAME.set_for_testing('namenode'))
+    finish.append(MR_CLUSTERS['default'].LOGICAL_NAME.set_for_testing('jobtracker'))
+    cluster.clear_caches()
+    fs = cluster.get_hdfs()
+    jt = cluster.get_next_ha_mrcluster()[1]
+    final_properties = properties.copy()
+    final_properties.update({
+      'jobTracker': 'jobtracker',
+      'nameNode': 'namenode'
+    })
+    submission = Submission(None, properties=properties, oozie_id='test', fs=fs, jt=jt)
+    assert_equal(properties, submission.properties)
+    submission._update_properties('jtaddress', 'deployment-directory')
+    assert_equal(final_properties, submission.properties)
+  finally:
+    cluster.clear_caches()
+    for reset in finish:
+      reset()

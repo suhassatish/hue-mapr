@@ -362,30 +362,18 @@ def commonheader(title, section, user, padding="90px"):
   """
   Returns the rendered common header
   """
-  current_app = None
-  other_apps = []
   if user.is_authenticated():
     apps = appmanager.get_apps(user)
-    apps_list = appmanager.get_apps_dict(user)
-    for app in apps:
-      if app.display_name not in [
-          'beeswax', 'impala', 'pig', 'jobsub', 'jobbrowser', 'metastore', 'hbase', 'sqoop', 'oozie', 'filebrowser',
-          'useradmin', 'search', 'help', 'about', 'zookeeper', 'proxy', 'rdbms', 'spark']:
-        other_apps.append(app)
-      if section == app.display_name:
-        current_app = app
+    apps_list = sorted(apps, key=lambda app: app.menu_index)
   else:
     apps_list = []
 
   return django_mako.render_to_string("common_header.mako", {
-    'current_app': current_app,
     'apps': apps_list,
-    'other_apps': other_apps,
     'title': title,
     'section': section,
     'padding': padding,
-    'user': user,
-    'is_demo': desktop.conf.DEMO_ENABLED.get()
+    'user': user
   })
 
 def commonfooter(messages=None):
@@ -400,7 +388,7 @@ def commonfooter(messages=None):
   return django_mako.render_to_string("common_footer.mako", {
     'messages': messages,
     'version': settings.HUE_DESKTOP_VERSION,
-    'collect_usage': collect_usage(),
+    'collect_usage': desktop.conf.COLLECT_USAGE.get(),
     'tours_and_tutorials': hue_settings.tours_and_tutorials
   })
 

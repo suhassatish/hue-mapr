@@ -70,7 +70,10 @@ from django.utils.encoding import smart_str
 from desktop.lib.paths import get_desktop_root, get_build_dir
 
 import configobj
-import json
+try:
+  import json
+except ImportError:
+  import simplejson as json
 import logging
 import os
 import textwrap
@@ -637,13 +640,10 @@ def coerce_json_dict(value):
     return value
   raise Exception("Could not coerce %r to json dictionary." % value)
 
-def list_of_compiled_res(skip_empty=False):
-  def fn(list_of_strings):
-    if isinstance(list_of_strings, basestring):
-      list_of_strings = list_of_strings.split(',')
-    list_of_strings = filter(lambda string: string if skip_empty else True, list_of_strings)
-    return list(re.compile(x) for x in list_of_strings)
-  return fn
+def list_of_compiled_res(list_of_strings):
+  if isinstance(list_of_strings, str):
+    list_of_strings = [ list_of_strings ]
+  return list(re.compile(x) for x in list_of_strings)
 
 def validate_path(confvar, is_dir=None, fs=os.path, message='Path does not exist on the filesystem.'):
   """

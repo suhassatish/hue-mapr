@@ -111,60 +111,20 @@ function launchModal(modal, data) {
           app.focusModel(data.content);
       data.content.history.reload();
 
-      if(data.content.parent) {
-        var path = '/hbase/api/putUpload/"' + app.cluster() + '"/"' + app.views.tabledata.name() + '"/"' + data.content.parent.row + '"/"' + data.content.name + '"';
-        var uploader = new qq.FileUploaderBasic({
-          button: document.getElementById("file-upload-btn"),
-          action: path,
-          fileFieldLabel: 'hbase_file',
-          multiple: false,
-          onComplete:function (id, fileName, response) {
-            data.content.reload();
-          }
-        });
-      }
-      break;
-    case 'new_row_modal':
-      $('a.action_addColumnValue').click(function() {
-        $(this).parent().find("ul").append("<li><input type=\"text\" name=\"column_values\" class=\"ignore\" placeholder = \"family:column_name\"/> <input type=\"text\" name=\"column_values\" class=\"ignore\" placeholder = \"cell_value\"/></li>")
-      });
-      break;
-    case 'new_column_modal':
+      var path = '/hbase/api/putUpload/"' + app.cluster() + '"/"' + app.views.tabledata.name() + '"/"' + data.content.parent.row + '"/"' + data.content.name + '"';
       var uploader = new qq.FileUploaderBasic({
-        button: document.getElementById("column-upload-btn"),
-        action: '',
+        button: document.getElementById("file-upload-btn"),
+        action: path,
         fileFieldLabel: 'hbase_file',
         multiple: false,
         onComplete:function (id, fileName, response) {
-          if(response.status == null) {
-            data.reload();
-            element.modal('hide');
-          } else {
-            $(document).trigger("error", $(response.response).find('div.alert strong').text());
-          }
-        },
-        onSubmit: function() {
-          uploader._handler._options.action = '/hbase/api/putUpload/"' + app.cluster() + '"/"' + app.views.tabledata.name() + '"/' + prepForTransport(data.row) + '/"' + element.find('#new_column_name').val() + '"';
+          data.content.reload();
         }
       });
       break;
   }
-  if(!element.hasClass('in'))
-    element.modal('show');
-  logGA(modal.slice(0, modal.indexOf('_modal') != -1 ? modal.indexOf('_modal') : modal.length));
-}
-
-function editCell($data) {
-  if ($data.parent.canWrite()) {
-    if ($data.value().length > 146) {
-      launchModal('cell_edit_modal',{
-        content: $data,
-        mime: detectMimeType($data.value())
-      });
-    } else {
-      $data.editing(true);
-    }
-  }
+  element.modal('show');
+logGA(modal.slice(0, modal.indexOf('_modal') != -1 ? modal.indexOf('_modal') : modal.length));
 }
 
 function parseXML(xml) {
@@ -244,7 +204,7 @@ function resetElements() {
       }
     });
   });
-  app.views.tabledata.showGrid(false);
+  resetSearch();
 };
 
 function resetSearch() {
@@ -260,18 +220,21 @@ function prepForTransport(value) {
 };
 
 function logGA(postfix) {
-  if (postfix == null)
+  function doLog() {
+    trackOnGA('hbase/' + postfix);
+  }
+  if(postfix == null)
     postfix = "";
   if (typeof trackOnGA == 'function') {
-    window.setTimeout(function () {
-      trackOnGA('hbase/' + postfix);
-    }, 10);
+    doLog();
+  } else {
+    setTimeout(doLog, 10);
   }
 };
 
 function table_search(value) {
   routie(app.cluster() + '/' + app.views.tabledata.name() +'/query/' + value);
-}
+};
 
 function getEditablePosition(contentEditable, trimWhitespaceNodes) {
   var el = contentEditable;

@@ -47,9 +47,9 @@ ${ commonheader(_('Search'), "search", user, "29px") | n,unicode }
   </%actionbar:render>
 
   <div class="row-fluid" data-bind="visible: collections().length == 0 && !isLoading()">
-    <div class="span10 offset1 center importBtn" style="cursor: pointer">
-      <i class="fa fa-plus-circle waiting"></i>
-      <h1 class="emptyMessage">${ _('There are currently no collections defined.') }<br/><a href="javascript:void(0)" class="importBtn">${ _('Click here to add') }</a> ${ _('one or more.') }</h1>
+    <div class="span10 offset1 center">
+      <i class="icon-plus-sign waiting"></i>
+      <h1 class="emptyMessage">${ _('There are currently no collections defined.') }<br/>${ _('Click on Import to add one or more.') }</h1>
     </div>
   </div>
   <div class="row-fluid" data-bind="visible: isLoading()">
@@ -209,15 +209,7 @@ ${ commonheader(_('Search'), "search", user, "29px") | n,unicode }
     $(document).on("imported", function (e, data) {
       $("#importModal").modal("hide");
       $("#importModalBtn").button("reset");
-      if (data.status == 0){
-        $(document).trigger("info", data.message + "<br/>${_('Imported: ')}" + data.imported.join(", "));
-      }
-      else if (data.status == 1){
-        $(document).trigger("info", data.message + "<br/>${_('Imported: ')}" + data.imported.join(", ") + "<br/>${_('Not imported: ')}" + data.notImported.join(", "));
-      }
-      else {
-        $(document).trigger("error", data.message+ "<br/>${_('Not imported: ')}" + data.notImported.join(", "));
-      }
+      $.jHueNotify.info("${ _("Collections imported successfully.") }"); // Could fail actually
     });
 
     $(document).on("deleting", function () {

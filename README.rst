@@ -21,9 +21,8 @@ It features:
       * Metastore Browser for accessing Hive metadata and HCatalog
       * Job Browser for accessing MapReduce jobs (MR1/MR2-YARN)
       * Job Designer for creating MapReduce/Streaming/Java jobs
-      * A Sqoop 2 Editor and Dashboard
-      * A ZooKeeper Browser and Editor
-      * A DB Query Editor for MySql, PostGres, Sqlite and Oracle
+      * A Pig/HBase/Sqoop2 shell
+      * A Sqoop 2 editor and dashboard
 
 On top of that, a SDK is available for creating new apps integrated with Hadoop.
 

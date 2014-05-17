@@ -67,7 +67,6 @@ ENABLE_CRON_SCHEDULING = Config( # Until Hue 4
   help=_t('Use Cron format for defining the frequency of a Coordinator instead of the old frequency number/unit.')
 )
 
-
 def config_validator(user):
   res = []
 

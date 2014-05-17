@@ -56,54 +56,12 @@ ${ commonheader(None, "pig", user) | n,unicode }
             <button class="btn fileToolbarBtn" title="${_('Delete this script')}" data-bind="enable: selectedScripts().length > 0, click: listConfirmDeleteScripts, visible: scripts().length > 0"><i class="fa fa-trash-o"></i> ${_('Delete')}</button>
         </%def>
 
-        <%def name="creation()">
-            <button class="btn fileToolbarBtn" title="${_('Create a new script')}" data-bind="click: confirmNewScript"><i class="fa fa-plus-circle"></i> ${_('New Script')}</button>
-        </%def>
-      </%actionbar:render>
-      <div class="alert alert-info" data-bind="visible: scripts().length == 0">
-        ${_('There are currently no scripts defined. Please add a new script clicking on "New script"')}
-      </div>
-
-      <table class="table table-striped table-condensed tablescroller-disable" data-bind="visible: scripts().length > 0">
-        <thead>
-        <tr>
-          <th width="1%"><div data-bind="click: selectAll, css: {hueCheckbox: true, 'fa': true, 'fa-check': allSelected}"></div></th>
-          <th width="20%">${_('Name')}</th>
-          <th width="79%">${_('Script')}</th>
-        </tr>
-        </thead>
-        <tbody id="scriptTable" data-bind="template: {name: 'scriptTemplate', foreach: filteredScripts}">
-
-        </tbody>
-        <tfoot>
-        <tr data-bind="visible: isLoading()">
-          <td colspan="3" class="left">
-            <img src="/static/art/spinner.gif" />
-          </td>
-        </tr>
-        <tr data-bind="visible: filteredScripts().length == 0 && !isLoading()">
-          <td colspan="3">
-            <div class="alert">
-                ${_('There are no scripts matching the search criteria.')}
-            </div>
-          </td>
-        </tr>
-        </tfoot>
-      </table>
-
-      <script id="scriptTemplate" type="text/html">
-        <tr style="cursor: pointer" data-bind="event: { mouseover: toggleHover, mouseout: toggleHover}">
-          <td class="center" data-bind="click: handleSelect" style="cursor: default">
-            <div data-bind="css: {hueCheckbox: true, 'fa': true, 'fa-check': selected}"></div>
-          </td>
-          <td data-bind="click: $root.confirmViewScript">
-            <strong><a href="#" data-bind="click: $root.confirmViewScript, text: name"></a></strong>
-          </td>
-          <td data-bind="click: $root.confirmViewScript">
-            <span data-bind="text: scriptSumup"></span>
-          </td>
-        </tr>
-      </script>
+      <%def name="creation()">
+          <button class="btn fileToolbarBtn" title="${_('Create a new script')}" data-bind="click: confirmNewScript"><i class="icon-plus-sign"></i> ${_('New Script')}</button>
+      </%def>
+    </%actionbar:render>
+    <div class="alert alert-info" data-bind="visible: scripts().length == 0">
+      ${_('There are currently no scripts defined. Please add a new script clicking on "New script"')}
     </div>
   </div>
 
@@ -113,7 +71,7 @@ ${ commonheader(None, "pig", user) | n,unicode }
           <ul class="nav nav-list">
             <li class="nav-header">${_('Editor')}</li>
             <li data-bind="click: editScript" class="active" data-section="edit">
-              <a href="#"><i class="fa fa-edit"></i> ${ _('Pig') }</a>
+              <a href="#"><i class="icon-edit"></i> ${ _('Pig') }</a>
             </li>
             <li data-bind="click: editScriptProperties" data-section="properties">
               <a href="#"><i class="fa fa-bars"></i> ${ _('Properties') }</a>
@@ -123,15 +81,13 @@ ${ commonheader(None, "pig", user) | n,unicode }
                 <i class="fa fa-floppy-o"></i> ${ _('Save') }
               </a>
             </li>
-            <li data-bind="click: confirmNewScript">
-              <a href="#" title="${ _('New script') }" rel="tooltip" data-placement="right">
-                <i class="fa fa-plus-circle"></i> ${ _('New Script') }
-              </a>
-            </li>
+            ##<li class="nav-header">${_('UDF')}</li>
+            ##<li><a href="#createDataset">${ _('Python') }</a></li>
+            ##<li><a href="#createDataset">${ _('Ruby') }</a></li>
             <li class="nav-header">${_('Run')}</li>
             <li data-bind="click: runOrShowSubmissionModal, visible: !currentScript().isRunning()">
               <a href="#" title="${ _('Run the script') }" rel="tooltip" data-placement="right">
-                <i class="fa fa-play"></i> ${ _('Submit') }
+                <i class="icon-play"></i> ${ _('Submit') }
               </a>
             </li>
             <li data-bind="click: showStopModal, visible: currentScript().isRunning()">
@@ -144,6 +100,12 @@ ${ commonheader(None, "pig", user) | n,unicode }
                 <i class="fa fa-tasks"></i> ${ _('Logs') }
               </a>
             </li>
+            <li data-bind="click: showScriptLogs" data-section="logs">
+              <a href="#" title="${ _('Show Logs') }" rel="tooltip" data-placement="right">
+                <i class="icon-tasks"></i> ${ _('Logs') }
+              </a>
+            </li>
+            <li class="nav-header">${_('File')}</li>
             <li data-bind="visible: currentScript().id() != -1, click: copyScript">
               <a href="#" title="${ _('Copy the script') }" rel="tooltip" data-placement="right">
                 <i class="fa fa-files-o"></i> ${ _('Copy') }
@@ -151,7 +113,12 @@ ${ commonheader(None, "pig", user) | n,unicode }
             </li>
             <li data-bind="visible: currentScript().id() != -1, click: confirmDeleteScript">
               <a href="#" title="${ _('Delete the script') }" rel="tooltip" data-placement="right">
-                <i class="fa fa-trash-o"></i> ${ _('Delete') }
+                <i class="icon-trash"></i> ${ _('Delete') }
+              </a>
+            </li>
+            <li data-bind="click: confirmNewScript">
+              <a href="#" title="${ _('New script') }" rel="tooltip" data-placement="right">
+                <i class="icon-plus-sign"></i> ${ _('Script') }
               </a>
             </li>
             <li>
@@ -509,7 +476,7 @@ ${ commonheader(None, "pig", user) | n,unicode }
 
       <div id="logs" class="section hide">
           <div class="alert alert-info">
-            <a class="mainAction" href="#" title="${ _('Stop this script') }" data-bind="click: showStopModal, visible: currentScript().isRunning()"><i class="fa fa-stop"></i></a>
+            <a class="mainAction" href="#" title="${ _('Stop this script') }" data-bind="click: showStopModal, visible: currentScript().isRunning()"><i class="icon-stop"></i></a>
             <h3><span data-bind="text: currentScript().name"></span></h3>
           </div>
           <div data-bind="template: {name: 'logTemplate', foreach: currentScript().actions}"></div>
@@ -727,13 +694,14 @@ ${ commonheader(None, "pig", user) | n,unicode }
 <script src="/pig/static/js/pig.ko.js" type="text/javascript" charset="utf-8"></script>
 <script src="/static/ext/js/routie-0.3.0.min.js" type="text/javascript" charset="utf-8"></script>
 <script src="/static/ext/js/codemirror-3.11.js"></script>
-<script src="/static/js/codemirror-pig.js"></script>
-<script src="/static/js/codemirror-show-hint.js"></script>
-<script src="/static/js/codemirror-pig-hint.js"></script>
+<script src="/static/js/Source/jHue/codemirror-pig.js"></script>
+<script src="/static/js/Source/jHue/codemirror-show-hint.js"></script>
+<script src="/static/js/Source/jHue/codemirror-pig-hint.js"></script>
 <script src="/beeswax/static/js/autocomplete.utils.js" type="text/javascript" charset="utf-8"></script>
 
 <link rel="stylesheet" href="/pig/static/css/pig.css">
 <link rel="stylesheet" href="/static/ext/css/codemirror.css">
+<link rel="stylesheet" href="/static/ext/css/codemirror-show-hint.css">
 
 <style type="text/css">
   .fileChooserBtn {
@@ -934,7 +902,7 @@ ${ commonheader(None, "pig", user) | n,unicode }
         CodeMirror.isPath = false;
         CodeMirror.isTable = false;
         CodeMirror.isHCatHint = false;
-        CodeMirror.showHint(codeMirror, CodeMirror.pigHint);
+        CodeMirror.showHint(cm, CodeMirror.pigHint);
       }
     }
     codeMirror = CodeMirror(function (elt) {
@@ -1179,7 +1147,7 @@ ${ commonheader(None, "pig", user) | n,unicode }
           var _lineNo = line.match(/[Ll]ine \d*/) != null ? line.match(/[Ll]ine \d*/)[0].split(" ")[1] * 1 : -1;
           var _colNo = line.match(/[Cc]olumn \d*/) != null ? line.match(/[Cc]olumn \d*/)[0].split(" ")[1] * 1 : -1;
           if (_lineNo != -1 && _colNo != -1 && errorWidget == null) {
-            errorWidget = codeMirror.addLineWidget(_lineNo - 1, $("<div>").addClass("editorError").html("<i class='fa fa-exclamation-circle'></i> " + line)[0], {coverGutter: true, noHScroll: true});
+            errorWidget = codeMirror.addLineWidget(_lineNo - 1, $("<div>").addClass("editorError").html("<i class='icon-exclamation-sign'></i> " + line)[0], {coverGutter: true, noHScroll: true});
             codeMirror.setSelection({line: _lineNo - 1, ch: _colNo}, {line: _lineNo - 1, ch: _colNo + codeMirror.getLine(_lineNo - 1).substring(_colNo).split(" ")[0].length});
             $(document).trigger("showEditor");
           }

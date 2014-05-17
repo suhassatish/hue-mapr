@@ -21,15 +21,13 @@ import socket
 from django.utils.translation import ugettext as _
 from django.utils.encoding import smart_str
 
-
 LOG = logging.getLogger(__name__)
 
-
 def handle_rest_exception(e, msg):
-  parent_ex = e.get_parent_ex()
-  reason = None
-  if hasattr(parent_ex, 'reason'):
-    reason = parent_ex.reason
+  if 'reason' in e.get_parent_ex():
+    reason = e.get_parent_ex().reason
+  else:
+    reason = None
   if isinstance(reason, socket.error):
     LOG.error(smart_str('Could not connect to sqoop server: %s (%s)' % (reason[0], reason[1])))
     return {
@@ -41,6 +39,5 @@ def handle_rest_exception(e, msg):
     LOG.error(smart_str(e.message))
     return {
       'status': 1,
-      'errors': [msg],
-      'exception': str(e)
+      'errors': [msg]
     }

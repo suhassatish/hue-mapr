@@ -18,3 +18,29 @@
 
 ## Views are inherited from Beeswax.
 
+## Most of the views are inherited from Beeswax.
+
+
+def refresh_catalog(request):
+  response = {'status': -1, 'message': ''}
+
+  if request.method != 'POST':
+    response['message'] = _('A POST request is required.')
+  else:
+    try:
+      db = server.get(request.user)
+      res = db.resetCatalog()
+      response = {'status': res.status.status_code, 'message': res.status.error_msgs}
+    except Exception, e:
+      response = {'message': str(e)}
+
+  return HttpResponse(json.dumps(response), mimetype="application/json")
+
+
+def install_examples(request):
+  response = beeswax_install_examples(request)
+  catalog_response = json.loads(refresh_catalog(request).content)
+
+  if 'status' in catalog_response and catalog_response['status'] != 0: # Simpler than aggregating the errors
+    request.error(catalog_response['message'])
+  return response

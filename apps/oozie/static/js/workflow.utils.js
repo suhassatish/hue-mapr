@@ -48,8 +48,44 @@ function edit_node_modal(modal, workflow, node, save, cancel, template) {
       }
     })
   };
+}
+
+// open a modal window for editing a node
+function edit_node_modal(modal, workflow, node, save, cancel, template) {
+  var backup = ko.mapping.toJS(node);
+  normalize_model_fields(backup);
+
+  modal.hide();
+  modal.setTemplate(template || node.edit_template);
+  // Provide node, readonly mode, and error link updater.
+  // Kill node is manually added to list of nodes that users can select from.
+  // Kill node is placed at the front of the list so that it is automatically selected.
+  var context = {
+    node: node,
+    read_only: workflow.read_only(),
+    nodes: ko.computed({
+      read: function() {
+        var arr = ko.utils.arrayFilter(workflow.registry.allNodes(), function(_node) {
+          return _node.id() && _node.id() != node.id() && $.inArray(_node.node_type(), ['start']) == -1;
+        });
+        return arr;
+      }
+    }),
+    error_node: ko.computed({
+      read: function() {
+        var error_child  = node.getErrorChild();
+        return (error_child) ? error_child.id() : null;
+      },
+      write: function(node_id) {
+        var error_child = workflow.registry.get(node_id);
+        if (error_child) {
+          node.putErrorChild(error_child);
+        }
+      }
+    })
+  };
   modal.show(context);
-  modal.recenter(280, 0);
+  modal.recenter(280, 250);
   modal.addDecorations();
 
   var cancel_edit = cancel || function() {

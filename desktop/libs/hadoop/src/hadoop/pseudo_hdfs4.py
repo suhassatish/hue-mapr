@@ -237,13 +237,14 @@ class PseudoHdfs4(object):
     # Start MR2
     self._start_mr2(env)
 
-    # Create HDFS directories
+    # Make sure /tmp is 1777
+    self.fs.setuser(self.superuser)
     if not self.fs.exists('/tmp'):
-      self.fs.do_as_superuser(self.mkdir, '/tmp', 01777)
-    self.fs.do_as_superuser(self.fs.chmod, '/tmp', 01777)
+      self.fs.mkdir('/tmp', 01777)
+    self.fs.chmod('/tmp', 01777)
 
-    self.fs.do_as_superuser(self.fs.mkdir, '/tmp/hadoop-yarn', 01777)
-    self.fs.do_as_superuser(self.fs.chmod, '/tmp/hadoop-yarn', 01777)
+    self.fs.chmod(self._tmpdir + '/hadoop_tmp_dir/mapred', 01777)
+    self.fs.mkdir(self._tmpdir + '/hadoop_tmp_dir/mapred/staging', 01777)
 
     self.fs.do_as_superuser(self.fs.mkdir, '/tmp/hadoop-yarn/staging', 01777)
     self.fs.do_as_superuser(self.fs.chmod, '/tmp/hadoop-yarn/staging', 01777)

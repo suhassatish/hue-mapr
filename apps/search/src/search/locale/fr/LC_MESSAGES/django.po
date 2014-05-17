@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2014-03-05 15:05-0800\n"
+"POT-Creation-Date: 2013-08-02 20:43-0700\n"
 "PO-Revision-Date: 2012-07-30 18:50-0700\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: fr <LL@li.org>\n"
@@ -17,12 +17,6 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 0.9.6\n"
 
-#: src/search/api.py:92 src/search/api.py:105 src/search/api.py:116
-#: src/search/api.py:129 src/search/api.py:138 src/search/api.py:148
-#: src/search/api.py:158 src/search/api.py:171
-msgid "Error while accessing Solr"
-msgstr "Erreur lors de l'accès à Solr"
-
 #: src/search/conf.py:25
 msgid "URL of the Solr Server."
 msgstr "URL du serveur Solr."
@@ -31,114 +25,94 @@ msgstr "URL du serveur Solr."
 msgid "Query sent when no term is entered."
 msgstr "Requête envoyée lorsqu'aucun terme n'est saisi."
 
-#: src/search/conf.py:35
-msgid "Whether Solr requires client to perform Kerberos authentication."
-msgstr "Indique si Solr a besoin du client pour effectuer une authentification Kerberos."
-
 #: src/search/decorators.py:32
 msgid "Permission denied. You are not an Administrator."
 msgstr "Autorisation refusée. Vous n'êtes pas un administrateur."
 
-#: src/search/forms.py:95
+#: src/search/forms.py:70
 #, python-format
 msgid "No live Solr collection or core by the name %s."
-msgstr "Aucun cœur ou aucune collection Solr direct(e) nommé(e) %s."
+msgstr "Aucune collection ou aucun coeur Solr du nom de %s."
 
-#: src/search/models.py:261
+#: src/search/models.py:247
 msgid "Solr index name pointing to"
-msgstr "Nom d'index Solr pointant vers"
+msgstr "Le nom de l'index Solr pointe vers"
 
-#: src/search/models.py:262
+#: src/search/models.py:248
 msgid "Friendlier name in UI"
-msgstr "Nom plus amical dans IU"
+msgstr "Nom plus convivial dans l'IU"
 
-#: src/search/models.py:264
+#: src/search/models.py:250
 msgid "Collection with cores data"
-msgstr "Collection avec données de cœurs"
+msgstr "Collection avec des données de coeurs"
 
-#: src/search/models.py:264
+#: src/search/models.py:250
 msgid "Solr json"
-msgstr "json Solr"
+msgstr "Solr json"
 
-#: src/search/models.py:266 src/search/templates/layout.mako:81
+#: src/search/models.py:252 src/search/templates/layout.mako:81
 msgid "Properties"
 msgstr "Propriétés"
 
-#: src/search/models.py:267
+#: src/search/models.py:253
 msgid "Hue properties (e.g. results by pages number)"
-msgstr "Propriétés Hue (par ex., les résultats par numéro de page)"
+msgstr "Propriétés de Hue (par ex. résultats par nombre de pages)"
 
-#: src/search/search_controller.py:80
+#: src/search/search_controller.py:79
 #, python-format
-msgid "Collection type does not exist: %s"
-msgstr "Le type de collection n'existe pas : %s"
+msgid "Collection type does not exit: %s"
+msgstr "Ce type de collection n'existe pas : %s"
 
-#: src/search/search_controller.py:97
+#: src/search/search_controller.py:96
 msgid " (Copy)"
 msgstr " (Copier)"
 
-#: src/search/views.py:80
+#: src/search/views.py:76
 msgid "There is no collection to search."
 msgstr "Il n'existe aucune collection à rechercher."
 
-#: src/search/views.py:103
-msgid "No collection to download."
-msgstr "Aucune collection à télécharger."
+#: src/search/views.py:128
+msgid "Error"
+msgstr "Erreur"
 
-#: src/search/views.py:121 src/search/views.py:123
-#, python-format
-msgid "Could not download search results: %s"
-msgstr "Impossible de télécharger les résultats de la recherche : %s"
+#: src/search/views.py:140
+msgid "Imported successfully"
+msgstr "Importé avec succès"
 
-#: src/search/views.py:171
-msgid "Collection(s) or core(s) imported successfully!"
-msgstr "Collection(s) ou cœur(s) importé(es)."
+#: src/search/views.py:140
+msgid "Imported with errors: "
+msgstr "Importé avec les erreurs suivantes : "
 
-#: src/search/views.py:174
-msgid "There was an error importing the collection(s) or core(s)"
-msgstr "Une erreur est survenue lors de l'importation de la ou des collection(s)/du ou des cœur(s)"
-
-#: src/search/views.py:177
-msgid "Collection(s) or core(s) partially imported"
-msgstr "Collection(s) ou cœur(s) partiellement importé(es)"
-
-#: src/search/views.py:215 src/search/views.py:229
+#: src/search/views.py:170 src/search/views.py:184
 msgid "POST request required."
 msgstr "Requête POST requise."
 
-#: src/search/views.py:255
+#: src/search/views.py:209
 #, python-format
 msgid "Errors on the form: %s."
 msgstr "Erreurs sur le formulaire : %s."
 
-#: src/search/views.py:295
-#, python-format
-msgid "No preview available, some facets are invalid: %s"
-msgstr "Aperçu indisponible, certaines facettes ne sont pas valides : %s"
-
-#: src/search/views.py:402
-msgid "A POST request is required."
-msgstr "Requête POST requise."
-
 #: src/search/templates/admin_collection_facets.mako:25
 #: src/search/templates/admin_collection_highlighting.mako:25
-#: src/search/templates/admin_collection_highlighting.mako:140
+#: src/search/templates/admin_collection_highlighting.mako:138
 #: src/search/templates/admin_collection_properties.mako:27
 #: src/search/templates/admin_collection_sorting.mako:25
 #: src/search/templates/admin_collection_template.mako:25
 #: src/search/templates/admin_collections.mako:25
 #: src/search/templates/no_collections.mako:25
-#: src/search/templates/search.mako:29 src/search/templates/search.mako:61
+#: src/search/templates/search.mako:25
 msgid "Search"
 msgstr "Rechercher"
 
 #: src/search/templates/admin_collection_facets.mako:29
-msgid "Facets for"
-msgstr "Facettes pour"
+#: src/search/templates/admin_collection_highlighting.mako:29
+#: src/search/templates/admin_collection_sorting.mako:29
+msgid "Search Admin - "
+msgstr "Rechercher administrateur - "
 
 #: src/search/templates/admin_collection_facets.mako:46
-#: src/search/templates/admin_collection_highlighting.mako:43
-#: src/search/templates/admin_collection_sorting.mako:48
+#: src/search/templates/admin_collection_highlighting.mako:42
+#: src/search/templates/admin_collection_sorting.mako:47
 msgid "Enabled"
 msgstr "Activé"
 
@@ -152,7 +126,7 @@ msgstr "Les facettes permettent de filtrer les résultats de manière intuitive.
 
 #: src/search/templates/admin_collection_facets.mako:51
 msgid "Different types of facets can be added on the following steps."
-msgstr "Différents types de facette peuvent être ajoutés aux étapes suivantes."
+msgstr "Il est possible d'ajouter plusieurs types de facettes aux étapes suivantes."
 
 #: src/search/templates/admin_collection_facets.mako:52
 msgid "Facets are currently disabled."
@@ -175,332 +149,274 @@ msgid "Step 4: Date Facets"
 msgstr "Etape 4 : Facettes de date"
 
 #: src/search/templates/admin_collection_facets.mako:62
-msgid "Step 5: Graphical Facet"
-msgstr "Etape 5 : Facette graphique"
+msgid "Step 5: Facets Order"
+msgstr "Etape 5 : Facettes d'ordre"
 
-#: src/search/templates/admin_collection_facets.mako:63
-msgid "Step 6: Facets Order"
-msgstr "Etape 6 : Ordre des facettes"
-
-#: src/search/templates/admin_collection_facets.mako:68
+#: src/search/templates/admin_collection_facets.mako:67
 msgid "Limit"
 msgstr "Limite"
 
-#: src/search/templates/admin_collection_facets.mako:74
+#: src/search/templates/admin_collection_facets.mako:73
 msgid "Mincount"
-msgstr "Nombre min"
+msgstr "Mincount"
 
-#: src/search/templates/admin_collection_facets.mako:80
+#: src/search/templates/admin_collection_facets.mako:79
 msgid "Sort"
 msgstr "Trier"
 
-#: src/search/templates/admin_collection_facets.mako:92
-msgid "There are currently no field facets defined."
+#: src/search/templates/admin_collection_facets.mako:91
+msgid "There are currently no field Facets defined."
 msgstr "Il n'existe actuellement aucune facette de champ définie."
 
-#: src/search/templates/admin_collection_facets.mako:103
-#: src/search/templates/admin_collection_facets.mako:130
-#: src/search/templates/admin_collection_facets.mako:164
-#: src/search/templates/admin_collection_facets.mako:208
-#: src/search/templates/admin_collection_sorting.mako:74
+#: src/search/templates/admin_collection_facets.mako:102
+#: src/search/templates/admin_collection_facets.mako:129
+#: src/search/templates/admin_collection_facets.mako:163
+#: src/search/templates/admin_collection_sorting.mako:72
 msgid "Field"
 msgstr "Champ"
 
-#: src/search/templates/admin_collection_facets.mako:105
-#: src/search/templates/admin_collection_facets.mako:132
-#: src/search/templates/admin_collection_facets.mako:166
-#: src/search/templates/admin_collection_facets.mako:210
-#: src/search/templates/admin_collection_sorting.mako:76
+#: src/search/templates/admin_collection_facets.mako:104
+#: src/search/templates/admin_collection_facets.mako:131
+#: src/search/templates/admin_collection_facets.mako:165
+#: src/search/templates/admin_collection_sorting.mako:74
 msgid "Label"
 msgstr "Etiquette"
 
-#: src/search/templates/admin_collection_facets.mako:109
+#: src/search/templates/admin_collection_facets.mako:108
 msgid "Add to Field Facets"
-msgstr "Ajouter aux facettes Champ"
+msgstr "Ajouter aux facettes de champ"
 
-#: src/search/templates/admin_collection_facets.mako:110
+#: src/search/templates/admin_collection_facets.mako:109
 msgid "The field you are trying to add is already in the list."
-msgstr "Le champ que vous tentez d'ajouter figure déjà dans la liste."
+msgstr "Le champ que vous tentez d'ajouter est déjà dans la liste."
 
-#: src/search/templates/admin_collection_facets.mako:116
-msgid "There are currently no range facets defined."
+#: src/search/templates/admin_collection_facets.mako:115
+msgid "There are currently no Range Facets defined."
 msgstr "Il n'existe actuellement aucune facette de plage définie."
 
-#: src/search/templates/admin_collection_facets.mako:136
-#: src/search/templates/admin_collection_facets.mako:214
+#: src/search/templates/admin_collection_facets.mako:135
 msgid "Start"
-msgstr "Début"
+msgstr "Démarrer"
 
-#: src/search/templates/admin_collection_facets.mako:138
-#: src/search/templates/admin_collection_facets.mako:216
+#: src/search/templates/admin_collection_facets.mako:137
 msgid "End"
 msgstr "Fin"
 
-#: src/search/templates/admin_collection_facets.mako:140
-#: src/search/templates/admin_collection_facets.mako:218
+#: src/search/templates/admin_collection_facets.mako:139
 msgid "Gap"
-msgstr "Ecart"
+msgstr "Intervalle"
 
-#: src/search/templates/admin_collection_facets.mako:144
+#: src/search/templates/admin_collection_facets.mako:143
 msgid "Add to Range Facets"
-msgstr "Ajouter aux facettes Plage"
+msgstr "Ajouter aux facettes de plage"
 
-#: src/search/templates/admin_collection_facets.mako:150
-msgid "There are currently no date facets defined."
+#: src/search/templates/admin_collection_facets.mako:149
+msgid "There are currently no Date Facets defined."
 msgstr "Il n'existe actuellement aucune facette de date définie."
 
-#: src/search/templates/admin_collection_facets.mako:171
+#: src/search/templates/admin_collection_facets.mako:170
 msgid "Range from"
-msgstr "Début de la plage"
+msgstr "Classer à partir de"
 
-#: src/search/templates/admin_collection_facets.mako:175
+#: src/search/templates/admin_collection_facets.mako:174
 msgid "before today until"
 msgstr "avant aujourd'hui jusqu'à"
 
-#: src/search/templates/admin_collection_facets.mako:179
+#: src/search/templates/admin_collection_facets.mako:178
 msgid "before today. Goes up by increments of"
-msgstr "avant aujourd'hui. Augmente par incrément de"
+msgstr "avant aujourd'hui. Augmente par incréments de"
 
-#: src/search/templates/admin_collection_facets.mako:184
+#: src/search/templates/admin_collection_facets.mako:183
 msgid "Date format"
 msgstr "Format de date"
 
-#: src/search/templates/admin_collection_facets.mako:188
+#: src/search/templates/admin_collection_facets.mako:187
 msgid "Add to Date Facets"
-msgstr "Ajouter aux facettes Date"
+msgstr "Ajouter aux facettes de date"
 
-#: src/search/templates/admin_collection_facets.mako:194
-msgid "There is currently no graphical facet defined. Remember, you can add just one field as graphical facet."
-msgstr "Aucune facette graphique n'est actuellement définie. Rappelez-vous que vous ne pouvez ajouter qu'un seul champ comme facette graphique."
-
-#: src/search/templates/admin_collection_facets.mako:215
-msgid "ie. 0"
-msgstr "ie. 0"
-
-#: src/search/templates/admin_collection_facets.mako:215
-msgid "ie. NOW-12HOURS/MINUTES"
-msgstr "ie. NOW-12HOURS/MINUTES"
-
-#: src/search/templates/admin_collection_facets.mako:217
-msgid "ie. 100"
-msgstr "ie. 100"
-
-#: src/search/templates/admin_collection_facets.mako:217
-msgid "ie. NOW"
-msgstr "ie. NOW"
-
-#: src/search/templates/admin_collection_facets.mako:219
-msgid "ie. 10"
-msgstr "ie. 10"
-
-#: src/search/templates/admin_collection_facets.mako:219
-msgid "ie. +30MINUTES"
-msgstr "ie. +30MINUTES"
-
-#: src/search/templates/admin_collection_facets.mako:220
-msgid "If empty this will be treated as a simple Field Facet."
-msgstr "S'il est vide, il sera traité comme une simple facette de champ."
-
-#: src/search/templates/admin_collection_facets.mako:220
-msgid "Read more about facets..."
-msgstr "En savoir plus sur les facettes..."
-
-#: src/search/templates/admin_collection_facets.mako:223
-msgid "Set as Graphical Facet"
-msgstr "Défini comme facette graphique"
-
-#: src/search/templates/admin_collection_facets.mako:224
-#: src/search/templates/admin_collection_facets.mako:225
-msgid "You can add just one field as graphical facet"
-msgstr "Vous ne pouvez ajouter qu'un seul champ comme facette graphique"
-
-#: src/search/templates/admin_collection_facets.mako:231
+#: src/search/templates/admin_collection_facets.mako:193
 msgid "There are currently no Facets defined."
 msgstr "Il n'existe actuellement aucune facette définie."
 
-#: src/search/templates/admin_collection_facets.mako:259
+#: src/search/templates/admin_collection_facets.mako:221
 msgid "Back"
 msgstr "Précédent"
 
-#: src/search/templates/admin_collection_facets.mako:260
+#: src/search/templates/admin_collection_facets.mako:222
 msgid "Next"
 msgstr "Suivant"
 
-#: src/search/templates/admin_collection_facets.mako:261
-#: src/search/templates/admin_collection_highlighting.mako:61
-#: src/search/templates/admin_collection_properties.mako:75
-#: src/search/templates/admin_collection_sorting.mako:93
-#: src/search/templates/admin_collection_template.mako:276
+#: src/search/templates/admin_collection_facets.mako:223
+#: src/search/templates/admin_collection_highlighting.mako:60
+#: src/search/templates/admin_collection_properties.mako:72
+#: src/search/templates/admin_collection_sorting.mako:88
+#: src/search/templates/admin_collection_template.mako:286
 msgid "Save"
 msgstr "Enregistrer"
 
-#: src/search/templates/admin_collection_facets.mako:272
+#: src/search/templates/admin_collection_facets.mako:233
 msgid "Format Help"
-msgstr "Aide Format"
+msgstr "Aide relative au format"
 
-#: src/search/templates/admin_collection_facets.mako:276
+#: src/search/templates/admin_collection_facets.mako:237
 msgid "You can specify here how you want the date to be formatted."
-msgstr "Vous pouvez spécifier ici le format de la date à utiliser."
+msgstr "Vous pouvez indiquer ici le format de la date que vous souhaitez utiliser."
 
-#: src/search/templates/admin_collection_facets.mako:278
+#: src/search/templates/admin_collection_facets.mako:239
 msgid "Use a predefined format:"
 msgstr "Utiliser un format prédéfini :"
 
-#: src/search/templates/admin_collection_facets.mako:312
+#: src/search/templates/admin_collection_facets.mako:273
 msgid "or any combination of these fields:"
-msgstr "ou une combinaison de ces champs :"
+msgstr "ou n'importe quelle combinaison des champs suivants :"
 
-#: src/search/templates/admin_collection_facets.mako:318
+#: src/search/templates/admin_collection_facets.mako:279
 msgid "Token"
 msgstr "Jeton"
 
-#: src/search/templates/admin_collection_facets.mako:319
+#: src/search/templates/admin_collection_facets.mako:280
 msgid "Output"
 msgstr "Sortie"
 
-#: src/search/templates/admin_collection_facets.mako:322
+#: src/search/templates/admin_collection_facets.mako:283
 msgid "Relative time"
 msgstr "Temps relatif"
 
-#: src/search/templates/admin_collection_facets.mako:324
+#: src/search/templates/admin_collection_facets.mako:285
 msgid "9 hours ago"
 msgstr "Il y a 9 heures"
 
-#: src/search/templates/admin_collection_facets.mako:327
+#: src/search/templates/admin_collection_facets.mako:288
 msgid "Month"
 msgstr "Mois"
 
-#: src/search/templates/admin_collection_facets.mako:344
+#: src/search/templates/admin_collection_facets.mako:305
 msgid "Jan Feb ... Nov Dec"
-msgstr "Jan Fév ... Nov Déc"
+msgstr "Janv Fév ... Nov Déc"
 
-#: src/search/templates/admin_collection_facets.mako:349
+#: src/search/templates/admin_collection_facets.mako:310
 msgid "January February ... November December"
 msgstr "Janvier Février ... Novembre Décembre"
 
-#: src/search/templates/admin_collection_facets.mako:352
+#: src/search/templates/admin_collection_facets.mako:313
 msgid "Day of Month"
 msgstr "Jour du mois"
 
-#: src/search/templates/admin_collection_facets.mako:359
+#: src/search/templates/admin_collection_facets.mako:320
 msgid "1st 2nd ... 30th 31st"
-msgstr "1er 2e ... 30e 31e"
+msgstr "1 2 ... 30 31"
 
-#: src/search/templates/admin_collection_facets.mako:367
+#: src/search/templates/admin_collection_facets.mako:328
 msgid "Day of Year"
 msgstr "Jour de l'année"
 
-#: src/search/templates/admin_collection_facets.mako:374
+#: src/search/templates/admin_collection_facets.mako:335
 msgid "1st 2nd ... 364th 365th"
 msgstr "1er 2e ... 364e 365e"
 
-#: src/search/templates/admin_collection_facets.mako:382
+#: src/search/templates/admin_collection_facets.mako:343
 msgid "Day of Week"
 msgstr "Jour de la semaine"
 
-#: src/search/templates/admin_collection_facets.mako:389
+#: src/search/templates/admin_collection_facets.mako:350
 msgid "0th 1st ... 5th 6th"
-msgstr "0 1er ... 5e 6e"
+msgstr "0 1 ... 5 6"
 
-#: src/search/templates/admin_collection_facets.mako:394
+#: src/search/templates/admin_collection_facets.mako:355
 msgid "Sun Mon ... Fri Sat"
 msgstr "Dim Lun ... Ven Sam"
 
-#: src/search/templates/admin_collection_facets.mako:399
+#: src/search/templates/admin_collection_facets.mako:360
 msgid "Sunday Monday ... Friday Saturday"
 msgstr "Dimanche Lundi ... Vendredi Samedi"
 
-#: src/search/templates/admin_collection_facets.mako:402
+#: src/search/templates/admin_collection_facets.mako:363
 msgid "Week of Year"
 msgstr "Semaine de l'année"
 
-#: src/search/templates/admin_collection_facets.mako:409
-#: src/search/templates/admin_collection_facets.mako:424
+#: src/search/templates/admin_collection_facets.mako:370
+#: src/search/templates/admin_collection_facets.mako:385
 msgid "1st 2nd ... 52nd 53rd"
-msgstr "1re 2e ... 52e 53e"
+msgstr "1ère 2e ... 52e 53e"
 
-#: src/search/templates/admin_collection_facets.mako:417
+#: src/search/templates/admin_collection_facets.mako:378
 msgid "ISO Week of Year"
 msgstr "Semaine de l'année ISO"
 
-#: src/search/templates/admin_collection_facets.mako:432
+#: src/search/templates/admin_collection_facets.mako:393
 msgid "Year"
 msgstr "Année"
 
-#: src/search/templates/admin_collection_facets.mako:452
+#: src/search/templates/admin_collection_facets.mako:413
 msgid "Hour"
 msgstr "Heure"
 
-#: src/search/templates/admin_collection_facets.mako:472
+#: src/search/templates/admin_collection_facets.mako:433
 msgid "Minute"
 msgstr "Minute"
 
-#: src/search/templates/admin_collection_facets.mako:482
+#: src/search/templates/admin_collection_facets.mako:443
 msgid "Second"
 msgstr "Seconde"
 
-#: src/search/templates/admin_collection_facets.mako:492
+#: src/search/templates/admin_collection_facets.mako:453
 msgid "Fractional Second"
-msgstr "Fraction de seconde"
+msgstr "Seconde fractionnaire"
 
-#: src/search/templates/admin_collection_facets.mako:512
+#: src/search/templates/admin_collection_facets.mako:473
 msgid "Unix Timestamp"
 msgstr "Horodatage Unix"
 
-#: src/search/templates/admin_collection_facets.mako:521
+#: src/search/templates/admin_collection_facets.mako:482
 msgid "Close"
 msgstr "Fermer"
 
-#: src/search/templates/admin_collection_facets.mako:598
+#: src/search/templates/admin_collection_facets.mako:559
 msgid "There was an error parsing your input"
-msgstr "Une erreur est survenue lors de l'analyse de votre entrée"
+msgstr "Une erreur s'est produite lors de l'analyse de l'entrée"
 
-#: src/search/templates/admin_collection_facets.mako:942
+#: src/search/templates/admin_collection_facets.mako:821
 msgid "Facets updated"
 msgstr "Facettes mises à jour"
 
-#: src/search/templates/admin_collection_facets.mako:946
-#: src/search/templates/admin_collection_highlighting.mako:118
-#: src/search/templates/admin_collection_sorting.mako:211
-#: src/search/templates/admin_collection_template.mako:692
+#: src/search/templates/admin_collection_facets.mako:825
+#: src/search/templates/admin_collection_highlighting.mako:116
+#: src/search/templates/admin_collection_sorting.mako:194
+#: src/search/templates/admin_collection_template.mako:652
 msgid "Error: "
 msgstr "Erreur : "
 
-#: src/search/templates/admin_collection_facets.mako:1036
+#: src/search/templates/admin_collection_facets.mako:906
 msgid "This field is required."
 msgstr "Ce champ est obligatoire."
 
-#: src/search/templates/admin_collection_highlighting.mako:29
-msgid "Highlighting for"
-msgstr "Mise en surbrillance pour"
+#: src/search/templates/admin_collection_highlighting.mako:45
+msgid "Highlighting"
+msgstr "Mise en évidence"
 
 #: src/search/templates/admin_collection_highlighting.mako:46
-msgid "Highlighting"
-msgstr "Surbrillance"
-
-#: src/search/templates/admin_collection_highlighting.mako:47
 msgid "Highlights the query keywords matching some of the fields below."
-msgstr "Met en surbrillance les mots-clés de la requête correspondant à certains des champs ci-dessous."
+msgstr "Met en évidence les mots clés correspondant à certains des champs ci-dessous."
 
-#: src/search/templates/admin_collection_highlighting.mako:50
+#: src/search/templates/admin_collection_highlighting.mako:49
 msgid "Highlighting is currently disabled."
-msgstr "La mise en surbrillance est actuellement désactivée."
+msgstr "La mise en évidence est actuellement désactivée."
 
-#: src/search/templates/admin_collection_highlighting.mako:115
+#: src/search/templates/admin_collection_highlighting.mako:113
 msgid "Updated"
 msgstr "Mis à jour"
 
-#: src/search/templates/admin_collection_highlighting.mako:139
+#: src/search/templates/admin_collection_highlighting.mako:137
 msgid "Select all"
 msgstr "Sélectionner tout"
 
-#: src/search/templates/admin_collection_highlighting.mako:141
+#: src/search/templates/admin_collection_highlighting.mako:139
 msgid "No fields found."
-msgstr "Champs introuvables."
+msgstr "Aucun champ trouvé."
 
 #: src/search/templates/admin_collection_properties.mako:43
-msgid "Properties of"
-msgstr "Propriétés de"
+msgid "Customize "
+msgstr "Personnaliser "
 
 #: src/search/templates/admin_collection_properties.mako:54
 #: src/search/templates/layout.mako:79
@@ -515,224 +431,191 @@ msgstr "Schéma"
 msgid "Indexes"
 msgstr "Index"
 
-#: src/search/templates/admin_collection_properties.mako:71
-msgid "Autocomplete and suggest queries"
-msgstr "Requêtes suggérées et saisies automatiquement"
-
-#: src/search/templates/admin_collection_properties.mako:80
-#: src/search/templates/admin_collection_properties.mako:84
+#: src/search/templates/admin_collection_properties.mako:77
+#: src/search/templates/admin_collection_properties.mako:81
 msgid "Loading..."
 msgstr "Chargement en cours..."
 
-#: src/search/templates/admin_collection_properties_solr_properties.mako:30
+#: src/search/templates/admin_collection_properties_solr_properties.mako:38
 msgid "Property"
 msgstr "Propriété"
 
-#: src/search/templates/admin_collection_properties_solr_properties.mako:31
+#: src/search/templates/admin_collection_properties_solr_properties.mako:39
 msgid "Value"
 msgstr "Valeur"
 
-#: src/search/templates/admin_collection_sorting.mako:29
-msgid "Sorting for"
-msgstr "Tri pour"
-
-#: src/search/templates/admin_collection_sorting.mako:51
-#: src/search/templates/admin_collection_sorting.mako:78
+#: src/search/templates/admin_collection_sorting.mako:50
+#: src/search/templates/admin_collection_sorting.mako:76
 msgid "Sorting"
 msgstr "Tri"
 
-#: src/search/templates/admin_collection_sorting.mako:52
+#: src/search/templates/admin_collection_sorting.mako:51
 msgid "Specify on which fields and order the results are sorted by default."
-msgstr "Spécifiez les champs et l'ordre selon lesquels les résultats seront triés par défaut."
+msgstr "Indiquez les champs et l'ordre dans lesquels les résultats doivent être triés par défaut."
+
+#: src/search/templates/admin_collection_sorting.mako:52
+msgid "The sorting is a combination of the fields, from left to right."
+msgstr "Le tri est une combinaison des champs, de gauche à droite."
 
 #: src/search/templates/admin_collection_sorting.mako:53
-msgid "The sorting is a combination of the \"Default sorting\" fields, from left to right."
-msgstr "Le tri est une combinaison des champs \"Tri par défaut\", de gauche à droite."
-
-#: src/search/templates/admin_collection_sorting.mako:54
 msgid "Sorting is currently disabled."
 msgstr "Le tri est actuellement désactivé."
 
-#: src/search/templates/admin_collection_sorting.mako:60
+#: src/search/templates/admin_collection_sorting.mako:59
 msgid "There are currently no fields defined."
 msgstr "Il n'existe actuellement aucun champ défini."
 
-#: src/search/templates/admin_collection_sorting.mako:67
-msgid "Default sorting"
-msgstr "Tri par défaut"
-
-#: src/search/templates/admin_collection_sorting.mako:84
-msgid "Include in default sorting"
-msgstr "Inclure dans le tri par défaut"
-
-#: src/search/templates/admin_collection_sorting.mako:88
+#: src/search/templates/admin_collection_sorting.mako:83
 msgid "Add to Sorting"
 msgstr "Ajouter au tri"
 
-#: src/search/templates/admin_collection_sorting.mako:208
+#: src/search/templates/admin_collection_sorting.mako:191
 msgid "Sorting updated"
 msgstr "Tri mis à jour"
 
-#: src/search/templates/admin_collection_template.mako:140
-msgid "Snippet editor for"
-msgstr "Editeur d'extrait pour"
+#: src/search/templates/admin_collection_template.mako:138
+msgid "Template Editor "
+msgstr "Editeur de modèles "
 
-#: src/search/templates/admin_collection_template.mako:149
+#: src/search/templates/admin_collection_template.mako:147
 msgid "Visual Editor"
 msgstr "Editeur visuel"
 
-#: src/search/templates/admin_collection_template.mako:150
+#: src/search/templates/admin_collection_template.mako:148
 msgid "Preview"
 msgstr "Aperçu"
 
-#: src/search/templates/admin_collection_template.mako:151
+#: src/search/templates/admin_collection_template.mako:149
 msgid "Source"
 msgstr "Source"
 
-#: src/search/templates/admin_collection_template.mako:152
+#: src/search/templates/admin_collection_template.mako:150
 msgid "Advanced"
 msgstr "Avancé"
 
-#: src/search/templates/admin_collection_template.mako:162
-msgid "Cloud Template"
-msgstr "Modèle de cloud"
-
-#: src/search/templates/admin_collection_template.mako:167
-msgid "Layout"
-msgstr "Disposition"
-
-#: src/search/templates/admin_collection_template.mako:174
-#: src/search/templates/admin_collection_template.mako:220
+#: src/search/templates/admin_collection_template.mako:171
+#: src/search/templates/admin_collection_template.mako:226
 msgid "Available Fields"
 msgstr "Champs disponibles"
 
-#: src/search/templates/admin_collection_template.mako:178
-#: src/search/templates/admin_collection_template.mako:202
-#: src/search/templates/admin_collection_template.mako:224
-#: src/search/templates/admin_collection_template.mako:248
+#: src/search/templates/admin_collection_template.mako:175
+#: src/search/templates/admin_collection_template.mako:203
+#: src/search/templates/admin_collection_template.mako:230
+#: src/search/templates/admin_collection_template.mako:258
 msgid "Click on this button to add the field"
-msgstr "Cliquer sur ce bouton pour ajouter le champ"
+msgstr "Cliquez sur ce bouton pour ajouter le champ"
 
 #: src/search/templates/admin_collection_template.mako:186
-#: src/search/templates/admin_collection_template.mako:232
+#: src/search/templates/admin_collection_template.mako:241
 msgid "Available Functions"
 msgstr "Fonctions disponibles"
 
-#: src/search/templates/admin_collection_template.mako:189
-msgid "Formats date or timestamp in DD-MM-YYYY"
-msgstr "Affiche une date ou un horodatage au format DD-MM-AAAA"
-
 #: src/search/templates/admin_collection_template.mako:190
-msgid "Formats date or timestamp in HH:mm:ss"
-msgstr "Affiche une date ou un horodatage au format HH:mm:ss"
+msgid "Formats date or timestamp in DD-MM-YYYY"
+msgstr "Convertit l'horodatage ou la date au format JJ-MM-AAAA"
 
 #: src/search/templates/admin_collection_template.mako:191
-msgid "Formats date or timestamp in DD-MM-YYYY HH:mm:ss"
-msgstr "Affiche une date ou un horodatage au format DD-MM-AAAA HH:mm:ss"
+msgid "Formats date or timestamp in HH:mm:ss"
+msgstr "Convertit l'horodatage ou la date au format hh:mm:ss"
 
 #: src/search/templates/admin_collection_template.mako:192
-#: src/search/templates/admin_collection_template.mako:238
-msgid "Formats a date in the full format"
-msgstr "Affiche une date au format complet"
+msgid "Formats date or timestamp in DD-MM-YYYY HH:mm:ss"
+msgstr "Convertit l'horodatage ou la date au format JJ-MM-AAAA hh:mm:ss"
 
 #: src/search/templates/admin_collection_template.mako:193
-#: src/search/templates/admin_collection_template.mako:239
-msgid "Formats a date as a Unix timestamp"
-msgstr "Affiche une date sous forme d'horodatage Unix"
+#: src/search/templates/admin_collection_template.mako:248
+msgid "Formats a date in the full format"
+msgstr "Convertit l'horodatage ou la date au format complet"
 
 #: src/search/templates/admin_collection_template.mako:194
-msgid "Formats a Unix timestamp as Ns, Nmin, Ndays... ago"
-msgstr "Formate un horodatage Unix sous la forme \"Il y a Ns, Nmin, Njours...\""
+#: src/search/templates/admin_collection_template.mako:249
+msgid "Formats a date as a Unix timestamp"
+msgstr "Convertit la date sous forme d'un horodatage Unix"
 
 #: src/search/templates/admin_collection_template.mako:195
-#: src/search/templates/admin_collection_template.mako:241
-msgid "Downloads and embed the file in the browser"
-msgstr "Télécharge et intègre le fichier au navigateur"
+msgid "Formats a Unix timestamp as Ns, Nmin, Ndays... ago"
+msgstr "Convertit l'horodatage Unix en \"Il y a Ns, Nmin, Njours...\""
 
 #: src/search/templates/admin_collection_template.mako:196
-#: src/search/templates/admin_collection_template.mako:242
+#: src/search/templates/admin_collection_template.mako:251
+msgid "Downloads and embed the file in the browser"
+msgstr "Télécharge et intègre le fichier dans le navigateur"
+
+#: src/search/templates/admin_collection_template.mako:197
+#: src/search/templates/admin_collection_template.mako:252
 msgid "Downloads the linked file"
 msgstr "Télécharge le fichier lié"
 
-#: src/search/templates/admin_collection_template.mako:197
-#: src/search/templates/admin_collection_template.mako:243
+#: src/search/templates/admin_collection_template.mako:198
+#: src/search/templates/admin_collection_template.mako:253
 msgid "Preview file in File Browser"
 msgstr "Aperçu du fichier dans le navigateur de fichiers"
 
-#: src/search/templates/admin_collection_template.mako:198
-#: src/search/templates/admin_collection_template.mako:244
-msgid "Truncate a value after 100 characters"
-msgstr "Tronquer une valeur après 100 caractères"
-
 #: src/search/templates/admin_collection_template.mako:199
-#: src/search/templates/admin_collection_template.mako:245
-msgid "Truncate a value after 250 characters"
-msgstr "Tronquer une valeur après 250 caractères"
+#: src/search/templates/admin_collection_template.mako:254
+msgid "Truncate a value after 100 characters"
+msgstr "Tronquer les valeurs après 100 caractères"
 
 #: src/search/templates/admin_collection_template.mako:200
-#: src/search/templates/admin_collection_template.mako:246
+#: src/search/templates/admin_collection_template.mako:255
+msgid "Truncate a value after 250 characters"
+msgstr "Tronquer les valeurs après 250 caractères"
+
+#: src/search/templates/admin_collection_template.mako:201
+#: src/search/templates/admin_collection_template.mako:256
 msgid "Truncate a value after 500 characters"
-msgstr "Tronquer une valeur après 500 caractères"
+msgstr "Tronquer les valeurs après 500 caractères"
 
-#: src/search/templates/admin_collection_template.mako:235
+#: src/search/templates/admin_collection_template.mako:245
 msgid "Formats a date in the DD-MM-YYYY format"
-msgstr "Affiche une date au format DD-MM-AAAA"
+msgstr "Convertit la date au format JJ-MM-AAAA"
 
-#: src/search/templates/admin_collection_template.mako:236
+#: src/search/templates/admin_collection_template.mako:246
 msgid "Formats a date in the HH:mm:ss format"
-msgstr "Affiche une date au format HH:mm:ss"
+msgstr "Convertit la date au format hh:mm:ss"
 
-#: src/search/templates/admin_collection_template.mako:237
+#: src/search/templates/admin_collection_template.mako:247
 msgid "Formats a date in the DD-MM-YYYY HH:mm:ss format"
-msgstr "Affiche une date au format DD-MM-AAAA HH:mm:ss"
+msgstr "Convertit la date au format JJ-MM-AAAA hh:mm:ss"
 
-#: src/search/templates/admin_collection_template.mako:240
+#: src/search/templates/admin_collection_template.mako:250
 msgid "Shows the relative time"
 msgstr "Affiche le temps relatif"
 
-#: src/search/templates/admin_collection_template.mako:267
+#: src/search/templates/admin_collection_template.mako:277
 msgid "Here you can define custom CSS classes or Javascript functions that you can use in your template."
-msgstr "Ici vous pouvez définir des classes CSS ou des fonctions Javascript personnalisées que vous pouvez utiliser dans votre modèle."
+msgstr "Vous pouvez définir ici les classes de style (CSS) ou les fonctions Javascript que vous souhaitez utiliser dans votre modèle."
 
-#: src/search/templates/admin_collection_template.mako:282
-#: src/search/templates/admin_collection_template.mako:392
+#: src/search/templates/admin_collection_template.mako:292
+#: src/search/templates/admin_collection_template.mako:402
 msgid "Insert layout"
-msgstr "Insérer une disposition"
+msgstr "Insérer une mise en page"
 
-#: src/search/templates/admin_collection_template.mako:391
-#: src/search/templates/admin_collection_template.mako:407
-#: src/search/templates/admin_collections.mako:100
+#: src/search/templates/admin_collection_template.mako:401
+#: src/search/templates/admin_collections.mako:97
 msgid "Cancel"
 msgstr "Annuler"
 
-#: src/search/templates/admin_collection_template.mako:399
-msgid "Load a template"
-msgstr "Charger un modèle"
-
-#: src/search/templates/admin_collection_template.mako:408
-msgid "Load template"
-msgstr "Charger un modèle"
-
-#: src/search/templates/admin_collection_template.mako:662
+#: src/search/templates/admin_collection_template.mako:622
 msgid "Start with this!"
-msgstr "Commencez avec ça !"
+msgstr "Commencez par ceci !"
 
-#: src/search/templates/admin_collection_template.mako:663
+#: src/search/templates/admin_collection_template.mako:623
 msgid "You can add a layout from here"
-msgstr "Vous pouvez ajouter une disposition à partir d'ici"
+msgstr "Vous pouvez ajouter une mise en page à partir d'ici"
 
-#: src/search/templates/admin_collection_template.mako:689
+#: src/search/templates/admin_collection_template.mako:649
 msgid "Template updated"
 msgstr "Modèle mis à jour"
 
 #: src/search/templates/admin_collections.mako:31
 #: src/search/templates/layout.mako:32
 msgid "Search page"
-msgstr "Rechercher une page"
+msgstr "Page de recherche"
 
 #: src/search/templates/admin_collections.mako:33
 msgid "Collection Manager"
-msgstr "Gestionnaire de collections"
+msgstr "Gestionnaire de collection"
 
 #: src/search/templates/admin_collections.mako:41
 msgid "Filter collections by name..."
@@ -747,94 +630,84 @@ msgid "There are currently no collections defined."
 msgstr "Il n'existe actuellement aucune collection définie."
 
 #: src/search/templates/admin_collections.mako:52
-msgid "Click here to add"
-msgstr "Cliquer ici pour ajouter"
+msgid "Click on Import to add one or more."
+msgstr "Cliquez sur Importer pour en ajouter une ou plusieurs."
 
-#: src/search/templates/admin_collections.mako:52
-msgid "one or more."
-msgstr "une ou plusieurs."
-
-#: src/search/templates/admin_collections.mako:70
+#: src/search/templates/admin_collections.mako:68
 msgid "Click to edit"
 msgstr "Cliquer pour modifier"
 
-#: src/search/templates/admin_collections.mako:72
+#: src/search/templates/admin_collections.mako:70
 msgid "Copy"
 msgstr "Copier"
 
-#: src/search/templates/admin_collections.mako:73
+#: src/search/templates/admin_collections.mako:71
 msgid "Delete"
 msgstr "Supprimer"
 
-#: src/search/templates/admin_collections.mako:85
+#: src/search/templates/admin_collections.mako:82
 msgid "Import Collections and Cores"
-msgstr "Importer des collections et des cœurs"
+msgstr "Importer les collections et les coeurs"
 
-#: src/search/templates/admin_collections.mako:90
+#: src/search/templates/admin_collections.mako:87
 msgid "Collections"
 msgstr "Collections"
 
-#: src/search/templates/admin_collections.mako:91
+#: src/search/templates/admin_collections.mako:88
 msgid "All available collections from the Solr URL in hue.ini have been imported."
-msgstr "Toutes les collections disponibles via l'URL Solr dans le fichier hue.ini ont été importées."
+msgstr "Toutes les collections disponibles depuis l'URL Solr dans le fichier hue.ini ont été importées."
 
-#: src/search/templates/admin_collections.mako:94
+#: src/search/templates/admin_collections.mako:91
 msgid "Cores"
-msgstr "Cœurs"
+msgstr "Coeurs"
 
-#: src/search/templates/admin_collections.mako:95
+#: src/search/templates/admin_collections.mako:92
 msgid "All available cores from the Solr URL in hue.ini have been imported."
-msgstr "Tous les cœurs disponibles via l'URL Solr dans le fichier hue.ini ont été importés."
+msgstr "Tous les coeurs disponibles depuis l'URL Solr dans le fichier hue.ini ont été importés."
 
-#: src/search/templates/admin_collections.mako:101
+#: src/search/templates/admin_collections.mako:98
 msgid "Import Selected"
-msgstr "Importer les éléments sélectionnés"
+msgstr "Importation sélectionnée"
 
-#: src/search/templates/admin_collections.mako:117
+#: src/search/templates/admin_collections.mako:114
 msgid "Confirm Delete"
 msgstr "Confirmer la suppression"
 
-#: src/search/templates/admin_collections.mako:120
+#: src/search/templates/admin_collections.mako:117
 msgid "Are you sure you want to delete this collection?"
 msgstr "Voulez-vous vraiment supprimer cette collection ?"
 
-#: src/search/templates/admin_collections.mako:123
+#: src/search/templates/admin_collections.mako:120
 msgid "No"
 msgstr "Non"
 
-#: src/search/templates/admin_collections.mako:124
+#: src/search/templates/admin_collections.mako:121
 msgid "Yes"
 msgstr "Oui"
 
-#: src/search/templates/admin_collections.mako:213
 #: src/search/templates/admin_collections.mako:216
-msgid "Imported: "
-msgstr "Importé : "
+msgid "Collections imported successfully."
+msgstr "Collections importées avec succès."
 
-#: src/search/templates/admin_collections.mako:216
-#: src/search/templates/admin_collections.mako:219
-msgid "Not imported: "
-msgstr "Non importé : "
+#: src/search/templates/admin_collections.mako:228
+msgid "Collection deleted successfully."
+msgstr "Collections supprimées avec succès."
 
 #: src/search/templates/admin_collections.mako:232
-msgid "Collection deleted successfully."
-msgstr "Collection supprimée."
-
-#: src/search/templates/admin_collections.mako:236
 msgid "Collection copied successfully."
-msgstr "Collection copiée."
+msgstr "Collections copiées avec succès."
 
-#: src/search/templates/layout.mako:33 src/search/templates/search.mako:57
+#: src/search/templates/layout.mako:33 src/search/templates/search.mako:48
 msgid "Collection manager"
-msgstr "Gestionnaire de collections"
+msgstr "Gestionnaire de collection"
 
 #: src/search/templates/layout.mako:40
 msgid "Search Admin"
-msgstr "Rechercher un administrateur"
+msgstr "Rechercher administrateur"
 
 #: src/search/templates/layout.mako:84
 msgid "Search it"
-msgstr "Rechercher"
+msgstr "Le rechercher"
 
 #: src/search/templates/layout.mako:87
 msgid "Template"
@@ -842,7 +715,7 @@ msgstr "Modèle"
 
 #: src/search/templates/layout.mako:89
 msgid "1. Snippet"
-msgstr "1. Extrait"
+msgstr "1. Fragment de code"
 
 #: src/search/templates/layout.mako:92
 msgid "2. Facets"
@@ -854,12 +727,12 @@ msgstr "3. Tri"
 
 #: src/search/templates/layout.mako:98
 msgid "4. Highlighting"
-msgstr "4. Surbrillance"
+msgstr "4. Mise en évidence"
 
 #: src/search/templates/macros.mako:197
 #, python-format
 msgid "Retweeted %s times"
-msgstr "Retweeté %s fois"
+msgstr "Retwitté %s fois"
 
 #: src/search/templates/macros.mako:207
 msgid "Reply"
@@ -867,90 +740,39 @@ msgstr "Répondre"
 
 #: src/search/templates/macros.mako:213
 msgid "Retweet"
-msgstr "Retweeter"
+msgstr "Retwitter"
 
 #: src/search/templates/no_collections.mako:47
 msgid "It seems there is nothing to search on ..."
-msgstr "Il semble qu'il n'y ait pas d'éléments sur lesquels baser la recherche..."
+msgstr "Il semblerait qu'il n'y ait rien à rechercher..."
 
-#: src/search/templates/search.mako:56
+#: src/search/templates/search.mako:47
 msgid "Customize this collection"
 msgstr "Personnaliser cette collection"
 
-#: src/search/templates/search.mako:83
-msgid "XLS"
-msgstr "XLS"
+#: src/search/templates/search.mako:141
+msgid "Sort by"
+msgstr "Trier par"
 
-#: src/search/templates/search.mako:84
-msgid "CSV"
-msgstr "CSV"
-
-#: src/search/templates/search.mako:97
-msgid "A demo index is used. In order to be interactive, please "
-msgstr "Un index de démonstration est utilisé. Pour bénéficier de l'interactivité, "
-
-#: src/search/templates/search.mako:97
-msgid "create the indexes"
-msgstr "créez les index"
-
-#: src/search/templates/search.mako:97
-msgid " in Solr."
-msgstr " dans Solr."
-
-#: src/search/templates/search.mako:220
+#: src/search/templates/search.mako:150
 #, python-format
-msgid "Page %s of %s. Showing %s results (%s seconds)"
-msgstr "Page %s sur %s. %s résultats affichés (%s secondes)"
+msgid "Showing %s - %s of %s results"
+msgstr "Affichage de %s - %s sur %s résultats"
 
-#: src/search/templates/search.mako:286
+#: src/search/templates/search.mako:187
+msgid "Beginning of List"
+msgstr "Début de la liste"
+
+#: src/search/templates/search.mako:190
 msgid "Previous Page"
 msgstr "Page précédente"
 
-#: src/search/templates/search.mako:302
+#: src/search/templates/search.mako:195
 msgid "Next Page"
 msgstr "Page suivante"
 
-#: src/search/templates/search.mako:311
-msgid "Your search"
-msgstr "Votre recherche"
-
-#: src/search/templates/search.mako:311
-msgid "did not match any documents."
-msgstr "ne correspond à aucun document."
-
-#: src/search/templates/search.mako:313
-msgid "Suggestions:"
-msgstr "Suggestions :"
-
-#: src/search/templates/search.mako:315
-msgid "Make sure all words are spelled correctly."
-msgstr "Assurez-vous que tous les mots sont bien orthographiés."
-
-#: src/search/templates/search.mako:316
-msgid "Try different keywords."
-msgstr "Essayez différents mots-clés."
-
-#: src/search/templates/search.mako:317
-msgid "Try more general keywords."
-msgstr "Essayez des mots-clés plus généraux."
-
-#: src/search/templates/search.mako:318
-msgid "Try fewer keywords."
-msgstr "Essayez moins de mots-clés."
-
-#: src/search/templates/search.mako:370
-msgid "Show"
-msgstr "Afficher"
-
-#: src/search/templates/search.mako:370
-msgid "more..."
-msgstr "plus..."
-
-#: src/search/templates/search.mako:654
-msgid "The graphical facets works just with numbers or dates. Please choose another field."
-msgstr "Les facettes graphiques fonctionnent seulement avec des nombres ou des dates. Veuillez choisir un autre champ."
-
-#: src/search/templates/search.mako:658
-msgid "There was an error initializing the graphical facet component."
-msgstr "Une erreur est survenue lors de l'initialisation du composant de facette graphique."
+#: src/search/templates/search.mako:204
+#, python-format
+msgid "Your search - %s - did not match any documents."
+msgstr "Votre recherche - %s - ne correspond à aucun document."
 

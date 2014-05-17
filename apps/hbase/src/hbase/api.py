@@ -62,14 +62,11 @@ class HbaseApi(object):
       full_config = [conf.HBASE_CLUSTERS.get()]
     for config in full_config: #hack cause get() is weird
       match = re.match('\((?P<name>[^\(\)\|]+)\|(?P<host>.+):(?P<port>[0-9]+)\)', config)
-      if match:
-        clusters += [{
-          'name': match.group('name'),
-          'host': match.group('host'),
-          'port': int(match.group('port'))
-        }]
-      else:
-        raise Exception(_("Cluster configuration %s isn't formatted correctly.") % config)
+      clusters += [{
+        'name': match.group('name'),
+        'host': match.group('host'),
+        'port': int(match.group('port'))
+      }]
     return clusters
 
   def getCluster(self, name):
@@ -121,14 +118,12 @@ class HbaseApi(object):
     return data
 
   def getAutocompleteRows(self, cluster, tableName, numRows, query):
-    query = smart_str(query)
     try:
       client = self.connectCluster(cluster)
       scan = get_thrift_type('TScan')(startRow=query, stopRow=None, timestamp=None, columns=[], caching=None, filterString="PrefixFilter('" + query + "') AND ColumnPaginationFilter(1,0)", batchSize=None)
       scanner = client.scannerOpenWithScan(tableName, scan, None)
       return [result.row for result in client.scannerGetList(scanner, numRows)]
-    except Exception, e:
-      LOG.error('Autocomplete error: %s' % smart_str(e))
+    except:
       return []
 
   def getRow(self, cluster, tableName, columns, startRowKey):
@@ -160,11 +155,7 @@ class HbaseApi(object):
     return client.mutateRow(tableName, smart_str(row), mutations, None)
 
   def deleteColumn(self, cluster, tableName, row, column):
-    return self.deleteColumns(cluster, tableName, smart_str(row), [smart_str(column)])
-
-  def deleteAllRow(self, cluster, tableName, row, attributes):
-    client = self.connectCluster(cluster)
-    return client.deleteAllRow(tableName, smart_str(row), attributes)
+    return self.deleteColumns(cluster, tableName, smart_str(row), [column])
 
   def putRow(self, cluster, tableName, row, data):
     client = self.connectCluster(cluster)
@@ -180,7 +171,7 @@ class HbaseApi(object):
   def putUpload(self, cluster, tableName, row, column, value):
     client = self.connectCluster(cluster)
     Mutation = get_thrift_type('Mutation')
-    return client.mutateRow(tableName, smart_str(row), [Mutation(column=smart_str(column), value=value.file.read(value.size))], None)
+    return client.mutateRow(tableName, row, [Mutation(column=smart_str(column), value=value.file.read(value.size))], None)
 
   def getRowQuerySet(self, cluster, tableName, columns, queries):
     client = self.connectCluster(cluster)
@@ -195,8 +186,7 @@ class HbaseApi(object):
       if fs:
         fs = " AND (" + fs.strip() + ")"
       filterstring = "(ColumnPaginationFilter(%i,0) AND PageFilter(%i))" % (limit, limit) + (fs or "")
-      scan_columns = [smart_str(column.strip(':')) for column in query['columns']] or [smart_str(column.strip(':')) for column in columns]
-      scan = get_thrift_type('TScan')(startRow=smart_str(query['row_key']), stopRow=None, timestamp=None, columns=scan_columns, caching=None, filterString=filterstring, batchSize=None)
+      scan = get_thrift_type('TScan')(startRow=smart_str(query['row_key']), stopRow=None, timestamp=None, columns=[smart_str(column) for column in (query['columns'] or columns)], caching=None, filterString=filterstring, batchSize=None)
       scanner = client.scannerOpenWithScan(tableName, scan, None)
       aggregate_data += client.scannerGetList(scanner, query['scan_length'])
     return aggregate_data
@@ -221,3 +211,4 @@ class HbaseApi(object):
       batches += [BatchMutation(row=row_key, mutations=mutations)]
     client.mutateRows(tableName, batches, None)
     return True
+

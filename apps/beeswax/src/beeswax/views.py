@@ -49,7 +49,8 @@ import beeswax.management.commands.beeswax_install_examples
 from beeswax import common, data_export, models
 from beeswax.models import SavedQuery, QueryHistory
 from beeswax.server import dbms
-from beeswax.server.dbms import expand_exception, get_query_server_config, QueryServerException
+from beeswax.server.dbms import expand_exception, get_query_server_config,\
+  QueryServerException
 
 
 LOG = logging.getLogger(__name__)
@@ -368,30 +369,63 @@ def execute_query(request, design_id=None, query_history_id=None):
   """
   View function for executing an arbitrary query.
   """
-  action = 'query'
+  authorized_get_design(request, design_id)
 
-  if query_history_id:
-    query_history = authorized_get_query_history(request, query_history_id, must_exist=True)
-    design = query_history.design
+  error_message = None
+  form = QueryForm()
+  action = request.path
+  log = None
+  app_name = get_app_name(request)
+  query_type = SavedQuery.TYPES_MAPPING[app_name]
+  design = safe_get_design(request, query_type, design_id)
+  on_success_url = request.REQUEST.get('on_success_url')
+  databases = []
+  query_server = get_query_server_config(app_name)
+  db = dbms.get(request.user, query_server)
 
-    try:
-      if query_history.server_id and query_history.server_guid:
-        handle, state = _get_query_handle_and_state(query_history)
+  try:
+    databases = _get_db_choices(request)
+  except Exception, ex:
+    error_message, log = expand_exception(ex, db)
 
-      if 'on_success_url' in request.GET:
-        if request.GET.get('on_success_url'):
-          action = 'watch-redirect'
-        else:
-          action = 'watch-results'
-      else:
-        action = 'editor-results'
-    except QueryServerException, e:
-      if 'Invalid query handle' in e.message or 'Invalid OperationHandle' in e.message:
-        query_history.save_state(QueryHistory.STATE.expired)
-        LOG.warn("Invalid query handle", exc_info=sys.exc_info())
-        action = 'editor-expired-results'
-      else:
-        raise e
+  if request.method == 'POST':
+    form.bind(request.POST)
+    form.query.fields['database'].choices =  databases # Could not do it in the form
+
+    to_explain = request.POST.has_key('button-explain')
+    to_submit = request.POST.has_key('button-submit')
+
+    # Always validate the saveform, which will tell us whether it needs explicit saving
+    if form.is_valid():
+      to_save = form.saveform.cleaned_data['save']
+      to_saveas = form.saveform.cleaned_data['saveas']
+
+      if to_saveas and not design.is_auto:
+        # Save As only affects a previously saved query
+        design = design.clone()
+
+      if to_submit or to_save or to_saveas or to_explain:
+        explicit_save = to_save or to_saveas
+        design = save_design(request, form, query_type, design, explicit_save)
+        action = reverse(app_name + ':execute_query', kwargs=dict(design_id=design.id))
+
+      if to_explain or to_submit:
+        query_str = form.query.cleaned_data["query"]
+
+        # (Optional) Parameterization.
+        parameterization = get_parameterization(request, query_str, form, design, to_explain)
+        if parameterization:
+          return parameterization
+
+        try:
+          query = HQLdesign(form, query_type=query_type)
+          if to_explain:
+            return explain_directly(request, query, design, query_server)
+          else:
+            download = request.POST.has_key('download')
+            return execute_directly(request, query, query_server, design, on_success_url=on_success_url, download=download)
+        except Exception, ex:
+          error_message, log = expand_exception(ex, db)
   else:
     # Check perms.
     authorized_get_design(request, design_id)
@@ -414,6 +448,24 @@ def execute_query(request, design_id=None, query_history_id=None):
   }
 
   return render('execute.mako', request, context)
+
+
+def close_operation(request, query_id):
+  response = {'status': -1, 'message': ''}
+
+  if request.method != 'POST':
+    response['message'] = _('A POST request is required.')
+  else:
+    try:
+      query_history = authorized_get_history(request, query_id, must_exist=True)
+      db = dbms.get(request.user, query_history.get_query_server_config())
+      db.close_operation(query_history.get_handle())
+      _get_query_handle_and_state(query_history)
+      response = {'status': 0}
+    except Exception, e:
+      response = {'message': unicode(e)}
+
+  return HttpResponse(json.dumps(response), mimetype="application/json")
 
 
 def view_results(request, id, first_row=0):
@@ -537,12 +589,106 @@ def view_results(request, id, first_row=0):
         + ('?context=' + context_param or '') + '&format=json'
     })
 
-  context['columns'] = massage_columns_for_json(columns)
-  if 'save_form' in context:
-    del context['save_form']
-  if 'query' in context:
-    del context['query']
-  return HttpResponse(json.dumps(context), mimetype="application/json")
+  if request.GET.get('format') == 'json':
+    context = {
+      'results': data,
+      'has_more': results.has_more,
+      'next_row': results.start_row + len(data),
+      'start_row': results.start_row,
+      'next_json_set': reverse(get_app_name(request) + ':view_results', kwargs={
+        'id': str(id),
+        'first_row': results.start_row + len(data)
+      }) + ('?context=' + context_param or '') + '&format=json'
+    }
+    return HttpResponse(json.dumps(context), mimetype="application/json")
+
+  return render('watch_results.mako', request, context)
+
+
+def save_results(request, id):
+  """
+  Save the results of a query to an HDFS directory or Hive table.
+  """
+  query_history = authorized_get_history(request, id, must_exist=True)
+
+  app_name = get_app_name(request)
+  server_id, state = _get_query_handle_and_state(query_history)
+  query_history.save_state(state)
+  error_msg, log = None, None
+
+  if request.method == 'POST':
+    if not query_history.is_success():
+      msg = _('This query is %(state)s. Results unavailable.') % {'state': state}
+      raise PopupException(msg)
+
+    db = dbms.get(request.user, query_history.get_query_server_config())
+    form = beeswax.forms.SaveResultsForm(request.POST, db=db, fs=request.fs)
+
+    if request.POST.get('cancel'):
+      return format_preserving_redirect(request, '/%s/watch/%s' % (app_name, id))
+
+    if form.is_valid():
+      try:
+        handle, state = _get_query_handle_and_state(query_history)
+        result_meta = db.get_results_metadata(handle)
+      except Exception, ex:
+        raise PopupException(_('Cannot find query: %s') % ex)
+
+      try:
+        if form.cleaned_data['save_target'] == form.SAVE_TYPE_DIR:
+          target_dir = form.cleaned_data['target_dir']
+          query_history = db.insert_query_into_directory(query_history, target_dir)
+          redirected = redirect(reverse('beeswax:watch_query', args=[query_history.id]) \
+                                + '?on_success_url=' + reverse('filebrowser.views.view', kwargs={'path': target_dir}))
+        elif form.cleaned_data['save_target'] == form.SAVE_TYPE_TBL:
+          redirected = db.create_table_as_a_select(request, query_history, form.cleaned_data['target_table'], result_meta)
+      except Exception, ex:
+        error_msg, log = expand_exception(ex, db)
+        raise PopupException(_('The result could not be saved: %s.') % log, detail=ex)
+
+      return redirected
+  else:
+    form = beeswax.forms.SaveResultsForm()
+
+  if error_msg:
+    error_msg = _('Failed to save results from query: %(error)s.') % {'error': error_msg}
+
+  return render('save_results.mako', request, {
+    'action': reverse(get_app_name(request) + ':save_results', kwargs={'id': str(id)}),
+    'form': form,
+    'error_msg': error_msg,
+    'log': log,
+  })
+
+
+def confirm_query(request, query, on_success_url=None):
+  """
+  Used by other forms to confirm a query before it's executed.
+  The form is the same as execute_query below.
+
+  query - The HQL about to be executed
+  on_success_url - The page to go to upon successful execution
+  """
+  mform = QueryForm()
+  mform.bind()
+  mform.query.initial = dict(query=query)
+
+  return render('execute.mako', request, {
+    'form': mform,
+    'action': reverse(get_app_name(request) + ':execute_query'),
+    'error_message': None,
+    'design': None,
+    'on_success_url': on_success_url,
+    'design': None,
+    'autocomplete_base_url': reverse(get_app_name(request) + ':autocomplete', kwargs={}),
+  })
+
+
+def explain_directly(request, query, design, query_server):
+  explanation = dbms.get(request.user, query_server).explain(query)
+  context = ("design", design)
+
+  return render('explain.mako', request, dict(query=query, explanation=explanation.textual, query_context=context))
 
 
 def configuration(request):
@@ -606,7 +752,7 @@ def query_done_cb(request, server_id):
 
     link = "%s%s" % \
               (get_desktop_uri_prefix(),
-               reverse(get_app_name(request) + ':watch_query_history', kwargs={'query_history_id': query_history.id}))
+               reverse(get_app_name(request) + ':watch_query', kwargs={'id': query_history.id}))
     body = _("%(subject)s. See the results here: %(link)s\n\nQuery:\n%(query)s") % {
                'subject': subject, 'link': link, 'query': query_history.query
              }
@@ -646,8 +792,9 @@ def authorized_get_design(request, design_id, owner_only=False, must_exist=False
     else:
       return None
 
-  if owner_only:
-    design.doc.get().can_write_or_exception(request.user)
+  if not conf.SHARE_SAVED_QUERIES.get() and (not request.user.is_superuser or owner_only) \
+      and design.owner != request.user:
+    raise PopupException(_('Cannot access design %(id)s.') % {'id': design_id})
   else:
     design.doc.get().can_read_or_exception(request.user)
 
@@ -665,10 +812,9 @@ def authorized_get_query_history(request, query_history_id, owner_only=False, mu
     else:
       return None
 
-  # Some queries don't have a design so are not linked to Document Model permission
-  if query_history.design is None or not query_history.design.doc.exists():
-    if not request.user.is_superuser and request.user != query_history.owner:
-      raise PopupException(_('Permission denied to read QueryHistory %(id)s') % {'id': query_history_id})
+  if not conf.SHARE_SAVED_QUERIES.get() and (not request.user.is_superuser or owner_only) \
+      and query_history.owner != request.user:
+    raise PopupException(_('Cannot access QueryHistory %(id)s.') % {'id': query_history_id})
   else:
     query_history.design.doc.get().can_read_or_exception(request.user)
 
@@ -684,7 +830,10 @@ def safe_get_design(request, design_type, design_id=None):
   design = None
 
   if design_id is not None:
-    design = authorized_get_design(request, design_id)
+    try:
+      design = models.SavedQuery.get(design_id, request.user, design_type)
+    except models.SavedQuery.DoesNotExist:
+      messages.error(request, _('Design does not exist.'))
 
   if design is None:
     design = SavedQuery(owner=request.user, type=design_type)
@@ -843,7 +992,15 @@ def _get_query_handle_and_state(query_history):
   if handle is None:
     raise PopupException(_("Failed to retrieve query state from the Query Server."))
 
-  state = dbms.get(query_history.owner, query_history.get_query_server_config()).get_state(handle)
+  query_server = query_history.get_query_server_config()
+
+  if query_server['server_name'] == 'impala' and not handle.has_result_set:
+    state = QueryHistory.STATE.available
+  else:
+    try:
+      state = dbms.get(query_history.owner, query_history.get_query_server_config()).get_state(handle)
+    except QueryServerException, e:
+      raise PopupException(_("Failed to contact Server to check query status."), detail=e)
 
   if state is None:
     raise PopupException(_("Failed to contact Server to check query status."))

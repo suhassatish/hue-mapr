@@ -126,7 +126,7 @@ ${ commonheader(None, "jobsub", user) | n,unicode }
               <a href="#new-design/fs" class="new-node-link" title="${_('Create Fs design')}" rel="tooltip"><i class="fa fa-plus-circle"></i> Fs</a>
             </li>
             <li>
-              <a href="#new-design/ssh" class="new-node-link" title="${_('Create SSH design')}" rel="tooltip"><i class="fa fa-plus-circle"></i> Ssh</a>
+              <a href="#new-design/ssh" class="new-node-link" title="${_('Create SSH design')}" rel="tooltip"><i class="icon-plus-sign"></i> Ssh</a>
             </li>
             <li>
               <a href="#new-design/shell" class="new-node-link" title="${_('Create Shell design')}" rel="tooltip"><i class="fa fa-plus-circle"></i> Shell</a>

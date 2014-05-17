@@ -25,13 +25,19 @@ from desktop.lib.python_util import force_dict_to_strings
 from desktop.lib.rest.resource import Resource
 
 
+def get_code(resp):
+  try:
+    return resp.getcode()
+  except AttributeError:
+    return resp.code
+
 class SqoopResource(Resource):
   """
   Sqoop resources provide extra response headers.
   @see desktop.lib.rest.resource
   """
 
-  def invoke(self, method, relpath=None, params=None, data=None, headers=None, allow_redirects=False):
+  def invoke(self, method, relpath=None, params=None, data=None, headers=None):
     """
     Invoke an API method.
     Look for sqoop-error-code and sqoop-error-message.
@@ -42,21 +48,21 @@ class SqoopResource(Resource):
                                 path,
                                 params=params,
                                 data=data,
-                                headers=headers,
-                                allow_redirects=allow_redirects)
+                                headers=headers)
+    body = self._get_body(resp)
 
-    if resp.status_code == 200:
+    if get_code(resp) == 200:
       self._client.logger.debug(
           "%(method)s Got response:\n%(headers)s\n%(body)s" % {
             'method': method,
             'headers': resp.headers,
-            'body': resp.content
+            'body': body
       })
       # Sqoop always uses json
-      return self._format_response(resp)
+      return self._format_body(resp, body)
     else:
       # Body will probably be a JSON formatted stacktrace
-      body = self._format_response(resp)
+      body = self._format_body(resp, body)
       msg_format = "%(method)s Sqoop Error (%s): %s\n\t%s"
       args = (resp.headers['sqoop-error-code'], resp.headers['sqoop-error-message'], body)
       self._client.logger.error(msg_format % args)
