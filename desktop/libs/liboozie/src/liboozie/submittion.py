@@ -96,6 +96,9 @@ class Submission(object):
     self._update_properties(jobtracker, deployment_dir)
     self.properties.update({'oozie.wf.application.path': deployment_dir})
 
+    self.properties.pop('oozie.wf.rerun.failnodes', None) # Re-init
+    self.properties.pop('oozie.wf.rerun.skip.nodes', None)
+
     if fail_nodes:
       self.properties.update({'oozie.wf.rerun.failnodes': fail_nodes})
     elif not skip_nodes:

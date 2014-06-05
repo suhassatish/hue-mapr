@@ -437,6 +437,7 @@ def rerun_oozie_job(request, job_id, app_path):
       args['deployment_dir'] = app_path
 
       mapping = dict([(param['name'], param['value']) for param in params_form.cleaned_data])
+      print args
 
       _rerun_workflow(request, job_id, args, mapping)
 

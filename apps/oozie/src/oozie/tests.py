@@ -2991,6 +2991,7 @@ class TestOozieSubmissions(OozieBase):
     post_data.update({u'rerun_form_choice': [u'skip_nodes'], u'skip_nodes': [u'Sleep']})
 
     response = self.c.post(reverse('oozie:rerun_oozie_job', kwargs={'job_id': job.id, 'app_path': job.appPath}), data=post_data, follow=True)
+    print response
     job = OozieServerProvider.wait_until_completion(response.context['oozie_workflow'].id)
     assert_equal('SUCCEEDED', job.status)
     assert_equal(100, job.get_progress())
