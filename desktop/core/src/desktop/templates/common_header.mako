@@ -57,6 +57,7 @@ from django.utils.translation import ugettext as _
   <style type="text/css">
     % if conf.CUSTOM.BANNER_TOP_HTML.get():
       body {
+        display: none;
         visibility: hidden;
         padding-top: ${str(int(padding[:-2]) + 30) + 'px'};
       }
@@ -164,12 +165,18 @@ from django.utils.translation import ugettext as _
         $.ajaxSetup({ cache: false });
       }
 
-      $("body").css({
-        'display': 'block',
-        'visibility': 'visible'
-      });
+      // prevents framebusting and clickjacking
+      if (self == top){
+        $("body").css({
+          'display': 'block',
+          'visibility': 'visible'
+        });
+      }
+      else {
+        top.location = self.location;
+      }
 
- $("input, textarea").placeholder();
+      $("input, textarea").placeholder();
       $(".submitter").keydown(function (e) {
         if (e.keyCode == 13) {
           $(this).closest("form").submit();
