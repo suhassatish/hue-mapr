@@ -31,12 +31,26 @@ var AppViewModel = function() {
     });
   });
   self.search = new tagsearch();
+  self.m7path = ko.observable("");
 
   self.views = {
     tables: new DataTableViewModel({columns:['Table Name', 'Enabled'], el: 'views.tables', reload: function(callback) {
       var d_self = this;
       d_self.items.removeAll();
       API.queryCluster("getTableList").done(function(data) {
+        d_self.items.removeAll(); //need to remove again before callback executes
+        for(q=0; q<data.length; q++) {
+          d_self.items.push(new TableDataRow(data[q]));
+        }
+        d_self._el.find('a[data-row-selector=true]').jHueRowSelector();
+        if(callback!=null)
+          callback();
+      });
+    }}),
+    m7tables: new DataTableViewModel({columns:['Table Name', 'Enabled'], el: 'views.tables', reload: function(callback) {
+      var d_self = this;
+      d_self.items.removeAll();
+      API.queryCluster("getM7TableList", self.m7path).done(function(data) {
         d_self.items.removeAll(); //need to remove again before callback executes
         for(q=0; q<data.length; q++) {
           d_self.items.push(new TableDataRow(data[q]));

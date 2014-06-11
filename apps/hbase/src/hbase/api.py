@@ -110,6 +110,10 @@ class HbaseApi(object):
     client = self.connectCluster(cluster)
     return [{'name': name, 'enabled': client.isTableEnabled(name)} for name in client.getTableNames()]
 
+  def getM7TableList(self, cluster, path):
+    client = self.connectCluster(cluster)
+    return [{'name': name, 'enabled': client.isTableEnabled(name)} for name in client.getM7TableNames(path)]
+
   def getRows(self, cluster, tableName, columns, startRowKey, numRows, prefix=False):
     client = self.connectCluster(cluster)
     if prefix == False:

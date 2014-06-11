@@ -37,7 +37,11 @@ var API = {
     var handler = $.post(url, $_POST).error(function(response) {
       $(document).trigger("error", JSON.parse(response.responseText).message);
     });
+    //console.log(handler, "handler");
+    //console.log(arguments, "arguments");    
     var doneHandle = handler.done;
+    //console.log(doneHandle, "doneHandle");    
+
     handler.done = function() {
       var cb = arguments[0];
       return doneHandle.apply(handler, [function(data)
@@ -74,4 +78,7 @@ var API = {
   getTableList: function(cluster, callback) {
     return API.query('getTableList', cluster).done(callback);
   }
+  getM7TableList: function(cluster, callback, m7path) {
+    return API.query('getM7TableList', cluster, m7path).done(callback);
+  } 
 }

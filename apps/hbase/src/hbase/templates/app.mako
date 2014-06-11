@@ -180,6 +180,13 @@ ${ commonheader(None, "hbase", user) | n,unicode }
         % endif
       </div>
     </div>
+    
+ <!--   <div id="container"> -->
+    <div class="actionbar">
+        <input type="text" id="search" class="input-large search-query" placeholder="${_('Search M7 table path: /mapr/M7/')}" data-bind="value: app.m7path, valueUpdate: 'afterkeydown'">
+	<button id="button" class="btn" data-bind="click: app.views.m7tables, valueUpdate: 'afterkeydown'"> <i class="fa"></i> ${_('Search')}</button>
+        <ul id="result"></ul>
+    </div>
 
     ${datatable('views.tables')}
 
@@ -374,7 +381,7 @@ ${ commonheader(None, "hbase", user) | n,unicode }
         % if user.is_superuser:
           <button class="btn" data-dismiss="modal" aria-hidden="true">${_('Cancel')}</button>
           <a id="file-upload-btn" class="btn fileChooserBtn" aria-hidden="true"><i class="fa fa-upload"></i> ${_('Upload')}</a>
-          <input data-bind="visible: mime.split('/')[0].toLowerCase() != 'application' && mime.split('/')[0].toLowerCase() != 'image'" type="submit" class="btn btn-primary" value="${_('Save')}">
+          <input type="submit" class="btn btn-primary" value="${_('Save')}">
         % else:
           <button class="btn" data-dismiss="modal" aria-hidden="true">${_('OK')}</button>
         % endif

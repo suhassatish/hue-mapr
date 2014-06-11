@@ -66,6 +66,7 @@ if len(sys.argv) <= 1 or sys.argv[1] == '--help':
   print '  void scannerClose(ScannerID id)'
   print '   getRowOrBefore(Text tableName, Text row, Text family)'
   print '  TRegionInfo getRegionInfo(Text row)'
+  print '   getM7TableNames(string path)'
   print ''
   sys.exit(0)
 
@@ -374,6 +375,12 @@ elif cmd == 'getRegionInfo':
     print 'getRegionInfo requires 1 args'
     sys.exit(1)
   pp.pprint(client.getRegionInfo(eval(args[0]),))
+
+elif cmd == 'getM7TableNames':
+  if len(args) != 1:
+    print 'getM7TableNames requires 1 args'
+    sys.exit(1)
+  pp.pprint(client.getM7TableNames(args[0],))
 
 else:
   print 'Unrecognized method %s' % cmd

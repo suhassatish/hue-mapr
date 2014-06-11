@@ -912,4 +912,13 @@ service Hbase {
     1:Text row,
 
   ) throws (1:IOError io)
+
+  /** uri string of path to search for M7 tables 
+   * @return returns a list of M7 table names in specified argument path
+   */
+  list<Text> getM7TableNames(
+    /** M7 table path uri */
+    1:string path
+  ) throws (1:IOError io)
+
 }
