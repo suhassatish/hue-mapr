@@ -200,3 +200,11 @@
   -webkit-animation-fill-mode: both;
   animation-fill-mode: both;
 }
+
+.destination {
+  background: #e5e5e5;
+  cursor: pointer;
+  font-weight: bold;
+  margin-right: 1em;
+  padding: 3px;
+}

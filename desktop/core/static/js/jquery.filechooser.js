@@ -16,8 +16,7 @@
 /*
  * jHue fileChooser plugin
  */
-;
-(function ($, window, document, undefined) {
+;(function ($, window, document, undefined) {
 
     var pluginName = "jHueFileChooser",
         // global variables (jHueFileChooserGlobals, useful for i18n) can be set on
@@ -58,13 +57,13 @@
             var extendedDefaults = $.extend({}, defaults, jHueFileChooserGlobals);
             extendedDefaults.labels = $.extend({}, defaults.labels, jHueFileChooserGlobals.labels);
             this.options = $.extend({}, extendedDefaults, options);
-            if (options != null){
+            if (options !== null){
                 this.options.labels = $.extend({}, extendedDefaults.labels, options.labels);
             }
         }
         else {
             this.options = $.extend({}, defaults, options);
-            if (options != null){
+            if (options !== null){
                 this.options.labels = $.extend({}, defaults.labels, options.labels);
             }
         }
@@ -77,10 +76,10 @@
     Plugin.prototype.setOptions = function (options) {
         this.options = $.extend({}, defaults, options);
         if (this.options.forceRefresh){
-          if ($.trim(this.options.initialPath) != "") {
+          if ($.trim(this.options.initialPath) !== "") {
             this.navigateTo(this.options.initialPath);
           }
-          else if ($.totalStorage(STORAGE_PREFIX + this.options.user) != null) {
+          else if ($.totalStorage(STORAGE_PREFIX + this.options.user) !== null) {
             this.navigateTo($.totalStorage(STORAGE_PREFIX + this.options.user));
           }
           else {
@@ -88,7 +87,7 @@
           }
         }
         else {
-          if ($.trim(this.options.initialPath) != "") {
+          if ($.trim(this.options.initialPath) !== "") {
             this.navigateTo(this.options.initialPath);
           }
         }
@@ -106,7 +105,7 @@
             $(_parent.element).empty();
             path = data.current_dir_path; // use real path.
             var _flist = $("<ul>").addClass("unstyled").css("margin-left", "2px");
-            if (data.title != null && data.title == "Error") {
+            if (data.title !== null && data.title === "Error") {
                 var _errorMsg = $("<div>").addClass("alert").addClass("alert-error").text(data.message);
                 _errorMsg.appendTo($(_parent.element));
                 var _previousLink = $("<a>").addClass("btn").addClass("bnt-small").text(_parent.options.labels.BACK).click(function () {
@@ -130,12 +129,12 @@
                 _homelink.appendTo(_home);
                 $("<span>").addClass("divider").css("margin-right", "20px").appendTo(_home);
                 _home.appendTo(_breadcrumbs);
-                if (typeof data.breadcrumbs != "undefined" && data.breadcrumbs != null){
+                if (typeof data.breadcrumbs !== undefined && data.breadcrumbs !== null){
                   var _bLength = data.breadcrumbs.length;
                   $(data.breadcrumbs).each(function (cnt, crumb) {
                       var _crumb = $("<li>");
                       var _crumbLink = $("<a>");
-                      var _crumbLabel = (crumb.label != null && crumb.label != "") ? crumb.label : "/";
+                      var _crumbLabel = (crumb.label !== null && crumb.label !== "") ? crumb.label : "/";
                       _crumbLink.attr("href", "javascript:void(0)").text(_crumbLabel).appendTo(_crumb);
                       if (cnt < _bLength - 1) {
                           if (cnt > 0) {
@@ -146,7 +145,7 @@
                           }
                       }
                       _crumb.click(function () {
-                          var _url = (crumb.url != null && crumb.url != "") ? crumb.url : "/";
+                          var _url = (crumb.url !== null && crumb.url !== "") ? crumb.url : "/";
                           _parent.options.onFolderChange(_url);
                           _parent.navigateTo(_url);
                       });
@@ -158,15 +157,15 @@
                 $(data.files).each(function (cnt, file) {
                     var _f = $("<li>");
                     var _flink = $("<a>");
-                    _flink.attr("href", "javascript:void(0)").text(" " + (file.name != "" ? file.name : "..")).appendTo(_f);
-                    if (file.type == "dir") {
+                    _flink.attr("href", "javascript:void(0)").text(" " + (file.name !== "" ? file.name : "..")).appendTo(_f);
+                    if (file.type === "dir") {
                         $("<i class='fa fa-folder'></i>").prependTo(_flink);
                         _f.click(function () {
                             _parent.options.onFolderChange(file.path);
                             _parent.navigateTo(file.path);
                         });
                     }
-                    if (file.type == "file") {
+                    if (file.type === "file") {
                         $("<i class='fa fa-file-o'></i>").prependTo(_flink);
                         _f.click(function () {
                             _parent.options.onFileChoose(file.path);
@@ -258,7 +257,7 @@
                     _actions.appendTo($(_parent.element));
                 }
                 window.setTimeout(function () {
-                  $(_parent.element).parent().scrollTop(0)
+                  $(_parent.element).parent().scrollTop(0);
                 }, 100);
             }
         }).error(function(){
@@ -266,7 +265,7 @@
               $(document).trigger("info", _parent.options.labels.FILE_NOT_FOUND);
               _parent.options.onError();
             }
-            _parent.navigateTo(_parent.options.errorRedirectPath != "" ? _parent.options.errorRedirectPath : "/?default_to_home");
+            _parent.navigateTo(_parent.options.errorRedirectPath !== "" ? _parent.options.errorRedirectPath : "/?default_to_home");
         });
     };
 
@@ -281,7 +280,7 @@
             },
             onComplete:function (id, fileName, responseJSON) {
                 num_of_pending_uploads--;
-                if(num_of_pending_uploads == 0){
+                if(num_of_pending_uploads === 0){
                     _parent.navigateTo(path);
                 }
             },
@@ -305,10 +304,10 @@
     }
 
     Plugin.prototype.init = function () {
-        if ($.trim(this.options.initialPath) != "") {
+        if ($.trim(this.options.initialPath) !== "") {
             this.navigateTo(this.options.initialPath);
         }
-        else if ($.totalStorage(STORAGE_PREFIX + this.options.user) != null) {
+        else if ($.totalStorage(STORAGE_PREFIX + this.options.user) !== null) {
             this.navigateTo($.totalStorage(STORAGE_PREFIX + this.options.user));
         }
         else {
@@ -325,6 +324,6 @@
                 $.data(this, 'plugin_' + pluginName).setOptions(options);
             }
         });
-    }
+    };
 
 })(jQuery, window, document);

@@ -1280,7 +1280,7 @@ a#advanced-btn:hover {
 
 .tooltip {
   border: 0;
-  z-index: 1032;
+  z-index: 2000;
 }
 
 .nav i {
