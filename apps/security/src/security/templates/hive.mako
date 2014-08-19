@@ -30,7 +30,7 @@ ${ layout.menubar(section='hive') }
 <script type="text/html" id="role">
   <div class="acl-block-title"><i class="fa fa-cube muted"></i> <a class="pointer" data-bind="click: function(){  $root.showRole($data); }"><span data-bind="text: name"></span></a></div>
   <div data-bind="template: { name: 'privilege', foreach: privileges }"></div>
-  <div class="acl-block acl-actions">
+  <div class="acl-block acl-actions" data-bind="click: privilegesChanged().length == 0 ? addPrivilege : void(0)">
     <span class="pointer" data-bind="click: addPrivilege" title="${ _('Add privilege') }"><i class="fa fa-plus"></i></span>
     <span class="pointer" data-bind="click: $root.list_sentry_privileges_by_authorizable, visible: privilegesChanged().length > 0" title="${ _('Undo') }"> &nbsp; <i class="fa fa-undo"></i></span>
     <span class="pointer" data-bind="click: $root.role.savePrivileges, visible: privilegesChanged().length > 0" title="${ _('Save') }"> &nbsp; <i class="fa fa-save"></i></span>
@@ -46,15 +46,15 @@ ${ layout.menubar(section='hive') }
       <a class="pointer" style="margin-right: 4px" data-bind="click: function() { if (editing()) { editing(false); }}"><i class="fa fa-eye"></i></a>
       <a class="pointer" style="margin-right: 4px" data-bind="click: remove"><i class="fa fa-times"></i></a>
     </div>
-    <input name="db" data-bind="attr: { name: 'privilege-' + $index() }" type="radio" checked/>
-    <input type="text" data-bind="value: $data.path, valueUpdate: 'afterkeydown'" placeholder="dbName.tableName">
+    <input value="db" data-bind="attr: { name: 'privilege-' + $index() }, checked: type" type="radio" />
+    <input type="text" data-bind="hivechooser: $data.path, enable: type() == 'db'" placeholder="dbName.tableName">
 
-    <input name="uri" data-bind="attr: { name: 'privilege-' + $index() }" type="radio"/>
-    <input type="text" data-bind="value: $data.URI" placeholder="URI">
+    <input value="uri" data-bind="attr: { name: 'privilege-' + $index() }, checked: type" type="radio"/>
+    <input type="text" data-bind="filechooser: $data.URI, enable: type() == 'uri'" placeholder="URI">
 
     <select data-bind="options: $root.availableActions, select2: { update: $data.action, type: 'action'}" style="width: 100px"></select>
 
-    &nbsp;&nbsp;<a class="pointer showAdvanced" data-bind="click: function(){ showAdvanced(true); }, visible: ! showAdvanced()"><i class="fa fa-cog"></i> ${ _('Show advanced') }</a>
+    <span class="showAdvancedSpace">&nbsp;&nbsp;</span><a class="pointer showAdvanced" data-bind="click: function(){ showAdvanced(true); }, visible: ! showAdvanced()"><i class="fa fa-cog"></i> ${ _('Show advanced') }</a>
 
     <div class="acl-block-section" data-bind="visible: showAdvanced">
       <input type="text" data-bind="value: serverName" placeholder="serverName">
@@ -160,7 +160,7 @@ ${ layout.menubar(section='hive') }
                     </a>
                     &nbsp;
                     <a class="pointer" data-bind="visible: $root.assist.checkedItems().length > 0, click: function(){ $('#bulkActionsModal').modal('show'); }" rel="tooltip" data-placement="right" title="${ _('Add, replace or remove ACLs for the checked paths') }">
-                      <i class="fa fa-cogs"></i>
+                      <i class="fa fa-copy"></i>
                     </a>
                   </div>
 
@@ -172,10 +172,10 @@ ${ layout.menubar(section='hive') }
             </div>
             <div class="span6 acl-panel">
               <div class="acl-panel-content">
+                <a data-bind="visible: $root.assist.privileges().length > 0, click: function(){ $root.showCreateRole(true); $('#createRoleModal').modal('show'); }" class="btn pointer pull-right"><i class="fa fa-plus-circle"></i> ${ _('Add role') }</a>
                 <h4 style="margin-top: 4px">${ _('Privileges') }</h4>
-                <div data-bind="visible: $root.assist.privileges().length == 0"><em class="muted">${ _('No privileges found for the selected item.')}</em></div>
-                  <div data-bind="template: { name: 'role', foreach: $root.assist.roles }">
-                </div>
+                <div data-bind="visible: $root.assist.privileges().length == 0"><em class="muted">${ _('No privileges found for the selected item.')} <a class="pointer" data-bind="click: function(){ $root.showCreateRole(true); $('#createRoleModal').modal('show'); }">${ _('Click here to add a new role.') }</a> </em></div>
+                <div data-bind="template: { name: 'role', foreach: $root.assist.roles }"></div>
               </div>
             </div>
           </div>
@@ -270,7 +270,7 @@ ${ layout.menubar(section='hive') }
               <tr data-bind="visible: $data.showPrivileges">
                 <td colspan="2"></td>
                 <td colspan="4">
-                  <div class="acl-block acl-actions">
+                  <div class="acl-block acl-actions" data-bind="click: privilegesChanged().length == 0 ? addPrivilege : void(0)">
                     <span class="pointer" data-bind="click: addPrivilege, visible: $data.showPrivileges" title="${ _('Add privilege') }"><i class="fa fa-plus"></i></span>
                     <span class="pointer" data-bind="click: $root.list_sentry_privileges_by_role, visible: privilegesChanged().length > 0" title="${ _('Undo') }"> &nbsp; <i class="fa fa-undo"></i></span>
                     <span class="pointer" data-bind="click: $root.role.savePrivileges, visible: privilegesChanged().length > 0" title="${ _('Save') }"> &nbsp; <i class="fa fa-save"></i></span>
@@ -297,7 +297,8 @@ ${ layout.menubar(section='hive') }
     <div class="row-fluid">
       <div class="span6">
         <h4>${ _('Name') }</h4>
-        <input type="text" class="input-xlarge" data-bind="value: $data.name" placeholder="${ _('Required') }" style="width: 360px" />
+        <input type="text" class="input-xlarge" data-bind="value: $data.name, valueUpdate: 'afterkeydown', style: {'border-color': $root.role.hasDuplicateName() ? '#b94a48':''}" placeholder="${ _('Required') }" style="width: 360px" />
+        <div style="color: #b94a48;" data-bind="visible: $root.role.hasDuplicateName"><em>${ _('The specified role name already exists.') }</em></div>
       </div>
       <div class="span6">
         <h4>${ _('Groups') }</h4>
@@ -307,13 +308,13 @@ ${ layout.menubar(section='hive') }
 
     <h4>${ _('Privileges') }</h4>
     <div data-bind="template: { name: 'privilege', foreach: privileges }"></div>
-    <div class="acl-block acl-actions">
-      <span class="pointer" data-bind="click: addPrivilege" title="${ _('Add privilege') }"><i class="fa fa-plus"></i></span>
+    <div class="acl-block acl-actions pointer" data-bind="click: addPrivilege">
+      <span class="pointer" title="${ _('Add privilege') }"><i class="fa fa-plus"></i></span>
     </div>
   </div>
   <div class="modal-footer">
     <button class="btn" data-dismiss="modal" aria-hidden="true" data-bind="click: $root.role.reset">${ _('Cancel') }</button>
-    <button data-loading-text="${ _('Saving...') }" class="btn btn-primary disable-enter" data-bind="click: $root.role.create">${ _('Save') }</button>
+    <button data-loading-text="${ _('Saving...') }" class="btn btn-primary disable-enter" data-bind="click: $root.role.create, enable: ! $root.role.hasDuplicateName()">${ _('Save') }</button>
   </div>
 </div>
 
@@ -332,7 +333,7 @@ ${ layout.menubar(section='hive') }
 <div id="bulkActionsModal" class="modal hide fade in" role="dialog">
   <div class="modal-header">
     <a href="#" class="close" data-dismiss="modal">&times;</a>
-    <h3>${ _('What would you like to do with the checked paths?') }</h3>
+    <h3>${ _('Apply some bulk operations') }</h3>
   </div>
   <div class="modal-body" style="overflow-x: hidden">
 
@@ -340,7 +341,7 @@ ${ layout.menubar(section='hive') }
       <div class="span6">
         <h4>${ _('Checked items') }</h4>
         <ul class="unstyled modal-panel" data-bind="foreach: $root.assist.checkedItems">
-          <li><span class="force-word-break" data-bind="text: path()"></span></li>
+          <li><span class="force-word-break" data-bind="text: path"></span></li>
         </ul>
       </div>
       <div class="span6">
@@ -358,30 +359,43 @@ ${ layout.menubar(section='hive') }
       <div class="span4 center">
         <div class="big-btn" data-bind="css: {'selected': $root.bulkAction() == 'add'}, click: function(){$root.bulkAction('add')}">
           <i class="fa fa-plus"></i><br/><br/>
-          ${ _('Add current privileges to checkbox selection') }
+          <span class="bulk-action-description">${ _('Add current privileges to checkbox selection') }</span>
         </div>
       </div>
       <div class="span4 center">
         <div class="big-btn" data-bind="css: {'selected': $root.bulkAction() == 'sync'}, click: function(){$root.bulkAction('sync')}">
-          <i class="fa fa-copy"></i><br/><br/>
-          ${ _('Replace checkbox selection with current privileges') }
+          <i class="fa fa-random"></i><br/><br/>
+          <span class="bulk-action-description">${ _('Replace checkbox selection with current privileges') }</span>
         </div>
       </div>
       <div class="span4 center">
         <div class="big-btn" data-bind="css: {'selected': $root.bulkAction() == 'delete'}, click: function(){$root.bulkAction('delete')}">
-          <i class="fa fa-times"></i><br/><br/>
-          ${ _('Remove privileges of checkbox selection') }
+          <i class="fa fa-eraser"></i><br/><br/>
+          <span class="bulk-action-description">${ _('Remove privileges of checkbox selection') }</span>
         </div>
       </div>
     </div>
 
   </div>
   <div class="modal-footer">
-    <label class="checkbox pull-left"><input type="checkbox" data-bind="checked: $root.assist.recursive"> ${ _('Apply recursively to all subfolders and files') }</label>
     <button class="btn" data-dismiss="modal" aria-hidden="true">${ _('Cancel') }</button>
     <button class="btn" data-bind="css: {'btn-primary': $root.bulkAction() != 'delete', 'btn-danger': $root.bulkAction() == 'delete'}, click: $root.bulkPerfomAction">${ _('Confirm') }</button>
   </div>
 </div>
+
+<div id="chooseFile" class="modal hide fade">
+  <div class="modal-header">
+      <a href="#" class="close" data-dismiss="modal">&times;</a>
+      <h3>${_('Choose a file')}</h3>
+  </div>
+  <div class="modal-body">
+      <div id="filechooser">
+      </div>
+  </div>
+  <div class="modal-footer">
+  </div>
+</div>
+
 
 <%def name="treeIcons()">
   'fa-database': isDb(),
@@ -400,6 +414,8 @@ ${ tree.import_templates(itemClick='$root.assist.setPath', iconClick='$root.assi
 
 <script src="/static/ext/js/moment.min.js" type="text/javascript" charset="utf-8"></script>
 <script src="/static/js/jquery.hiveautocomplete.js" type="text/javascript" charset="utf-8"></script>
+<script src="/static/js/jquery.filechooser.js" type="text/javascript" charset="utf-8"></script>
+
 
   <script type="text/javascript" charset="utf-8">
     var viewModel = new HiveViewModel(${ initial | n,unicode });
@@ -422,6 +438,7 @@ ${ tree.import_templates(itemClick='$root.assist.setPath', iconClick='$root.assi
       }
 
       $("#path").jHueHiveAutocomplete({
+        skipColumns: true,
         home: viewModel.assist.path(),
         onPathChange: function (path) {
           setPathFromAutocomplete(path);
@@ -473,7 +490,6 @@ ${ tree.import_templates(itemClick='$root.assist.setPath', iconClick='$root.assi
           highlightMainMenu(mainSection);
           viewModel.updateSectionHash(mainSection);
         }
-
         logGA(mainSection);
       }
 

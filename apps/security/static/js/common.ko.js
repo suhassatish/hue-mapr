@@ -97,3 +97,71 @@ ko.bindingHandlers.select2 = {
     }
   }
 };
+
+ko.bindingHandlers.hivechooser = {
+  init: function(element, valueAccessor, allBindingsAccessor, vm) {
+    var self = $(element);
+    self.val(valueAccessor()());
+    function setPathFromAutocomplete(path){
+      self.val(path);
+      self.change();
+    }
+    self.jHueHiveAutocomplete({
+      skipColumns: true,
+      home: "/",
+      onPathChange: function (path) {
+        setPathFromAutocomplete(path);
+      },
+      onEnter: function (el) {
+        setPathFromAutocomplete(el.val());
+      }
+    });
+  }
+}
+
+ko.bindingHandlers.filechooser = {
+  init: function(element, valueAccessor, allBindingsAccessor, vm) {
+    var self = $(element);
+    self.after(getFileBrowseButton(self, true));
+  }
+};
+
+function getFileBrowseButton(inputElement, selectFolder) {
+  return $("<button>").addClass("btn").addClass("fileChooserBtn").text("..").click(function (e) {
+    e.preventDefault();
+    // check if it's a relative path
+    callFileChooser();
+
+    function callFileChooser() {
+      var _initialPath = $.trim(inputElement.val()) != "" ? inputElement.val() : "/";
+      if (_initialPath.indexOf("hdfs://") > -1){
+        _initialPath = _initialPath.substring(7);
+      }
+      $("#filechooser").jHueFileChooser({
+        suppressErrors: true,
+        selectFolder: (selectFolder) ? true : false,
+        onFolderChoose: function (filePath) {
+          handleChoice(filePath);
+          if (selectFolder) {
+            $("#chooseFile").modal("hide");
+          }
+        },
+        onFileChoose: function (filePath) {
+          handleChoice(filePath);
+          $("#chooseFile").modal("hide");
+        },
+        createFolder: false,
+        uploadFile: false,
+        initialPath: _initialPath,
+        errorRedirectPath: "",
+        forceRefresh: true
+      });
+      $("#chooseFile").modal("show");
+    }
+
+    function handleChoice(filePath) {
+      inputElement.val("hdfs://" + filePath);
+      inputElement.change();
+    }
+  });
+}

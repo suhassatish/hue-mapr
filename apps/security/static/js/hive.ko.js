@@ -67,6 +67,7 @@ var Privilege = function (vm, privilege) {
   self.grantor = ko.observable(typeof privilege.grantor != "undefined" && privilege.grantor != null ? privilege.grantor : "");
 
   // UI
+  self.type = ko.observable("db");
   self.showAdvanced = ko.observable(false);
   self.path = ko.computed({
     read: function () {
@@ -126,6 +127,7 @@ var Role = function (vm, role) {
   self.originalPrivileges = ko.observableArray();
   self.showPrivileges = ko.observable(false);
   self.showEditGroups = ko.observable(false);
+  self.hasDuplicateName = ko.observable(false);
 
   self.privilegesChanged = ko.computed(function () {
     return $.grep(self.privileges(), function (privilege) {
@@ -194,6 +196,7 @@ var Role = function (vm, role) {
         $(document).trigger("created.role");
         var role = new Role(vm, data.role);
         vm.roles.unshift(role);
+        vm.assist.refreshTree();
         vm.list_sentry_privileges_by_role(role); // Show privileges        
       } else {
         $(document).trigger("error", data.message);
@@ -210,6 +213,7 @@ var Role = function (vm, role) {
     }, function (data) {
       if (data.status == 0) {
         vm.removeRole(role.name);
+        vm.assist.refreshTree();
       } else {
         $(document).trigger("error", data.message);
       }
@@ -224,6 +228,7 @@ var Role = function (vm, role) {
       role: ko.mapping.toJSON(role)
     }, function (data) {
       if (data.status == 0) {
+        vm.list_sentry_roles_by_group();
         vm.list_sentry_privileges_by_authorizable();
         vm.list_sentry_privileges_by_role(role); // Refresh all role privileges
       } else {
@@ -431,10 +436,11 @@ var Assist = function (vm, initial) {
           else {
             if (self.treeAdditionalData[path].loaded) {
               self.fetchHivePath(path, function () {
+                self.updatePathProperty(self.growingTree(), path, "isExpanded", self.treeAdditionalData[path].expanded);
                 Object.keys(self.treeAdditionalData).forEach(function (ipath) {
                   if (ipath.split(".").length == 2 && ipath.split(".")[0] == path) {
                     self.fetchHivePath(ipath, function () {
-                      self.updateTreeProperty(self.growingTree(), "isExpanded", true);
+                      self.updatePathProperty(self.growingTree(), ipath, "isExpanded", self.treeAdditionalData[ipath].expanded);
                       self.loadData(self.growingTree());
                     });
                   }
@@ -445,13 +451,14 @@ var Assist = function (vm, initial) {
         }
       });
     });
-
+    vm.list_sentry_privileges_by_authorizable();
   }
 
   self.setPath = function (obj, toggle) {
     if (self.getTreeAdditionalDataForPath(obj.path()).loaded || (!obj.isExpanded() && !self.getTreeAdditionalDataForPath(obj.path()).loaded)) {
       if (typeof toggle == "boolean" && toggle) {
         obj.isExpanded(!obj.isExpanded());
+        self.getTreeAdditionalDataForPath(obj.path()).expanded = obj.isExpanded();
       }
       self.updatePathProperty(self.growingTree(), obj.path(), "isExpanded", obj.isExpanded());
     }
@@ -461,6 +468,7 @@ var Assist = function (vm, initial) {
       } else {
         obj.isExpanded(false);
       }
+      self.getTreeAdditionalDataForPath(obj.path()).expanded = obj.isExpanded();
       self.updatePathProperty(self.growingTree(), obj.path(), "isExpanded", obj.isExpanded());
     }
     self.path(obj.path());
@@ -472,21 +480,36 @@ var Assist = function (vm, initial) {
     self.setPath(obj, true);
   }
 
+  self.getCheckedItems = function (leaf, checked) {
+    if (leaf == null){
+      leaf = self.growingTree();
+    }
+    if (checked == null){
+      checked = []
+    }
+    if (leaf.isChecked){
+      checked.push(leaf);
+    }
+    if (leaf.nodes.length > 0) {
+      leaf.nodes.forEach(function (node) {
+        self.getCheckedItems(node, checked);
+      });
+    }
+    return checked;
+  }
+
+
   self.checkPath = function (obj) {
     obj.isChecked(!obj.isChecked());
-    if (obj.isChecked()) {
-      self.checkedItems.push(obj);
-    }
-    else {
-      self.checkedItems.remove(obj);
-    }
     self.updatePathProperty(self.growingTree(), obj.path(), "isChecked", obj.isChecked());
+    self.checkedItems(self.getCheckedItems());
   }
 
   self.getTreeAdditionalDataForPath = function (path) {
     if (typeof self.treeAdditionalData[path] == "undefined") {
       var _add = {
-        loaded: false
+        loaded: false,
+        expanded: true
       }
       self.treeAdditionalData[path] = _add;
     }
@@ -564,11 +587,15 @@ var Assist = function (vm, initial) {
 
           if (data.databases) {
             self.addDatabases(_originalPath, data.databases, _hasCallback);
+            if (vm.getPathHash() == ""){
+              self.setPath(self.treeData().nodes()[0]);
+            }
           } else if (data.tables && data.tables.length > 0) {
             self.addTables(_originalPath, data.tables, _hasCallback);
-          } else if (data.columns && data.columns.length > 0) {
-            self.addColumns(_originalPath, data.columns, _hasCallback);
           }
+          //else if (data.columns && data.columns.length > 0) {
+            //self.addColumns(_originalPath, data.columns, _hasCallback);
+          //}
 
           if (_hasCallback) {
             loadCallback(data);
@@ -631,6 +658,15 @@ var HiveViewModel = function (initial) {
   // Editing
   self.showCreateRole = ko.observable(false);
   self.role = new Role(self, {});
+  self.role.name.subscribe(function (value){
+    var _found = false;
+    ko.utils.arrayForEach(self.roles(), function (role) {
+      if (role.name() == value){
+        _found = true;
+      }
+    });
+    self.role.hasDuplicateName(_found);
+  });
   self.privilege = new Privilege(self, {});
 
   self.doAs = ko.observable(initial.user);

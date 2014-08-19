@@ -120,7 +120,7 @@ ${ layout.menubar(section='hdfs') }
                     </a>
                     &nbsp;
                     <a class="pointer" data-bind="visible: $root.assist.checkedItems().length > 0, click: function(){ $('#bulkActionsModal').modal('show'); }" rel="tooltip" data-placement="right" title="${ _('Add, replace or remove ACLs for the checked paths') }">
-                      <i class="fa fa-cogs"></i>
+                      <i class="fa fa-copy"></i>
                     </a>
                   </div>
                 </div>
@@ -135,7 +135,6 @@ ${ layout.menubar(section='hdfs') }
                     <li data-bind="css: {'active': ! $root.assist.showAclsAsText()}"><a class="pointer" data-bind="click: function() { $root.assist.showAclsAsText(false); }"><i class="fa fa-pencil"></i> ${ _('Edit') }</a></li>
                     <li data-bind="css: {'active': $root.assist.showAclsAsText()}"><a class="pointer" data-bind="click: function() { $root.assist.showAclsAsText(true); }"><i class="fa fa-header"></i> ${ _('View as text') }</a></li>
                   </ul>
-                  
 
                   <div class="acl-panel-content">
                     <span class="fake-pre" data-bind="visible: $root.assist.showAclsAsText">
@@ -194,7 +193,7 @@ ${ layout.menubar(section='hdfs') }
 <div id="bulkActionsModal" class="modal hide fade in" role="dialog">
   <div class="modal-header">
     <a href="#" class="close" data-dismiss="modal">&times;</a>
-    <h3>${ _('What would you like to do with the checked paths?') }</h3>
+    <h3>${ _('Apply some bulk operations') }</h3>
   </div>
   <div class="modal-body" style="overflow-x: hidden">
 
@@ -202,7 +201,7 @@ ${ layout.menubar(section='hdfs') }
       <div class="span6">
         <h4>${ _('Checked paths') }</h4>
         <ul class="unstyled modal-panel" data-bind="foreach: $root.assist.checkedItems">
-          <li><a class="force-word-break" data-bind="attr: { href: '/filebrowser/view' + path() }, text: path()" target="_blank" title="${ _('Open in File Browser') }" rel="tooltip"></a></li>
+          <li><a class="force-word-break" data-bind="attr: { href: '/filebrowser/view' + path }, text: path" target="_blank" title="${ _('Open in File Browser') }" rel="tooltip"></a></li>
         </ul>
       </div>
       <div class="span6">
@@ -228,19 +227,19 @@ ${ layout.menubar(section='hdfs') }
       <div class="span4 center">
         <div class="big-btn" data-bind="css: {'selected': $root.assist.bulkAction() == 'add'}, click: function(){$root.assist.bulkAction('add')}">
           <i class="fa fa-plus"></i><br/><br/>
-          ${ _('Add current ACLs to checkbox selection') }
+          <span class="bulk-action-description">${ _('Add current ACLs to checkbox selection') }</span>
         </div>
       </div>
       <div class="span4 center">
         <div class="big-btn" data-bind="css: {'selected': $root.assist.bulkAction() == 'sync'}, click: function(){$root.assist.bulkAction('sync')}">
-          <i class="fa fa-copy"></i><br/><br/>
-          ${ _('Replace checkbox selection with current ACLs') }
+          <i class="fa fa-random"></i><br/><br/>
+          <span class="bulk-action-description">${ _('Replace checkbox selection with current ACLs') }</span>
         </div>
       </div>
       <div class="span4 center">
         <div class="big-btn" data-bind="css: {'selected': $root.assist.bulkAction() == 'delete'}, click: function(){$root.assist.bulkAction('delete')}">
-          <i class="fa fa-times"></i><br/><br/>
-          ${ _('Remove all ACLs of checkbox selection') }
+          <i class="fa fa-eraser"></i><br/><br/>
+          <span class="bulk-action-description">${ _('Remove all ACLs of checkbox selection') }</span>
         </div>
       </div>
     </div>

@@ -225,7 +225,8 @@ var Assist = function (vm, assist) {
   self.getTreeAdditionalDataForPath = function (path) {
     if (typeof self.treeAdditionalData[path] == "undefined") {
       var _add = {
-        loaded: false
+        loaded: false,
+        expanded: true
       }
       self.treeAdditionalData[path] = _add;
     }
@@ -288,13 +289,13 @@ var Assist = function (vm, assist) {
     Object.keys(self.treeAdditionalData).forEach(function (path) {
       if (typeof force == "boolean" && force) {
         self.fetchPath(path, function () {
-          self.updatePathProperty(self.growingTree(), path, "isExpanded", true);
+          self.updatePathProperty(self.growingTree(), path, "isExpanded", self.treeAdditionalData[path].expanded);
           self.loadData(self.growingTree());
         });
       } else {
         if (self.treeAdditionalData[path].loaded) {
           self.fetchPath(path, function () {
-            self.updatePathProperty(self.growingTree(), path, "isExpanded", true);
+            self.updatePathProperty(self.growingTree(), path, "isExpanded", self.treeAdditionalData[path].expanded);
             self.loadData(self.growingTree());
           });
         }
@@ -319,6 +320,7 @@ var Assist = function (vm, assist) {
     if (self.getTreeAdditionalDataForPath(obj.path()).loaded || (!obj.isExpanded() && !self.getTreeAdditionalDataForPath(obj.path()).loaded)) {
       if (typeof toggle == "boolean" && toggle) {
         obj.isExpanded(!obj.isExpanded());
+        self.getTreeAdditionalDataForPath(obj.path()).expanded = obj.isExpanded();
       }
       self.updatePathProperty(self.growingTree(), obj.path(), "isExpanded", obj.isExpanded());
     }
@@ -328,6 +330,7 @@ var Assist = function (vm, assist) {
       } else {
         obj.isExpanded(false);
       }
+      self.getTreeAdditionalDataForPath(obj.path()).expanded = obj.isExpanded();
       self.updatePathProperty(self.growingTree(), obj.path(), "isExpanded", obj.isExpanded());
     }
     self.path(obj.path());
@@ -337,15 +340,29 @@ var Assist = function (vm, assist) {
     self.setPath(obj, true);
   }
 
+  self.getCheckedItems = function (leaf, checked) {
+    if (leaf == null){
+      leaf = self.growingTree();
+    }
+    if (checked == null){
+      checked = []
+    }
+    if (leaf.isChecked){
+      checked.push(leaf);
+    }
+    if (leaf.nodes.length > 0) {
+      leaf.nodes.forEach(function (node) {
+        self.getCheckedItems(node, checked);
+      });
+    }
+    return checked;
+  }
+
+
   self.checkPath = function (obj) {
     obj.isChecked(!obj.isChecked());
-    if (obj.isChecked()) {
-      self.checkedItems.push(obj);
-    }
-    else {
-      self.checkedItems.remove(obj);
-    }
     self.updatePathProperty(self.growingTree(), obj.path(), "isChecked", obj.isChecked());
+    self.checkedItems(self.getCheckedItems());
   }
 
   self.openPath = function (obj) {
@@ -380,13 +397,11 @@ var Assist = function (vm, assist) {
           'pagenum': self.pagenum(),
           'format': 'json',
           'doas': vm.doAs(),
-          'isDiffMode': self.isDiffMode(),
+          'isDiffMode': self.isDiffMode()
         },
         function (data) {
-          if (data.error != null) {
-            if (data.error == "FILE_NOT_FOUND") {
-              self.path("/");
-            }
+          if (data.error != null && data.error == "FILE_NOT_FOUND") {
+            self.path("/");
           }
           else {
             self.loadParents(data.breadcrumbs);
