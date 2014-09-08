@@ -37,6 +37,7 @@ from desktop.log.access import access_warn
 
 from liboozie.oozie_api import get_oozie
 from liboozie.submittion import Submission
+from liboozie.types import Workflow as OozieWorkflow, Coordinator as CoordinatorWorkflow, Bundle as BundleWorkflow
 
 from oozie.conf import OOZIE_JOBS_COUNT, ENABLE_CRON_SCHEDULING
 from oozie.forms import RerunForm, ParameterForm, RerunCoordForm,\
@@ -99,21 +100,24 @@ def list_oozie_workflows(request):
   kwargs = {'cnt': OOZIE_JOBS_COUNT.get(),}
   if not has_dashboard_jobs_access(request.user):
     kwargs['user'] = request.user.username
-
-  workflows = get_oozie(request.user).get_workflows(**kwargs)
+  oozie_api = get_oozie(request.user)
 
   if request.GET.get('format') == 'json':
-    json_jobs = workflows.jobs
     just_sla = request.GET.get('justsla') == 'true'
-    if request.GET.get('type') == 'running':
-      json_jobs = split_oozie_jobs(request.user, workflows.jobs)['running_jobs']
-    if request.GET.get('type') == 'completed':
-      json_jobs = split_oozie_jobs(request.user, workflows.jobs)['completed_jobs']
+    if request.GET.get('type') in ('running', 'progress'):
+      kwargs['filters'] = [('status', status) for status in OozieWorkflow.RUNNING_STATUSES]
+    elif request.GET.get('type') == 'completed':
+      kwargs['filters'] = [('status', status) for status in OozieWorkflow.FINISHED_STATUSES]
+
+    json_jobs = oozie_api.get_workflows(**kwargs).jobs
+    if request.GET.get('type') == 'progress':
+      json_jobs = [oozie_api.get_job(job.id) for job in json_jobs]
+
     return HttpResponse(encode_json_for_js(massaged_oozie_jobs_for_json(json_jobs, request.user, just_sla)), mimetype="application/json")
 
   return render('dashboard/list_oozie_workflows.mako', request, {
     'user': request.user,
-    'jobs': split_oozie_jobs(request.user, workflows.jobs),
+    'jobs': [],
     'has_job_edition_permission':  has_job_edition_permission,
   })
 
@@ -123,20 +127,24 @@ def list_oozie_coordinators(request):
   kwargs = {'cnt': OOZIE_JOBS_COUNT.get(),}
   if not has_dashboard_jobs_access(request.user):
     kwargs['user'] = request.user.username
+  oozie_api = get_oozie(request.user)
 
-  coordinators = get_oozie(request.user).get_coordinators(**kwargs)
   enable_cron_scheduling = ENABLE_CRON_SCHEDULING.get()
 
   if request.GET.get('format') == 'json':
-    json_jobs = coordinators.jobs
-    if request.GET.get('type') == 'running':
-      json_jobs = split_oozie_jobs(request.user, coordinators.jobs)['running_jobs']
-    if request.GET.get('type') == 'completed':
-      json_jobs = split_oozie_jobs(request.user, coordinators.jobs)['completed_jobs']
+    if request.GET.get('type') in ('running', 'progress'):
+      kwargs['filters'] = [('status', status) for status in CoordinatorWorkflow.RUNNING_STATUSES]
+    elif request.GET.get('type') == 'completed':
+      kwargs['filters'] = [('status', status) for status in CoordinatorWorkflow.FINISHED_STATUSES]
+
+    json_jobs = oozie_api.get_coordinators(**kwargs).jobs
+    if request.GET.get('type') == 'progress':
+      json_jobs = [oozie_api.get_coordinator(job.id) for job in json_jobs]
+
     return HttpResponse(json.dumps(massaged_oozie_jobs_for_json(json_jobs, request.user)).replace('\\\\', '\\'), mimetype="application/json")
 
   return render('dashboard/list_oozie_coordinators.mako', request, {
-    'jobs': split_oozie_jobs(request.user, coordinators.jobs),
+    'jobs': [],
     'has_job_edition_permission': has_job_edition_permission,
     'enable_cron_scheduling': enable_cron_scheduling,
   })
@@ -147,19 +155,22 @@ def list_oozie_bundles(request):
   kwargs = {'cnt': OOZIE_JOBS_COUNT.get(),}
   if not has_dashboard_jobs_access(request.user):
     kwargs['user'] = request.user.username
-
-  bundles = get_oozie(request.user).get_bundles(**kwargs)
+  oozie_api = get_oozie(request.user)
 
   if request.GET.get('format') == 'json':
-    json_jobs = bundles.jobs
-    if request.GET.get('type') == 'running':
-      json_jobs = split_oozie_jobs(request.user, bundles.jobs)['running_jobs']
-    if request.GET.get('type') == 'completed':
-      json_jobs = split_oozie_jobs(request.user, bundles.jobs)['completed_jobs']
+    if request.GET.get('type') in ('running', 'progress'):
+      kwargs['filters'] = [('status', status) for status in BundleWorkflow.RUNNING_STATUSES]
+    elif request.GET.get('type') == 'completed':
+      kwargs['filters'] = [('status', status) for status in BundleWorkflow.FINISHED_STATUSES]
+
+    json_jobs = oozie_api.get_bundles(**kwargs).jobs
+    if request.GET.get('type') == 'progress':
+      json_jobs = [oozie_api.get_bundle(job.id) for job in json_jobs]
+
     return HttpResponse(json.dumps(massaged_oozie_jobs_for_json(json_jobs, request.user)).replace('\\\\', '\\'), mimetype="application/json")
 
   return render('dashboard/list_oozie_bundles.mako', request, {
-    'jobs': split_oozie_jobs(request.user, bundles.jobs),
+    'jobs': [],
     'has_job_edition_permission': has_job_edition_permission,
   })
 
@@ -246,9 +257,12 @@ def list_oozie_coordinator(request, job_id):
 
   oozie_bundle = None
   if request.GET.get('bundle_job_id'):
-    oozie_bundle = check_job_access_permission(request, request.GET.get('bundle_job_id'))
+    try:
+      oozie_bundle = check_job_access_permission(request, request.GET.get('bundle_job_id'))
+    except:
+      pass
 
-  show_all_actions =request.GET.get('show_all_actions') == 'true'
+  show_all_actions = request.GET.get('show_all_actions') == 'true'
 
   if request.GET.get('format') == 'json':
     actions = massaged_coordinator_actions_for_json(oozie_coordinator, oozie_bundle)
@@ -675,11 +689,11 @@ def massaged_coordinator_actions_for_json(coordinator, oozie_bundle):
   actions = []
 
   related_job_ids = []
+  related_job_ids.append('coordinator_job_id=%s' % coordinator_id)
   if oozie_bundle is not None:
     related_job_ids.append('bundle_job_id=%s' %oozie_bundle.id)
 
   for action in coordinator_actions:
-    related_job_ids.append('coordinator_job_id=%s' % coordinator_id)
     massaged_action = {
       'id': action.id,
       'url': action.externalId and reverse('oozie:list_oozie_workflow', kwargs={'job_id': action.externalId}) + '?%s' % '&'.join(related_job_ids) or '',
@@ -747,14 +761,7 @@ def massaged_oozie_jobs_for_json(oozie_jobs, user, just_sla=False):
   jobs = []
 
   for job in oozie_jobs:
-    if job.is_running():
-      if job.type == 'Workflow':
-        job = get_oozie(user).get_job(job.id)
-      elif job.type == 'Coordinator':
-        job = get_oozie(user).get_coordinator(job.id)
-      else:
-        job = get_oozie(user).get_bundle(job.id)
-    if not just_sla or (just_sla and job.has_sla):
+    if not just_sla or (just_sla and job.has_sla) and job.appName != 'pig-app-hue-script':
       massaged_job = {
         'id': job.id,
         'lastModTime': hasattr(job, 'lastModTime') and job.lastModTime and format_time(job.lastModTime) or None,
@@ -780,30 +787,6 @@ def massaged_oozie_jobs_for_json(oozie_jobs, user, just_sla=False):
         'timeUnit': hasattr(job, 'timeUnit') and job.timeUnit or None,
       }
       jobs.append(massaged_job)
-
-  return jobs
-
-
-def split_oozie_jobs(user, oozie_jobs):
-  jobs = {}
-  jobs_running = []
-  jobs_completed = []
-
-  for job in oozie_jobs:
-    if job.appName != 'pig-app-hue-script':
-      if job.is_running():
-        if job.type == 'Workflow':
-          job = get_oozie(user).get_job(job.id)
-        elif job.type == 'Coordinator':
-          job = get_oozie(user).get_coordinator(job.id)
-        else:
-          job = get_oozie(user).get_bundle(job.id)
-        jobs_running.append(job)
-      else:
-        jobs_completed.append(job)
-
-  jobs['running_jobs'] = sorted(jobs_running, key=lambda w: w.status)
-  jobs['completed_jobs'] = sorted(jobs_completed, key=lambda w: w.status)
 
   return jobs
 

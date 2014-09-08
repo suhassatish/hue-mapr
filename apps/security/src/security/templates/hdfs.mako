@@ -87,6 +87,11 @@ ${ layout.menubar(section='hdfs') }
           ${ _('HDFS ACLs') }
         </h1>
         <div class="card-body">
+          <div class="row-fluid" data-bind="visible: $root.doAs() != '${ user.username }' && ! $root.assist.isDiffMode()">
+            <div class="span12">
+              <div class="alert"><i class="fa fa-warning"></i> ${ _('You are currently impersonating the user') } <strong data-bind="text: $root.doAs"></strong></div>
+            </div>
+          </div>
           <div class="row-fluid">
             <div class="span8">
               <div class="path-container">
@@ -99,6 +104,7 @@ ${ layout.menubar(section='hdfs') }
                 <div class="clearfix"></div>
                 <div class="tree-toolbar">
                   <div class="pull-right">
+                    % if has_impersonation_perm:
                     <div class="dropdown inline-block" style="margin-right: 6px">
                       <a class="dropdown-toggle" data-toggle="dropdown" href="#"><i class="fa fa-eye-slash" data-bind="visible: $root.assist.isDiffMode"></i><i class="fa fa-eye" data-bind="visible: ! $root.assist.isDiffMode()"></i> <span data-bind="visible: $root.assist.isDiffMode">${ _('Show non accessible files for') }</span><span data-bind="visible: ! $root.assist.isDiffMode()">${ _('Impersonate the user') }</span></a>
                       <ul class="dropdown-menu">
@@ -107,10 +113,10 @@ ${ layout.menubar(section='hdfs') }
                       </ul>
                     </div>
                     <select class="user-list" data-bind="options: $root.selectableHadoopUsers, select2: { placeholder: '${ _("Select a user") }', update: $root.doAs, type: 'user'}" style="width: 120px"></select>
+                    % endif
                     <i class="fa fa-group" title="List of groups in popover for this user?"></i>
                   </div>
                   <div>
-                    <i class="fa fa-spinner fa-spin" data-bind="visible: $root.assist.isLoadingTree()"></i>
                     <a class="pointer" data-bind="click: $root.assist.collapseOthers" rel="tooltip" data-placement="right" title="${_('Close other nodes')}">
                       <i class="fa fa-compress"></i>
                     </a>
@@ -122,6 +128,8 @@ ${ layout.menubar(section='hdfs') }
                     <a class="pointer" data-bind="visible: $root.assist.checkedItems().length > 0, click: function(){ $('#bulkActionsModal').modal('show'); }" rel="tooltip" data-placement="right" title="${ _('Add, replace or remove ACLs for the checked paths') }">
                       <i class="fa fa-copy"></i>
                     </a>
+                    &nbsp;
+                    <i class="fa fa-spinner fa-spin" data-bind="visible: $root.assist.isLoadingTree()"></i>
                   </div>
                 </div>
               </div>
@@ -198,15 +206,40 @@ ${ layout.menubar(section='hdfs') }
   <div class="modal-body" style="overflow-x: hidden">
 
     <div class="row-fluid">
-      <div class="span6">
-        <h4>${ _('Checked paths') }</h4>
+      <div class="span4">
+        <h4>${ _('Path selection') }</h4>
         <ul class="unstyled modal-panel" data-bind="foreach: $root.assist.checkedItems">
           <li><a class="force-word-break" data-bind="attr: { href: '/filebrowser/view' + path }, text: path" target="_blank" title="${ _('Open in File Browser') }" rel="tooltip"></a></li>
         </ul>
       </div>
-      <div class="span6">
+      <div class="span8">
+        <div class="row-fluid">
+          <div class="span4 center">
+            <div class="big-btn" data-bind="css: {'selected': $root.assist.bulkAction() == 'add'}, click: function(){$root.assist.bulkAction('add')}">
+              <i class="fa fa-plus"></i><br/><br/>
+              <span>${ _('Add current ACLs to selection') }</span>
+            </div>
+          </div>
+          <div class="span4 center">
+            <div class="big-btn" data-bind="css: {'selected': $root.assist.bulkAction() == 'sync'}, click: function(){$root.assist.bulkAction('sync')}">
+              <i class="fa fa-random"></i><br/><br/>
+              <span>${ _('Replace selection with current ACLs') }</span>
+            </div>
+          </div>
+          <div class="span4 center">
+            <div class="big-btn" data-bind="css: {'selected': $root.assist.bulkAction() == 'delete'}, click: function(){$root.assist.bulkAction('delete')}">
+              <i class="fa fa-eraser"></i><br/><br/>
+              <span>${ _('Remove all ACLs of selection') }</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
-        <h4>${ _('Selected path for ACLs actions') }</h4>
+    <div class="row-fluid" data-bind="visible: $root.assist.bulkAction() != '' && $root.assist.bulkAction() != 'delete'">
+      <div class="span12">
+
+        <h4>${ _('ACLs to apply') }</h4>
 
         <span class="fake-pre modal-panel">
           # file: <a class="force-word-break" data-bind="attr: { href: '/filebrowser/view' + $root.assist.path() }, text: $root.assist.path()" target="_blank"></a><br/>
@@ -222,40 +255,20 @@ ${ layout.menubar(section='hdfs') }
       </div>
     </div>
 
-    <h4>${ _('Choose your action') }</h4>
-    <div class="row-fluid">
-      <div class="span4 center">
-        <div class="big-btn" data-bind="css: {'selected': $root.assist.bulkAction() == 'add'}, click: function(){$root.assist.bulkAction('add')}">
-          <i class="fa fa-plus"></i><br/><br/>
-          <span class="bulk-action-description">${ _('Add current ACLs to checkbox selection') }</span>
-        </div>
-      </div>
-      <div class="span4 center">
-        <div class="big-btn" data-bind="css: {'selected': $root.assist.bulkAction() == 'sync'}, click: function(){$root.assist.bulkAction('sync')}">
-          <i class="fa fa-random"></i><br/><br/>
-          <span class="bulk-action-description">${ _('Replace checkbox selection with current ACLs') }</span>
-        </div>
-      </div>
-      <div class="span4 center">
-        <div class="big-btn" data-bind="css: {'selected': $root.assist.bulkAction() == 'delete'}, click: function(){$root.assist.bulkAction('delete')}">
-          <i class="fa fa-eraser"></i><br/><br/>
-          <span class="bulk-action-description">${ _('Remove all ACLs of checkbox selection') }</span>
-        </div>
-      </div>
-    </div>
+
 
   </div>
   <div class="modal-footer">
     <label class="checkbox pull-left"><input type="checkbox" data-bind="checked: $root.assist.recursive"> ${ _('Apply recursively to all subfolders and files') }</label>
     <button class="btn" data-dismiss="modal" aria-hidden="true">${ _('Cancel') }</button>
-    <button class="btn" data-bind="css: {'btn-primary': $root.assist.bulkAction() != 'delete', 'btn-danger': $root.assist.bulkAction() == 'delete'}, click: $root.assist.bulkPerfomAction">${ _('Confirm') }</button>
+    <button class="btn" data-bind="enable: $root.assist.bulkAction(), css: {'btn-primary': $root.assist.bulkAction() != 'delete', 'btn-danger': $root.assist.bulkAction() == 'delete'}, click: $root.assist.bulkPerfomAction">${ _('Confirm') }</button>
   </div>
 </div>
 
 
 <%def name="treeIcons()">
-  'fa-folder-open-o': isDir() && nodes().length > 0 && !aclBit(),
-  'fa-folder-open': isDir() && nodes().length > 0 && aclBit(),
+  'fa-folder-open-o': isDir() && (nodes().length > 0 || isLoaded()) && !aclBit(),
+  'fa-folder-open': isDir() && (nodes().length > 0 || isLoaded()) && aclBit(),
   'fa-folder-o': isDir() && nodes().length == 0 && !aclBit(),
   'fa-folder': isDir() && nodes().length == 0 && aclBit(),
   'fa-file-o': !isDir() && !aclBit(),
@@ -324,11 +337,13 @@ ${ tree.import_templates(itemClick='$root.assist.setPath', iconClick='$root.assi
       if (_path[_path.length-1] == "/"){
         _path = _path.substr(0, _path.length - 1);
       }
-      if ($("a.anchor[href^='"+_path+"']").length > 0){
-        $("#expandableTree").animate({
-          scrollTop: ($("a.anchor[href^='"+_path+"']:first").position().top + $("#expandableTree").scrollTop() - $("#expandableTree").position().top - 4)+"px"
-        });
-      }
+      window.setTimeout(function(){
+        if ($("a.anchor[href^='"+_path+"']").length > 0){
+          $("#expandableTree").animate({
+            scrollTop: ($("a.anchor[href^='"+_path+"']:first").position().top + $("#expandableTree").scrollTop() - $("#expandableTree").position().top - 4)+"px"
+          }, 200);
+        }
+      }, 200)
     });
 
     $(document).on("updated.acls", function() {

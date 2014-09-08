@@ -21,6 +21,7 @@
 (function ($, window, document, undefined) {
   var pluginName = "jHueHiveAutocomplete",
       defaults = {
+        serverType: "HIVE",
         home: "/",
         skipColumns: false,
         onEnter: function () {
@@ -30,7 +31,8 @@
         onPathChange: function () {
         },
         smartTooltip: "",
-        smartTooltipThreshold: 10 // needs 10 up/down or click actions and no tab to activate the smart tooltip
+        smartTooltipThreshold: 10, // needs 10 up/down or click actions and no tab to activate the smart tooltip
+        showOnFocus: false
       };
 
   function Plugin(element, options) {
@@ -117,12 +119,12 @@
       $("#jHueHiveAutocomplete").css("top", _el.offset().top + _el.outerHeight() - 1).css("left", _el.offset().left).width(_el.outerWidth() - 4);
     });
 
-    var _hdfsAutocompleteSelectedIndex = -1;
+    var _hiveAutocompleteSelectedIndex = -1;
     var _filterTimeout = -1;
     _el.keyup(function (e) {
       window.clearTimeout(_filterTimeout);
       if ($.inArray(e.keyCode, [17, 38, 40, 13, 32, 191]) == -1) {
-        _hdfsAutocompleteSelectedIndex = -1;
+        _hiveAutocompleteSelectedIndex = -1;
         _filterTimeout = window.setTimeout(function () {
           var path = _el.val();
           if (path.indexOf(".") > -1) {
@@ -139,42 +141,48 @@
         }, 500);
       }
       if (e.keyCode == 38) {
-        if (_hdfsAutocompleteSelectedIndex <= 0) {
-          _hdfsAutocompleteSelectedIndex = $("#jHueHiveAutocomplete ul li:visible").length - 1;
+        if (_hiveAutocompleteSelectedIndex <= 0) {
+          _hiveAutocompleteSelectedIndex = $("#jHueHiveAutocomplete ul li:visible").length - 1;
         }
         else {
-          _hdfsAutocompleteSelectedIndex--;
+          _hiveAutocompleteSelectedIndex--;
         }
       }
       if (e.keyCode == 40) {
-        if (_hdfsAutocompleteSelectedIndex == $("#jHueHiveAutocomplete ul li:visible").length - 1) {
-          _hdfsAutocompleteSelectedIndex = 0;
+        if (_hiveAutocompleteSelectedIndex == $("#jHueHiveAutocomplete ul li:visible").length - 1) {
+          _hiveAutocompleteSelectedIndex = 0;
         }
         else {
-          _hdfsAutocompleteSelectedIndex++;
+          _hiveAutocompleteSelectedIndex++;
         }
       }
       if (e.keyCode == 38 || e.keyCode == 40) {
         smartTooltipMaker();
         $("#jHueHiveAutocomplete ul li").removeClass("active");
-        $("#jHueHiveAutocomplete ul li:visible").eq(_hdfsAutocompleteSelectedIndex).addClass("active");
-        $("#jHueHiveAutocomplete .popover-content").scrollTop($("#jHueHiveAutocomplete ul li:visible").eq(_hdfsAutocompleteSelectedIndex).prevAll().length * $("#jHueHiveAutocomplete ul li:visible").eq(_hdfsAutocompleteSelectedIndex).outerHeight());
+        $("#jHueHiveAutocomplete ul li:visible").eq(_hiveAutocompleteSelectedIndex).addClass("active");
+        $("#jHueHiveAutocomplete .popover-content").scrollTop($("#jHueHiveAutocomplete ul li:visible").eq(_hiveAutocompleteSelectedIndex).prevAll().length * $("#jHueHiveAutocomplete ul li:visible").eq(_hiveAutocompleteSelectedIndex).outerHeight());
       }
       if ((e.keyCode == 32 && e.ctrlKey) || e.keyCode == 191) {
         smartTooltipMaker();
         showHiveAutocomplete();
       }
       if (e.keyCode == 13) {
-        if (_hdfsAutocompleteSelectedIndex > -1) {
-          $("#jHueHiveAutocomplete ul li:visible").eq(_hdfsAutocompleteSelectedIndex).click();
+        if (_hiveAutocompleteSelectedIndex > -1) {
+          $("#jHueHiveAutocomplete ul li:visible").eq(_hiveAutocompleteSelectedIndex).click();
         }
         else {
           _this.options.onEnter($(this));
         }
         $("#jHueHiveAutocomplete").hide();
-        _hdfsAutocompleteSelectedIndex = -1;
+        _hiveAutocompleteSelectedIndex = -1;
       }
     });
+
+    if (_this.options.showOnFocus){
+      _el.on("focus", function(){
+        showHiveAutocomplete();
+      });
+    }
 
     var _pauseBlur = false;
 
@@ -187,6 +195,9 @@
     });
 
     var BASE_PATH = "/beeswax/api/autocomplete/";
+    if (_this.options.serverType == "IMPALA"){
+      BASE_PATH = "/impala/api/autocomplete/";
+    }
     var _currentFiles = [];
 
     function showHiveAutocomplete(callback) {
@@ -267,6 +278,11 @@
                 if (! _this.options.skipColumns) {
                   showHiveAutocomplete();
                 }
+                else {
+                  _this.options.onEnter(_el);
+                  $("#jHueHiveAutocomplete").hide();
+                  _hiveAutocompleteSelectedIndex = -1;
+                }
               }
 
               if ($(this).html().indexOf("columns") > -1){
@@ -277,7 +293,7 @@
                   _el.val(_el.val() + "." + item);
                 }
                 $("#jHueHiveAutocomplete").hide();
-                _hdfsAutocompleteSelectedIndex = -1;
+                _hiveAutocompleteSelectedIndex = -1;
                 _this.options.onEnter(_el);
               }
 

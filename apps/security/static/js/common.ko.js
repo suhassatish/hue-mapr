@@ -104,10 +104,16 @@ ko.bindingHandlers.hivechooser = {
     self.val(valueAccessor()());
     function setPathFromAutocomplete(path){
       self.val(path);
-      self.change();
+      self.blur();
     }
+
+    self.on("blur", function(){
+      valueAccessor()(self.val());
+    });
+
     self.jHueHiveAutocomplete({
       skipColumns: true,
+      showOnFocus: true,
       home: "/",
       onPathChange: function (path) {
         setPathFromAutocomplete(path);
@@ -165,3 +171,11 @@ function getFileBrowseButton(inputElement, selectFolder) {
     }
   });
 }
+
+ko.bindingHandlers.tooltip = {
+  update: function (element, valueAccessor, allBindingsAccessor, viewModel, bindingContext) {
+    var options = ko.utils.unwrapObservable(valueAccessor());
+    var self = $(element);
+    self.tooltip(options);
+  }
+};

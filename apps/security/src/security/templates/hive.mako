@@ -28,13 +28,18 @@ ${ layout.menubar(section='hive') }
 
 
 <script type="text/html" id="role">
-  <div class="acl-block-title"><i class="fa fa-cube muted"></i> <a class="pointer" data-bind="click: function(){  $root.showRole($data); }"><span data-bind="text: name"></span></a></div>
-  <div data-bind="template: { name: 'privilege', foreach: privileges }"></div>
-  <div class="acl-block acl-actions" data-bind="click: privilegesChanged().length == 0 ? addPrivilege : void(0)">
-    <span class="pointer" data-bind="click: addPrivilege" title="${ _('Add privilege') }"><i class="fa fa-plus"></i></span>
-    <span class="pointer" data-bind="click: $root.list_sentry_privileges_by_authorizable, visible: privilegesChanged().length > 0" title="${ _('Undo') }"> &nbsp; <i class="fa fa-undo"></i></span>
-    <span class="pointer" data-bind="click: $root.role.savePrivileges, visible: privilegesChanged().length > 0" title="${ _('Save') }"> &nbsp; <i class="fa fa-save"></i></span>
+  <div class="acl-block-title">
+    <i class="fa fa-cube muted"></i> <a class="pointer" data-bind="click: function(){  $root.showRole($data); }"><span data-bind="text: name"></span></a>
   </div>
+  <div data-bind="template: { name: 'privilege', foreach: privilegesForView }"></div>
+  <!-- ko ifnot: $root.isApplyingBulk() -->
+  <div class="acl-block acl-actions">
+    <span class="pointer" data-bind="visible: privilegesForViewTo() < privileges().length, click: function(){ privilegesForViewTo(privilegesForViewTo() + 50) }" title="${ _('Show 50 more...') }"><i class="fa fa-ellipsis-h"></i></span>
+    <span class="pointer" data-bind="click: addPrivilege" title="${ _('Add privilege') }"><i class="fa fa-plus"></i></span>
+    <span class="pointer" data-bind="click: function() { $root.list_sentry_privileges_by_authorizable() }, visible: privilegesChanged().length > 0" title="${ _('Undo') }"> &nbsp; <i class="fa fa-undo"></i></span>
+    <span class="pointer" data-bind="click: $root.role().savePrivileges, visible: privilegesChanged().length > 0" title="${ _('Save') }"> &nbsp; <i class="fa fa-save"></i></span>
+  </div>
+  <!-- /ko -->
 </script>
 
 
@@ -46,28 +51,39 @@ ${ layout.menubar(section='hive') }
       <a class="pointer" style="margin-right: 4px" data-bind="click: function() { if (editing()) { editing(false); }}"><i class="fa fa-eye"></i></a>
       <a class="pointer" style="margin-right: 4px" data-bind="click: remove"><i class="fa fa-times"></i></a>
     </div>
-    <input value="db" data-bind="attr: { name: 'privilege-' + $index() }, checked: type" type="radio" />
-    <input type="text" data-bind="hivechooser: $data.path, enable: type() == 'db'" placeholder="dbName.tableName">
 
-    <input value="uri" data-bind="attr: { name: 'privilege-' + $index() }, checked: type" type="radio"/>
-    <input type="text" data-bind="filechooser: $data.URI, enable: type() == 'uri'" placeholder="URI">
+    <div class="inline-block" style="vertical-align: middle">
+      <a class="pointer" style="padding-top: 4px" data-bind="click: function(){ privilegeType('db'); }"><i class="fa fa-fw fa-1halfx muted" data-bind="css: {'fa-circle-o': privilegeType() != 'db' , 'fa-check-circle-o': privilegeType() == 'db'}"></i></a>
+    </div>
+    <input type="text" data-bind="hivechooser: $data.path, enable: privilegeType() == 'db'" placeholder="dbName.tableName <CTRL+SPACE>">
+
+    <div class="inline-block" style="vertical-align: middle">
+      <a class="pointer" style="padding-top: 4px" data-bind="click: function(){ privilegeType('uri'); }"><i class="fa fa-fw fa-1halfx muted" data-bind="css: {'fa-circle-o': privilegeType() != 'uri' , 'fa-check-circle-o': privilegeType() == 'uri'}"></i></a>
+    </div>
+    <input type="text" data-bind="filechooser: $data.URI, enable: privilegeType() == 'uri'" placeholder="URI">
 
     <select data-bind="options: $root.availableActions, select2: { update: $data.action, type: 'action'}" style="width: 100px"></select>
-
+    
+    <div class="inline-block" style="vertical-align: middle">
+      <input type="checkbox" data-bind="checked: grantOption"> ${ _('With grant') }
+    </div>
+    
     <span class="showAdvancedSpace">&nbsp;&nbsp;</span><a class="pointer showAdvanced" data-bind="click: function(){ showAdvanced(true); }, visible: ! showAdvanced()"><i class="fa fa-cog"></i> ${ _('Show advanced') }</a>
 
     <div class="acl-block-section" data-bind="visible: showAdvanced">
-      <input type="text" data-bind="value: serverName" placeholder="serverName">
+      <input type="text" data-bind="value: serverName" placeholder="serverName" style="margin-left: 29px">
       <select data-bind="options: $root.availablePrivileges, select2: { update: $data.privilegeScope, type: 'scope'}" style="width: 100px"></select>
     </div>
 
   <!-- /ko -->
-  
+
   <!-- ko ifnot: editing() -->
+    <!-- ko ifnot: $root.isApplyingBulk() -->
     <div class="pull-right">
       <a class="pointer" style="margin-right: 4px" data-bind="click: function() { if (! editing()) { editing(true); }}"><i class="fa fa-pencil"></i></a>
       <a class="pointer" style="margin-right: 4px" data-bind="click: remove"><i class="fa fa-times"></i></a>
     </div>
+    <!-- /ko -->
 
     <em class="muted" data-bind="text: moment(timestamp()).fromNow()"></em> <span class="muted" data-bind="text: privilegeScope"></span><br/>
         
@@ -83,11 +99,15 @@ ${ layout.menubar(section='hive') }
       <i class="fa fa-long-arrow-right"></i> action=<span data-bind="text: action"></span>
     <!-- /ko -->
     
-    <!-- ko if: URI() -->    
+    <!-- ko if: grantOption() -->
+      <i class="fa fa-link" title="${ _('With grant option') }"></i>
+    <!-- /ko -->
+    
+    <!-- ko if: URI() -->
       <span data-bind="text: URI"></span>
     <!-- /ko -->
     <br/>
-    <span data-bind="text: grantor"></span>    
+    <span data-bind="text: grantor"></span>
   <!-- /ko -->
 </div>
 </script>
@@ -118,18 +138,24 @@ ${ layout.menubar(section='hive') }
         </h1>
 
         <div class="card-body">
+          <div class="row-fluid" data-bind="visible: $root.doAs() != '${ user.username }' && ! $root.assist.isDiffMode()">
+            <div class="span12">
+              <div class="alert"><i class="fa fa-warning"></i> ${ _('You are currently impersonating the user') } <strong data-bind="text: $root.doAs"></strong></div>
+            </div>
+          </div>
           <div class="row-fluid">
             <div class="span6">
               <div class="path-container">
                 <div class="input-append span12">
                   <input id="path" class="path" type="text" autocomplete="off" />
-                  <a data-bind="attr: { href: '/metastore/' + $root.assist.path() }" target="_blank" title="${ _('Open in Metastore Browser') }" class="btn btn-inverse">
+                  <a data-bind="attr: { href: '/metastore/table/' + $root.assist.path().replace('.', '/') }" target="_blank" title="${ _('Open in Metastore Browser') }" class="btn btn-inverse">
                     <i class="fa fa-external-link"></i>
                   </a>
                 </div>
                 <div class="clearfix"></div>
                 <div class="tree-toolbar">
                   <div class="pull-right">
+                    % if has_impersonation_perm:
                     <div class="dropdown inline-block" style="margin-right: 6px">
                       <a class="dropdown-toggle" data-toggle="dropdown" href="#">
                         <i class="fa fa-eye-slash" data-bind="visible: $root.assist.isDiffMode"></i>
@@ -147,10 +173,10 @@ ${ layout.menubar(section='hive') }
                       </ul>
                     </div>
                     <select class="user-list" data-bind="options: $root.selectableHadoopUsers, select2: { placeholder: '${ _("Select a user") }', update: $root.doAs, type: 'user'}" style="width: 120px"></select>
+                    % endif
                     <i class="fa fa-group" title="${ _('List of groups in popover for this user?') }"></i>
                   </div>
                   <div>
-                    <i class="fa fa-spinner fa-spin" data-bind="visible: $root.assist.isLoadingTree()"></i>
                     <a class="pointer" data-bind="click: $root.assist.collapseOthers" rel="tooltip" data-placement="right" title="${_('Close other nodes')}">
                       <i class="fa fa-compress"></i>
                     </a>
@@ -159,9 +185,11 @@ ${ layout.menubar(section='hive') }
                       <i class="fa fa-refresh"></i>
                     </a>
                     &nbsp;
-                    <a class="pointer" data-bind="visible: $root.assist.checkedItems().length > 0, click: function(){ $('#bulkActionsModal').modal('show'); }" rel="tooltip" data-placement="right" title="${ _('Add, replace or remove ACLs for the checked paths') }">
+                    <a class="pointer" data-bind="visible: $root.assist.checkedItems().length > 0, click: function(){ $root.isApplyingBulk(true); $('#bulkActionsModal').modal('show'); }" rel="tooltip" data-placement="right" title="${ _('Add, replace or remove ACLs for the checked paths') }">
                       <i class="fa fa-copy"></i>
                     </a>
+                    &nbsp;
+                    <i class="fa fa-spinner fa-spin" data-bind="visible: $root.assist.isLoadingTree()"></i>
                   </div>
 
                 </div>
@@ -172,9 +200,18 @@ ${ layout.menubar(section='hive') }
             </div>
             <div class="span6 acl-panel">
               <div class="acl-panel-content">
-                <a data-bind="visible: $root.assist.privileges().length > 0, click: function(){ $root.showCreateRole(true); $('#createRoleModal').modal('show'); }" class="btn pointer pull-right"><i class="fa fa-plus-circle"></i> ${ _('Add role') }</a>
-                <h4 style="margin-top: 4px">${ _('Privileges') }</h4>
-                <div data-bind="visible: $root.assist.privileges().length == 0"><em class="muted">${ _('No privileges found for the selected item.')} <a class="pointer" data-bind="click: function(){ $root.showCreateRole(true); $('#createRoleModal').modal('show'); }">${ _('Click here to add a new role.') }</a> </em></div>
+                <div class="pull-right">
+                  <input class="input-medium no-margin" type="text" placeholder="${ _('Search privileges...') }" data-bind="value: privilegeFilter, valueUpdate: 'afterkeydown', visible: $root.assist.privileges().length > 1"> &nbsp;
+                  <a data-bind="visible: $root.assist.privileges().length > 0, click: function(){ $root.showCreateRole(true); $('#createRoleModal').modal('show'); }" class="btn pointer"><i class="fa fa-plus-circle"></i> ${ _('Add role') }</a>
+                </div>
+                <h4 style="margin-top: 4px">${ _('Privileges') } &nbsp;<i class="fa fa-spinner fa-spin" data-bind="visible: $root.isLoadingPrivileges()"></i></h4>
+                <div data-bind="visible: $root.assist.privileges().length == 0 && ! $root.isLoadingPrivileges()">
+                  <div class="span10 offset1 center" style="cursor: pointer" data-bind="click: function(){ $root.showCreateRole(true); $('#createRoleModal').modal('show'); }">
+                    <i class="fa fa-plus-circle waiting"></i>
+                    <h1 class="emptyMessage">${ _('No privileges found for the selected item') }<br/><a class="pointer">${ _('Click here to add a new role') }</a></h1>
+                  </div>
+                </div>
+                <div data-bind="visible: $root.assist.privileges().length == 0 && $root.isLoadingPrivileges()"><em class="muted">${ _('Loading privileges...')}</em></div>
                 <div data-bind="template: { name: 'role', foreach: $root.assist.roles }"></div>
               </div>
             </div>
@@ -191,7 +228,7 @@ ${ layout.menubar(section='hive') }
         <div class="card-body">
           <div class="span10 offset1 center" style="cursor: pointer" data-bind="visible: $root.roles().length == 0, click: function(){ $root.showCreateRole(true); $('#createRoleModal').modal('show'); }">
             <i class="fa fa-plus-circle waiting"></i>
-            <h1 class="emptyMessage">${ _('There are currently no roles defined.') }<br/><a class="pointer">${ _('Click here to add') }</a> ${ _('one.') }</h1>
+            <h1 class="emptyMessage">${ _('There are currently no roles defined') }<br/><a class="pointer">${ _('Click here to add') }</a> ${ _('one') }</h1>
           </div>
           <div class="clearfix" data-bind="visible: $root.roles().length == 0"></div>
           <div data-bind="visible: $root.roles().length > 0">
@@ -246,6 +283,7 @@ ${ layout.menubar(section='hive') }
                   </a>
                   <div data-bind="visible: showEditGroups() || groupsChanged()">
                     <select data-bind="options: $root.selectableHadoopGroups, selectedOptions: groups, select2: { update: groups, type: 'group'}" size="5" multiple="true" style="width: 400px"></select>
+                    &nbsp;
                     <a class="pointer" data-bind="visible: groupsChanged, click: resetGroups">
                       <i class="fa fa-undo"></i>
                     </a>
@@ -273,7 +311,7 @@ ${ layout.menubar(section='hive') }
                   <div class="acl-block acl-actions" data-bind="click: privilegesChanged().length == 0 ? addPrivilege : void(0)">
                     <span class="pointer" data-bind="click: addPrivilege, visible: $data.showPrivileges" title="${ _('Add privilege') }"><i class="fa fa-plus"></i></span>
                     <span class="pointer" data-bind="click: $root.list_sentry_privileges_by_role, visible: privilegesChanged().length > 0" title="${ _('Undo') }"> &nbsp; <i class="fa fa-undo"></i></span>
-                    <span class="pointer" data-bind="click: $root.role.savePrivileges, visible: privilegesChanged().length > 0" title="${ _('Save') }"> &nbsp; <i class="fa fa-save"></i></span>
+                    <span class="pointer" data-bind="click: $root.role().savePrivileges, visible: privilegesChanged().length > 0" title="${ _('Save') }"> &nbsp; <i class="fa fa-save"></i></span>
                   </div>
                 </td>
               </tr>              
@@ -290,15 +328,16 @@ ${ layout.menubar(section='hive') }
 <div id="createRoleModal" class="modal hide fade in" role="dialog">
   <div class="modal-header">
     <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-    <h3>${ _('Add role') }</h3>
+    <h3 data-bind="visible: ! $root.role().isEditing()">${ _('Add role') }</h3>
+    <h3 data-bind="visible: $root.role().isEditing()">${ _('Edit role') }</h3>
   </div>
   <div class="modal-body" data-bind="with: $root.role, visible: showCreateRole">
 
     <div class="row-fluid">
       <div class="span6">
         <h4>${ _('Name') }</h4>
-        <input type="text" class="input-xlarge" data-bind="value: $data.name, valueUpdate: 'afterkeydown', style: {'border-color': $root.role.hasDuplicateName() ? '#b94a48':''}" placeholder="${ _('Required') }" style="width: 360px" />
-        <div style="color: #b94a48;" data-bind="visible: $root.role.hasDuplicateName"><em>${ _('The specified role name already exists.') }</em></div>
+        <input id="createRoleName" type="text" class="input-xlarge" data-bind="value: $data.name, visible: ! $data.isEditing()" placeholder="${ _('Required') }" style="width: 360px" />
+        <strong data-bind="text: $data.name, visible: $data.isEditing()"></strong>
       </div>
       <div class="span6">
         <h4>${ _('Groups') }</h4>
@@ -313,8 +352,9 @@ ${ layout.menubar(section='hive') }
     </div>
   </div>
   <div class="modal-footer">
-    <button class="btn" data-dismiss="modal" aria-hidden="true" data-bind="click: $root.role.reset">${ _('Cancel') }</button>
-    <button data-loading-text="${ _('Saving...') }" class="btn btn-primary disable-enter" data-bind="click: $root.role.create, enable: ! $root.role.hasDuplicateName()">${ _('Save') }</button>
+    <button class="btn" data-dismiss="modal" aria-hidden="true">${ _('Cancel') }</button>
+    <button data-loading-text="${ _('Saving...') }" class="btn btn-primary disable-enter" data-bind="click: $root.role().create, visible: ! $root.role().isEditing()">${ _('Save') }</button>
+    <button data-loading-text="${ _('Saving...') }" class="btn btn-primary disable-enter" data-bind="click: $root.role().update, visible: $root.role().isEditing()">${ _('Update') }</button>
   </div>
 </div>
 
@@ -338,48 +378,54 @@ ${ layout.menubar(section='hive') }
   <div class="modal-body" style="overflow-x: hidden">
 
     <div class="row-fluid">
-      <div class="span6">
-        <h4>${ _('Checked items') }</h4>
+      <div class="span4">
+        <h4>${ _('Selection') }</h4>
         <ul class="unstyled modal-panel" data-bind="foreach: $root.assist.checkedItems">
-          <li><span class="force-word-break" data-bind="text: path"></span></li>
+          <li data-bind="visible: path.indexOf('.') > -1" class="force-word-break"><i class="fa fa-database muted"></i> <span data-bind="text: path.split('.')[0]"></span> <i class="fa fa-long-arrow-right muted"></i> <i class="fa fa-table muted"></i> <span data-bind="text: path.split('.')[1]"></span></li>
+          <li data-bind="visible: path.indexOf('.') == -1" class="force-word-break"><i class="fa fa-database muted"></i> <span data-bind="text: path.split('.')[0]"></span></li>
         </ul>
       </div>
-      <div class="span6">
+      <div class="span8">
+        <div class="row-fluid">
+          <div class="span4 center">
+            <div class="big-btn" data-bind="css: {'selected': $root.bulkAction() == 'add'}, click: function(){$root.bulkAction('add')}">
+              <i class="fa fa-plus"></i><br/><br/>
+              <span>${ _('Add current privileges to selection') }</span>
+            </div>
+          </div>
+          <div class="span4 center">
+            <div class="big-btn" data-bind="css: {'selected': $root.bulkAction() == 'sync'}, click: function(){$root.bulkAction('sync')}">
+              <i class="fa fa-random"></i><br/><br/>
+              <span>${ _('Replace selection with current privileges') }</span>
+            </div>
+          </div>
+          <div class="span4 center">
+            <div class="big-btn" data-bind="css: {'selected': $root.bulkAction() == 'delete'}, click: function(){$root.bulkAction('delete')}">
+              <i class="fa fa-eraser"></i><br/><br/>
+              <span>${ _('Delete all privileges of selection') }</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <br/>
+    <div class="row-fluid" data-bind="visible: $root.bulkAction() != '' && $root.bulkAction() != 'delete'">
+      <div class="span12">
 
-        <h4>${ _('Selected item for privilege actions') }</h4>
+        <h4>${ _('Privileges to apply') }</h4>
 
         <div data-bind="visible: $root.assist.privileges().length == 0"><em class="muted">${ _('No privileges found for the selected item.')}</em></div>
         <div data-bind="template: { name: 'role', foreach: $root.assist.roles }" class="modal-panel"></div>
 
       </div>
+
     </div>
 
-    <h4>${ _('Choose your action') }</h4>
-    <div class="row-fluid">
-      <div class="span4 center">
-        <div class="big-btn" data-bind="css: {'selected': $root.bulkAction() == 'add'}, click: function(){$root.bulkAction('add')}">
-          <i class="fa fa-plus"></i><br/><br/>
-          <span class="bulk-action-description">${ _('Add current privileges to checkbox selection') }</span>
-        </div>
-      </div>
-      <div class="span4 center">
-        <div class="big-btn" data-bind="css: {'selected': $root.bulkAction() == 'sync'}, click: function(){$root.bulkAction('sync')}">
-          <i class="fa fa-random"></i><br/><br/>
-          <span class="bulk-action-description">${ _('Replace checkbox selection with current privileges') }</span>
-        </div>
-      </div>
-      <div class="span4 center">
-        <div class="big-btn" data-bind="css: {'selected': $root.bulkAction() == 'delete'}, click: function(){$root.bulkAction('delete')}">
-          <i class="fa fa-eraser"></i><br/><br/>
-          <span class="bulk-action-description">${ _('Remove privileges of checkbox selection') }</span>
-        </div>
-      </div>
-    </div>
 
   </div>
   <div class="modal-footer">
     <button class="btn" data-dismiss="modal" aria-hidden="true">${ _('Cancel') }</button>
-    <button class="btn" data-bind="css: {'btn-primary': $root.bulkAction() != 'delete', 'btn-danger': $root.bulkAction() == 'delete'}, click: $root.bulkPerfomAction">${ _('Confirm') }</button>
+    <button class="btn" data-bind="enable: $root.bulkAction(), css: {'btn-primary': $root.bulkAction() != 'delete', 'btn-danger': $root.bulkAction() == 'delete'}, click: $root.bulkPerfomAction">${ _('Confirm') }</button>
   </div>
 </div>
 
@@ -398,12 +444,23 @@ ${ layout.menubar(section='hive') }
 
 
 <%def name="treeIcons()">
-  'fa-database': isDb(),
+  'fa-hdd-o': isServer(),
+  'fa-database-open': isDb() && (nodes().length > 0 || isLoaded()),
+  'fa-database': isDb() && nodes().length == 0,
   'fa-table': isTable(),
   'fa-columns': isColumn()
 </%def>
 
-${ tree.import_templates(itemClick='$root.assist.setPath', iconClick='$root.assist.togglePath', itemSelected='$root.assist.path() == path()', iconModifier=treeIcons, anchorProperty='path', itemChecked='isChecked') }
+<%def name="withPrivilegesPullRight()">
+  <div class="pull-right">
+    <i class="fa fa-shield" data-bind="visible: withPrivileges()" style="color: #338bb8" title="${ _('Has some privileges') }"></i>&nbsp;
+    <i class="fa fa-file-o muted" data-bind="click: $root.assist.showHdfs ,visible: isTable()"></i>
+  </div>
+</%def>
+
+
+${ tree.import_templates(itemClick='$root.assist.setPath', iconClick='$root.assist.togglePath', itemSelected='$root.assist.path() == path()', styleModifier='withPrivileges', iconModifier=treeIcons, anchorProperty='path', itemChecked='isChecked', styleModifierPullRight=withPrivilegesPullRight) }
+
 
 <script src="/static/ext/js/knockout-min.js" type="text/javascript" charset="utf-8"></script>
 <script src="/static/ext/js/knockout.mapping-2.3.2.js" type="text/javascript" charset="utf-8"></script>
@@ -418,6 +475,7 @@ ${ tree.import_templates(itemClick='$root.assist.setPath', iconClick='$root.assi
 
 
   <script type="text/javascript" charset="utf-8">
+
     var viewModel = new HiveViewModel(${ initial | n,unicode });
     ko.applyBindings(viewModel);
 
@@ -471,6 +529,9 @@ ${ tree.import_templates(itemClick='$root.assist.setPath', iconClick='$root.assi
 
       $(document).on("created.role", function(){
         $("#createRoleModal").modal("hide");
+        window.setTimeout(function(){
+          viewModel.refreshExpandedRoles();
+        }, 500);
       });
 
       $(document).on("deleted.role", function(){
@@ -528,6 +589,10 @@ ${ tree.import_templates(itemClick='$root.assist.setPath', iconClick='$root.assi
         show: false
       });
 
+      $("#createRoleModal").on("hidden", function () {
+        viewModel.resetCreateRole();
+      });
+
       $("#deleteRoleModal").modal({
         show: false
       });
@@ -557,7 +622,34 @@ ${ tree.import_templates(itemClick='$root.assist.setPath', iconClick='$root.assi
         show: false
       });
 
+      $("#bulkActionsModal").on("hidden", function(){
+        viewModel.isApplyingBulk(false);
+      });
+
+      $(document).on("create.typeahead", function(){
+        $("#createRoleName").typeahead({
+            source: function (query) {
+              var _options = [];
+              viewModel.selectableRoles().forEach(function(item){
+                if (item.toLowerCase().indexOf(query.toLowerCase()) > -1){
+                  _options.push(item);
+                }
+              });
+              return _options;
+            },
+            'updater': function(item) {
+                return item;
+             }
+        });
+      });
+      $(document).on("destroy.typeahead", function(){
+        $('.typeahead').unbind();
+        $("ul.typeahead").hide();
+      });
+
+      $(document).trigger("create.typeahead");
     });
+
 </script>
 
 ${ commonfooter(messages) | n,unicode }

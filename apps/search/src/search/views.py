@@ -37,7 +37,8 @@ from search.conf import SOLR_URL
 from search.data_export import download as export_download
 from search.decorators import allow_admin_only
 from search.management.commands import search_setup
-from search.models import Collection, augment_solr_response, augment_solr_exception
+from search.models import Collection, augment_solr_response, augment_solr_exception,\
+  pairwise2
 from search.search_controller import SearchController
 
 
@@ -319,6 +320,60 @@ def get_document(request):
   return HttpResponse(json.dumps(result), mimetype="application/json")
 
 
+def get_stats(request):
+  result = {'status': -1, 'message': 'Error'}
+
+  try:
+    collection = json.loads(request.POST.get('collection', '{}'))
+    query = json.loads(request.POST.get('query', '{}'))
+    analysis = json.loads(request.POST.get('analysis', '{}'))
+
+    field = analysis['name']
+    facet = analysis['stats']['facet']
+
+    result['stats'] = SolrApi(SOLR_URL.get(), request.user).stats(collection['name'], [field], query, facet)
+    result['status'] = 0
+    result['message'] = ''
+
+  except Exception, e:
+    result['message'] = unicode(str(e), "utf8")
+    if 'not currently supported' in result['message']:
+      result['status'] = 1
+      result['message'] = _('This field does not support stats')
+
+  return HttpResponse(json.dumps(result), mimetype="application/json")
+
+
+def get_terms(request):
+  result = {'status': -1, 'message': 'Error'}
+
+  try:
+    collection = json.loads(request.POST.get('collection', '{}'))
+    analysis = json.loads(request.POST.get('analysis', '{}'))
+
+    field = analysis['name']
+    properties = {
+      'terms.prefix': analysis['terms']['prefix']
+      # lower
+      # limit
+      # mincount
+      # maxcount
+    }
+
+    result['terms'] = SolrApi(SOLR_URL.get(), request.user).terms(collection['name'], field, properties)
+    result['terms'] = pairwise2(field, [], result['terms']['terms'][field])
+    result['status'] = 0
+    result['message'] = ''
+
+  except Exception, e:
+    result['message'] = unicode(str(e), "utf8")
+    if 'not currently supported' in result['message']:
+      result['status'] = 1
+      result['message'] = _('This field does not support stats')
+
+  return HttpResponse(json.dumps(result), mimetype="application/json")
+
+
 def get_timeline(request):
   result = {'status': -1, 'message': 'Error'}
 
@@ -377,7 +432,7 @@ def new_facet(request):
     widget_type = request.POST['widget_type']
 
     result['message'] = ''
-    result['facet'] =  _create_facet(collection, request.user, facet_id, facet_label, facet_field, widget_type)
+    result['facet'] = _create_facet(collection, request.user, facet_id, facet_label, facet_field, widget_type)
     result['status'] = 0
   except Exception, e:
     result['message'] = unicode(str(e), "utf8")
@@ -396,21 +451,29 @@ def _create_facet(collection, user, facet_id, facet_label, facet_field, widget_t
     'andUp': False,  # Not used yet
   }
 
-  solr_api = SolrApi(SOLR_URL.get(), user)
-  range_properties = _new_range_facet(solr_api, collection, facet_field, widget_type)
-
-  if range_properties:
-    facet_type = 'range'
-    properties.update(range_properties)
-  elif widget_type == 'hit-widget':
-    facet_type = 'query'
+  if widget_type == 'tree-widget':
+    facet_type = 'pivot'
   else:
-    facet_type = 'field'
+    solr_api = SolrApi(SOLR_URL.get(), user)
+    range_properties = _new_range_facet(solr_api, collection, facet_field, widget_type)
+
+    if range_properties:
+      facet_type = 'range'
+      properties.update(range_properties)
+    elif widget_type == 'hit-widget':
+      facet_type = 'query'
+    else:
+      facet_type = 'field'
 
   if widget_type == 'map-widget':
     properties['scope'] = 'world'
     properties['mincount'] = 1
     properties['limit'] = 100
+  elif widget_type == 'tree-widget':
+    properties['mincount'] = 1
+    properties['facets'] = []
+    properties['facets_form'] = {'field': '', 'mincount': 1, 'limit': 10}
+    properties['graph'] = False
 
   return {
     'id': facet_id,

@@ -114,7 +114,7 @@
     </div>
     <div data-bind="template: { name: 'row-template', foreach: rows}">
     </div>
-    <div class="container-fluid" data-bind="visible: $root.isEditing">
+    <div class="container-fluid" data-bind="visible: $root.isEditing && rows().length > 0">
       <div data-bind="click: function(){$data.addEmptyRow()}, css: {'add-row': true, 'is-editing': $root.isEditing}, sortable: { data: drops, isEnabled: $root.isEditing, 'afterMove': function(event){var widget=event.item; var _r = $data.addEmptyRow(); _r.addWidget(widget);$('.card-body').slideDown('fast', function(){$(window).scrollTop(lastWindowScrollPosition)}); columnDropAdditionalHandler(widget)}, options: {'placeholder': 'add-row-highlight', 'greedy': true, 'stop': function(event, ui){$('.card-body').slideDown('fast', function(){$(window).scrollTop(lastWindowScrollPosition)});}}}"></div>
     </div>
   </div>
@@ -163,7 +163,7 @@
         <span data-bind="editable: name, editableOptions: {enabled: $root.isEditing(), placement: 'right'}"></span>
       <!-- /ko -->
       <div class="inline pull-right" data-bind="visible: $root.isEditing">
-        <a href="javascript:void(0)" data-bind="click: function(){remove($parent, this)}"><i class="fa fa-times"></i></a>
+        <a href="javascript:void(0)" data-bind="click: $root.removeWidget"><i class="fa fa-times"></i></a>
       </div>
     </h2>
     <div class="card-body" style="padding: 5px;">

@@ -62,7 +62,8 @@ def _to_sentry_privilege(privilege):
       'tableName': privilege['tableName'],
       'URI': privilege['URI'],
       'action': privilege['action'],
-      'createTime': privilege['timestamp']
+      'createTime': privilege['timestamp'],
+      'grantOption': 1 if privilege['grantOption'] else 0,
   }  
 
 
@@ -83,7 +84,8 @@ def _hive_add_privileges(user, role, privileges):
             'scope': privilege.get('privilegeScope'),
             'table': privilege.get('tableName'),
             'URI': privilege.get('URI'),            
-            'server': privilege.get('serverName')
+            'server': privilege.get('serverName'),
+            'grantOption': privilege.get('grantOption') == 1
         })
 
     return _privileges
@@ -210,12 +212,11 @@ def list_sentry_privileges_by_authorizable(request):
     roles = get_api(request.user).list_sentry_roles_by_group(groupName=groupName)
 
     for role in roles:
-      for privilege in get_api(request.user).list_sentry_privileges_by_role(role['name']): # authorizableHierarchy not working here?
-        if privilege['database'] == authorizableHierarchy['db'] and ('table' not in authorizableHierarchy or privilege['table'] == authorizableHierarchy['table']):
-          privilege['roleName'] = role['name']
-          privileges.append(privilege)
+      for privilege in get_api(request.user).list_sentry_privileges_by_role(role['name'], authorizableHierarchy=authorizableHierarchy):
+        privilege['roleName'] = role['name']
+        privileges.append(privilege)
 
-    result['privileges'] = privileges
+    result['privileges'] = sorted(privileges, key=lambda privilege: privilege['roleName'])
 
     result['message'] = ''
     result['status'] = 0
@@ -230,7 +231,6 @@ def bulk_delete_privileges(request):
 
   try:
     checkedPaths = json.loads(request.POST['checkedPaths'])
-    recursive = json.loads(request.POST['recursive'])
     authorizableHierarchy = json.loads(request.POST['authorizableHierarchy'])
 
     for path in [path['path'] for path in checkedPaths]:
@@ -257,7 +257,6 @@ def bulk_add_privileges(request):
   try:
     privileges = json.loads(request.POST['privileges'])
     checkedPaths = json.loads(request.POST['checkedPaths'])
-    recursive = json.loads(request.POST['recursive'])
     authorizableHierarchy = json.loads(request.POST['authorizableHierarchy'])
 
     privileges = [privilege for privilege in privileges if privilege['status'] == '']

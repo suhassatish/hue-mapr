@@ -351,9 +351,13 @@ class HiveServerClient:
       kerberos_principal_short_name = None
 
     if self.query_server['server_name'] == 'impala':
-      cluster_conf = cluster.get_cluster_conf_for_job_submission()
-      use_sasl = cluster_conf is not None and cluster_conf.SECURITY_ENABLED.get()
-      mechanism = HiveServerClient.HS2_MECHANISMS['KERBEROS']
+      if LDAP_PASSWORD.get(): # Force LDAP auth if ldap_password is provided
+        use_sasl = True
+        mechanism = HiveServerClient.HS2_MECHANISMS['NONE']
+      else:
+        cluster_conf = cluster.get_cluster_conf_for_job_submission()
+        use_sasl = cluster_conf is not None and cluster_conf.SECURITY_ENABLED.get()
+        mechanism = HiveServerClient.HS2_MECHANISMS['KERBEROS']
       impersonation_enabled = self.query_server['impersonation_enabled']
     else:
       hive_mechanism = hive_site.get_hiveserver2_authentication()
@@ -362,9 +366,10 @@ class HiveServerClient:
       use_sasl = hive_mechanism in ('KERBEROS', 'NONE')
       mechanism = HiveServerClient.HS2_MECHANISMS[hive_mechanism]
       impersonation_enabled = hive_site.hiveserver2_impersonation_enabled()
-      if LDAP_PASSWORD.get(): # HiveServer2 supports pass-through LDAP authentication.
-        ldap_username = LDAP_USERNAME.get()
-        ldap_password = LDAP_PASSWORD.get()
+
+    if LDAP_PASSWORD.get(): # Pass-through LDAP authentication
+      ldap_username = LDAP_USERNAME.get()
+      ldap_password = LDAP_PASSWORD.get()
 
     return use_sasl, mechanism, kerberos_principal_short_name, impersonation_enabled, ldap_username, ldap_password
 
@@ -516,6 +521,9 @@ class HiveServerClient:
 
 
   def execute_statement(self, statement, max_rows=1000, configuration={}):
+    if self.query_server['server_name'] == 'impala' and self.query_server['QUERY_TIMEOUT_S'] > 0:
+      configuration['QUERY_TIMEOUT_S'] = str(self.query_server['QUERY_TIMEOUT_S'])
+
     req = TExecuteStatementReq(statement=statement.encode('utf-8'), confOverlay=configuration)
     res = self.call(self._client.ExecuteStatement, req)
 
@@ -523,6 +531,9 @@ class HiveServerClient:
 
 
   def execute_async_statement(self, statement, confOverlay):
+    if self.query_server['server_name'] == 'impala' and self.query_server['QUERY_TIMEOUT_S'] > 0:
+      confOverlay['QUERY_TIMEOUT_S'] = str(self.query_server['QUERY_TIMEOUT_S'])
+
     req = TExecuteStatementReq(statement=statement.encode('utf-8'), confOverlay=confOverlay, runAsync=True)
     res = self.call(self._client.ExecuteStatement, req)
 
