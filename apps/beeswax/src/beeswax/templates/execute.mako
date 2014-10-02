@@ -42,8 +42,12 @@ ${layout.menubar(section='query')}
     <div class="tab-pane active" id="navigatorTab">
       <div class="card card-small card-tab">
         <div class="card-body" style="margin-top: 0">
-          <a href="#" title="${_('Double click on a table name or field to insert it in the editor')}" rel="tooltip" data-placement="top" class="pull-right" style="margin:3px; margin-top:7px"><i class="fa fa-question-circle"></i></a>
-          <a id="refreshNavigator" href="#" title="${_('Manually refresh the table list')}" rel="tooltip" data-placement="top" class="pull-right" style="margin:3px; margin-top:7px"><i class="fa fa-refresh"></i></a>
+          <a href="#" title="${_('Double click on a table name or field to insert it in the editor')}" rel="tooltip" data-placement="top" class="pull-right" style="margin:3px; margin-top:7px">
+            <i class="fa fa-question-circle"></i>
+          </a>
+          <a id="refreshNavigator" href="#" title="${_('Manually refresh the table list')}" rel="tooltip" data-placement="top" class="pull-right" style="margin:3px; margin-top:7px">
+            <i class="fa fa-refresh"></i>
+          </a>
           <ul class="nav nav-list" style="border: none; padding: 0; background-color: #FFF">
             <li class="nav-header">${_('database')}</li>
           </ul>
@@ -51,8 +55,8 @@ ${layout.menubar(section='query')}
           <input id="navigatorSearch" type="text" placeholder="${ _('Table name...') }" style="width:90%; margin-top: 20px"/>
           <div id="navigatorNoTables">${_('The selected database has no tables.')}</div>
           <ul id="navigatorTables" class="unstyled"></ul>
-          <div id="navigatorLoader">
-            <!--[if !IE]><!--><i class="fa fa-spinner fa-spin" style="font-size: 20px; color: #DDD"></i><!--<![endif]-->
+          <div id="navigatorLoader" class="center">
+            <!--[if !IE]><!--><i class="fa fa-spinner fa-spin" style="font-size: 20px; color: #BBB"></i><!--<![endif]-->
             <!--[if IE]><img src="/static/art/spinner.gif"/><![endif]-->
           </div>
         </div>
@@ -950,7 +954,7 @@ ${ dashboard.import_charts() }
 
 
 <script type="text/javascript" charset="utf-8">
-var codeMirror, renderNavigator, resetNavigator, resizeNavigator, dataTable, renderRecent;
+var codeMirror, renderNavigator, resetNavigator, resizeNavigator, dataTable, renderRecent, syncWithHive;
 
 var HIVE_AUTOCOMPLETE_BASE_URL = "${ autocomplete_base_url | n,unicode }";
 var HIVE_AUTOCOMPLETE_FAILS_QUIETLY_ON = [500]; // error codes from beeswax/views.py - autocomplete
@@ -1097,9 +1101,11 @@ $(document).ready(function () {
     if (_db != null) {
       $.totalStorage(hac_getTotalStorageUserPrefix() + 'databases', null);
       // clear all the table fields too
-      $.totalStorage(hac_getTotalStorageUserPrefix() + 'tables_' + _db).split(" ").forEach(function(item){
-        $.totalStorage(hac_getTotalStorageUserPrefix() + 'columns_' + _db + '_' + item, null);
-      });
+      if ($.totalStorage(hac_getTotalStorageUserPrefix() + 'tables_' + _db) != null) {
+        $.totalStorage(hac_getTotalStorageUserPrefix() + 'tables_' + _db).split(" ").forEach(function (item) {
+          $.totalStorage(hac_getTotalStorageUserPrefix() + 'columns_' + _db + '_' + item, null);
+        });
+      }
       getDatabases(function(){
         $.totalStorage(hac_getTotalStorageUserPrefix() + 'tables_' + _db, null);
         $.totalStorage(hac_getTotalStorageUserPrefix() + 'timestamp_tables_' + _db, null);
@@ -1128,22 +1134,27 @@ $(document).ready(function () {
 
             _table.data("table", table).attr("id", "navigatorTables_" + table);
             _table.find("a:eq(2)").on("click", function () {
-              _table.find(".fa-table").removeClass("fa-table").addClass("fa-spin").addClass("fa-spinner");
-              hac_getTableColumns(viewModel.database(), table, "", function (plain_columns, extended_columns) {
-                _table.find("a:eq(1)").removeClass("hide");
+              if (_table.find("li").length > 0){
                 _table.find("ul").empty();
-                _table.find(".fa-spinner").removeClass("fa-spinner").removeClass("fa-spin").addClass("fa-table");
-                $(extended_columns).each(function (iCnt, col) {
-                  var _column = $("<li>");
-                  _column.html("<a href='javascript:void(0)' style='padding-left:10px'" + (col.comment != null && col.comment != "" ? " title='" + col.comment + "'" : "") + "><i class='fa fa-columns'></i> " + col.name + ($.trim(col.type) != "" ? " (" + $.trim(col.type) + ")" : "") + "</a>");
-                  _column.appendTo(_table.find("ul"));
-                  _column.on("dblclick", function () {
-                    codeMirror.replaceSelection($.trim(col.name) + ', ');
-                    codeMirror.setSelection(codeMirror.getCursor());
-                    codeMirror.focus();
+              }
+              else {
+                _table.find(".fa-table").removeClass("fa-table").addClass("fa-spin").addClass("fa-spinner");
+                hac_getTableColumns(viewModel.database(), table, "", function (plain_columns, extended_columns) {
+                  _table.find("a:eq(1)").removeClass("hide");
+                  _table.find("ul").empty();
+                  _table.find(".fa-spinner").removeClass("fa-spinner").removeClass("fa-spin").addClass("fa-table");
+                  $(extended_columns).each(function (iCnt, col) {
+                    var _column = $("<li>");
+                    _column.html("<a href='javascript:void(0)' style='padding-left:10px'" + (col.comment != null && col.comment != "" ? " title='" + col.comment + "'" : "") + "><i class='fa fa-columns'></i> " + col.name + ($.trim(col.type) != "" ? " (" + $.trim(col.type) + ")" : "") + "</a>");
+                    _column.appendTo(_table.find("ul"));
+                    _column.on("dblclick", function () {
+                      codeMirror.replaceSelection($.trim(col.name) + ', ');
+                      codeMirror.setSelection(codeMirror.getCursor());
+                      codeMirror.focus();
+                    });
                   });
                 });
-              });
+              }
             });
             _table.find("a:eq(2)").on("dblclick", function () {
               codeMirror.replaceSelection($.trim(table) + ' ');
@@ -1206,7 +1217,46 @@ $(document).ready(function () {
   });
 
   $("#refreshNavigator").on("click", function () {
-    resetNavigator();
+    $("#navigatorTables").empty();
+    $("#navigatorLoader").show();
+
+    % if app_name == 'impala':
+      syncWithHive = function () {
+        // Diff Hive / Impala metastore and invalidate out of sync tables
+        hac_jsoncalls({
+          autocompleteBaseURL: "${ autocomplete_base_url_hive | n,unicode }",
+          database: viewModel.database(),
+          sync: true,
+          onDataReceived: function (data) {
+            if (data.tables) {
+              var _hiveTables = data.tables;
+              hac_getTables(viewModel.database(), function (data) {
+                var _impalaTables = data.split(" ");
+                $.ajax({
+                  type: "POST",
+                  url: "${ url('impala:refresh_tables') }",
+                  data: {
+                    database: ko.mapping.toJSON(viewModel.database()),
+                    added: ko.mapping.toJSON(_hiveTables.diff(_impalaTables)),
+                    removed: ko.mapping.toJSON(_impalaTables.diff(_hiveTables)),
+                  },
+                  success: function (data) {
+                    if (data.status != 0) {
+                      $(document).trigger("error", data.message);
+                    }
+                  }
+                });
+              });
+            }
+          }
+        });
+      }
+
+      window.setTimeout(syncWithHive, 100);
+
+    % endif
+
+    window.setTimeout(resetNavigator, 100);
   });
 
   resizeNavigator();

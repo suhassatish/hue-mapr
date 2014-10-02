@@ -22,15 +22,21 @@ from django.http import HttpResponse
 from django.utils.translation import ugettext as _
 
 from libsentry.api import get_api
+from libsentry.sentry_site import get_sentry_server_admin_groups
+from hadoop.cluster import get_defaultfs
 
 
 def list_sentry_roles_by_group(request):
   result = {'status': -1, 'message': 'Error'}
 
   try:
-    groupName = request.POST['groupName'] if request.POST['groupName'] else None
+    if request.POST['groupName']:
+      groupName = request.POST['groupName']
+    else:
+      # Admins can see everything, other only the groups they belong too
+      groupName = None if request.user.groups.filter(name__in=get_sentry_server_admin_groups()).exists() else '*'
     roles = get_api(request.user).list_sentry_roles_by_group(groupName)
-    result['roles'] = sorted(roles, key= lambda role: role['name'])
+    result['roles'] = sorted(roles, key=lambda role: role['name'])
     result['message'] = ''
     result['status'] = 0
   except Exception, e:
@@ -45,7 +51,7 @@ def list_sentry_privileges_by_role(request):
   try:
     roleName = request.POST['roleName']
     sentry_privileges = get_api(request.user).list_sentry_privileges_by_role(roleName)
-    result['sentry_privileges'] = sorted(sentry_privileges, key=lambda privilege: '%s.%s' % (privilege['database'], privilege['table']))
+    result['sentry_privileges'] = sorted(sentry_privileges, key=lambda privilege: '%s.%s.%s.%s' % (privilege['server'], privilege['database'], privilege['table'], privilege['URI']))
     result['message'] = ''
     result['status'] = 0
   except Exception, e:
@@ -60,11 +66,11 @@ def _to_sentry_privilege(privilege):
       'serverName': privilege['serverName'],
       'dbName': privilege['dbName'],
       'tableName': privilege['tableName'],
-      'URI': privilege['URI'],
+      'URI': _massage_uri(privilege['URI']),
       'action': privilege['action'],
       'createTime': privilege['timestamp'],
       'grantOption': 1 if privilege['grantOption'] else 0,
-  }  
+  }
 
 
 def _hive_add_privileges(user, role, privileges):
@@ -78,17 +84,26 @@ def _hive_add_privileges(user, role, privileges):
         # Mocked until Sentry API returns the info. Not used currently as we refresh the whole role.
         _privileges.append({
             'timestamp': int(time.time()),
-            'grantor': user.username,
             'database': privilege.get('dbName'),
             'action': privilege.get('action'),
             'scope': privilege.get('privilegeScope'),
             'table': privilege.get('tableName'),
-            'URI': privilege.get('URI'),            
+            'URI': privilege.get('URI'),
             'server': privilege.get('serverName'),
             'grantOption': privilege.get('grantOption') == 1
         })
 
     return _privileges
+
+
+def _massage_uri(uri):
+  if uri:
+    if uri.startswith('hdfs:///'):
+      uri = uri.replace('hdfs://', get_defaultfs())
+    elif uri.startswith('/'):
+      uri = get_defaultfs() + uri
+
+  return uri
 
 
 def _drop_sentry_privilege(user, role, authorizable):
@@ -104,10 +119,12 @@ def create_role(request):
     api = get_api(request.user)
 
     api.create_sentry_role(role['name'])
-    result['privileges'] = _hive_add_privileges(request.user, role, role['privileges'])
+
+    privileges = [privilege for privilege in role['privileges'] if privilege['status'] != 'deleted']
+    result['privileges'] = _hive_add_privileges(request.user, role, privileges)
     api.alter_sentry_role_add_groups(role['name'], role['groups'])
 
-    result['role'] = {"name": role['name'], "groups": role['groups'], "grantorPrincipal": request.user.username}
+    result['role'] = {"name": role['name'], "groups": role['groups']}
 
     result['message'] = _('Role created!')
     result['status'] = 0
@@ -122,12 +139,12 @@ def update_role_groups(request):
 
   try:
     role = json.loads(request.POST['role'])
-    
+
     new_groups = set(role['groups']) - set(role['originalGroups'])
     deleted_groups = set(role['originalGroups']) - set(role['groups'])
 
     api = get_api(request.user)
-    
+
     if new_groups:
       api.alter_sentry_role_add_groups(role['name'], new_groups)
     if deleted_groups:
@@ -149,7 +166,7 @@ def save_privileges(request):
 
     new_privileges = [privilege for privilege in role['privilegesChanged'] if privilege['status'] == 'new']
     result['privileges'] = _hive_add_privileges(request.user, role, new_privileges)
-    
+
     deleted_privileges = [privilege for privilege in role['privilegesChanged'] if privilege['status'] == 'deleted']
     for privilege in deleted_privileges:
       _drop_sentry_privilege(request.user, role, privilege)
@@ -158,10 +175,27 @@ def save_privileges(request):
     old_privileges_ids = [privilege['id'] for privilege in modified_privileges]
     _hive_add_privileges(request.user, role, modified_privileges)
     for privilege in role['originalPrivileges']:
-      if privilege['id'] in old_privileges_ids:      
+      if privilege['id'] in old_privileges_ids:
         _drop_sentry_privilege(request.user, role, privilege)
 
-    result['message'] = ''
+    result['message'] = _('Privileges updated')
+    result['status'] = 0
+  except Exception, e:
+    result['message'] = unicode(str(e), "utf8")
+
+  return HttpResponse(json.dumps(result), mimetype="application/json")
+
+
+def grant_privilege(request):
+  result = {'status': -1, 'message': 'Error'}
+
+  try:
+    roleName = json.loads(request.POST['roleName'])
+    privilege = json.loads(request.POST['privilege'])
+
+    result['privileges'] = _hive_add_privileges(request.user, {'name': roleName}, [privilege])
+
+    result['message'] = _('Privilege granted successfully to %s.') % roleName
     result['status'] = 0
   except Exception, e:
     result['message'] = unicode(str(e), "utf8")
@@ -199,24 +233,22 @@ def drop_sentry_role(request):
   return HttpResponse(json.dumps(result), mimetype="application/json")
 
 
-# Mocked until Sentry API returns the info!
 def list_sentry_privileges_by_authorizable(request):
   result = {'status': -1, 'message': 'Error'}
 
   try:
-    groupName = request.POST['groupName'] if request.POST['groupName'] else None
-    roleSet = json.loads(request.POST['roleSet'])
-    authorizableHierarchy = json.loads(request.POST['authorizableHierarchy'])
+    groups = [request.POST['groupName']] if request.POST['groupName'] else None
+    authorizableSet = [json.loads(request.POST['authorizableHierarchy'])]
 
-    privileges = []
-    roles = get_api(request.user).list_sentry_roles_by_group(groupName=groupName)
+    _privileges = []
 
-    for role in roles:
-      for privilege in get_api(request.user).list_sentry_privileges_by_role(role['name'], authorizableHierarchy=authorizableHierarchy):
-        privilege['roleName'] = role['name']
-        privileges.append(privilege)
+    for authorizable, roles in get_api(request.user).list_sentry_privileges_by_authorizable(authorizableSet=authorizableSet, groups=groups):
+      for role, privileges in roles.iteritems():
+        for privilege in privileges:
+          privilege['roleName'] = role
+        _privileges.append(privilege)
 
-    result['privileges'] = sorted(privileges, key=lambda privilege: privilege['roleName'])
+    result['privileges'] = sorted(_privileges, key=lambda privilege: privilege['roleName'])
 
     result['message'] = ''
     result['status'] = 0
@@ -269,14 +301,14 @@ def bulk_add_privileges(request):
       privilegeScope = 'TABLE' if table else 'DATABASE' if db else 'SERVER'
       authorizableHierarchy.update({
         'db': db,
-        'table': table, 
+        'table': table,
       })
 
       for privilege in privileges:
         privilege['dbName'] = db
         privilege['tableName'] = table
-        privilege['privilegeScope'] = privilegeScope        
-        _hive_add_privileges(request.user, {'name': privilege['roleName']}, [privilege])      
+        privilege['privilegeScope'] = privilegeScope
+        _hive_add_privileges(request.user, {'name': privilege['roleName']}, [privilege])
 
     result['message'] = _('Privileges added.')
     result['status'] = 0

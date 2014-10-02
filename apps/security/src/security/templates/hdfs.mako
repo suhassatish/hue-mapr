@@ -114,7 +114,6 @@ ${ layout.menubar(section='hdfs') }
                     </div>
                     <select class="user-list" data-bind="options: $root.selectableHadoopUsers, select2: { placeholder: '${ _("Select a user") }', update: $root.doAs, type: 'user'}" style="width: 120px"></select>
                     % endif
-                    <i class="fa fa-group" title="List of groups in popover for this user?"></i>
                   </div>
                   <div>
                     <a class="pointer" data-bind="click: $root.assist.collapseOthers" rel="tooltip" data-placement="right" title="${_('Close other nodes')}">
@@ -176,15 +175,16 @@ ${ layout.menubar(section='hdfs') }
                         <span class="pointer" data-bind="visible: $root.assist.changedRegularAcls().length, click: $root.assist.updateAcls"> &nbsp; <i class="fa fa-save"></i></span>
                       </div>
 
-                      <h4>${ _('Default ACLs') }</h4>
-                      <div data-bind="foreach: $root.assist.defaultAcls">
-                        <div data-bind="template: {name: 'aclEdit'}"></div>
-                      </div>
-
-                      <div class="acl-block acl-actions">
-                        <span class="pointer" data-bind="click: $root.assist.addDefaultAcl"><i class="fa fa-plus"></i></span>
-                        <span class="pointer" data-bind="visible: $root.assist.defaultAcls().length, click: $root.assist.getAcls"> &nbsp; <i class="fa fa-undo"></i></span>
-                        <span class="pointer" data-bind="visible: $root.assist.defaultAcls().length, click: $root.assist.updateAcls"> &nbsp; <i class="fa fa-save"></i></span>
+                      <div data-bind="visible: $root.assist.pathType() == 'dir'">
+                        <h4>${ _('Default ACLs') }</h4>
+                        <div data-bind="foreach: $root.assist.defaultAcls">
+                          <div data-bind="template: {name: 'aclEdit'}"></div>
+                        </div>
+                        <div class="acl-block acl-actions">
+                          <span class="pointer" data-bind="click: $root.assist.addDefaultAcl"><i class="fa fa-plus"></i></span>
+                          <span class="pointer" data-bind="visible: $root.assist.defaultAcls().length, click: $root.assist.getAcls"> &nbsp; <i class="fa fa-undo"></i></span>
+                          <span class="pointer" data-bind="visible: $root.assist.defaultAcls().length, click: $root.assist.updateAcls"> &nbsp; <i class="fa fa-save"></i></span>
+                        </div>
                       </div>
                     </span>
                   </div>
@@ -201,17 +201,11 @@ ${ layout.menubar(section='hdfs') }
 <div id="bulkActionsModal" class="modal hide fade in" role="dialog">
   <div class="modal-header">
     <a href="#" class="close" data-dismiss="modal">&times;</a>
-    <h3>${ _('Apply some bulk operations') }</h3>
+    <h3>${ _('Select one operation') }</h3>
   </div>
   <div class="modal-body" style="overflow-x: hidden">
 
     <div class="row-fluid">
-      <div class="span4">
-        <h4>${ _('Path selection') }</h4>
-        <ul class="unstyled modal-panel" data-bind="foreach: $root.assist.checkedItems">
-          <li><a class="force-word-break" data-bind="attr: { href: '/filebrowser/view' + path }, text: path" target="_blank" title="${ _('Open in File Browser') }" rel="tooltip"></a></li>
-        </ul>
-      </div>
       <div class="span8">
         <div class="row-fluid">
           <div class="span4 center">
@@ -233,6 +227,12 @@ ${ layout.menubar(section='hdfs') }
             </div>
           </div>
         </div>
+      </div>
+      <div class="span4">
+        <h4>${ _('to apply to the selection') }</h4>
+        <ul class="unstyled modal-panel" data-bind="foreach: $root.assist.checkedItems">
+          <li><a class="force-word-break" data-bind="attr: { href: '/filebrowser/view' + path }, text: path" target="_blank" title="${ _('Open in File Browser') }" rel="tooltip"></a></li>
+        </ul>
       </div>
     </div>
 

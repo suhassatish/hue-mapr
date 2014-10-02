@@ -23,7 +23,8 @@ from sentry_policy_service import SentryPolicyService
 from sentry_policy_service.ttypes import TListSentryRolesRequest, TListSentryPrivilegesRequest, TSentryAuthorizable, TCreateSentryRoleRequest, \
     TDropSentryRoleRequest, TAlterSentryRoleGrantPrivilegeRequest, TSentryPrivilege, TAlterSentryRoleGrantPrivilegeResponse, \
     TAlterSentryRoleRevokePrivilegeRequest, TAlterSentryRoleAddGroupsRequest, TSentryGroup, TAlterSentryRoleDeleteGroupsRequest, \
-    TListSentryPrivilegesForProviderRequest, TSentryActiveRoleSet, TSentryAuthorizable, TDropPrivilegesRequest, TRenamePrivilegesRequest
+    TListSentryPrivilegesForProviderRequest, TSentryActiveRoleSet, TSentryAuthorizable, TDropPrivilegesRequest, TRenamePrivilegesRequest, \
+    TListSentryPrivilegesByAuthRequest
 
 from libsentry.sentry_site import get_sentry_server_authentication,\
   get_sentry_server_principal
@@ -36,12 +37,12 @@ LOG = logging.getLogger(__name__)
 struct TSentryPrivilege {
 1: required string privilegeScope, # Valid values are SERVER, DATABASE, TABLE
 3: required string serverName,
-4: optional string dbName,
-5: optional string tableName,
-6: optional string URI,
-7: required string action,
+4: optional string dbName = "",
+5: optional string tableName = "",
+6: optional string URI = "",
+7: required string action = "",
 8: optional i64 createTime, # Set on server side
-9: optional string grantorPrincipal # Set on server side
+9: optional TSentryGrantOption grantOption = TSentryGrantOption.FALSE
 }
 
 struct TSentryAuthorizable {
@@ -166,3 +167,13 @@ class SentryClient(object):
       authorizableHierarchy = TSentryAuthorizable(**authorizableHierarchy)
     request = TListSentryPrivilegesForProviderRequest(groups=groups, roleSet=roleSet, authorizableHierarchy=authorizableHierarchy)
     return self.client.list_sentry_privileges_for_provider(request)
+
+
+  def list_sentry_privileges_by_authorizable(self, authorizableSet, groups=None, roleSet=None):
+    authorizableSet = [TSentryAuthorizable(**authorizable) for authorizable in authorizableSet]
+    if roleSet is not None:
+      roleSet = TSentryActiveRoleSet(**roleSet)    
+
+    request = TListSentryPrivilegesByAuthRequest(requestorUserName=self.username, authorizableSet=authorizableSet, groups=groups, roleSet=roleSet)
+    return self.client.list_sentry_privileges_by_authorizable(request)
+

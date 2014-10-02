@@ -56,6 +56,12 @@
       </div>
     </a>
   </div>
+  %if hasattr(caller, "results"):
+  <div style="float: left; margin-left: 20px" data-bind="visible: columns().length > 0">
+    <div class="toolbar-label">${_('RESULTS')}</div>
+    ${caller.results()}
+  </div>
+  %endif
   %if hasattr(caller, "widgets"):
   <div style="float: left; margin-left: 20px" data-bind="visible: columns().length > 0">
     <div class="toolbar-label">${_('WIDGETS')}</div>
@@ -109,12 +115,12 @@
 
 <script type="text/html" id="column-template">
   <div data-bind="css: klass">
-    <div class="container-fluid" data-bind="visible: $root.isEditing">
+    <div class="container-fluid" data-bind="visible: $root.isEditing()">
       <div data-bind="click: function(){$data.addEmptyRow(true)}, css: {'add-row': true, 'is-editing': $root.isEditing}, sortable: { data: drops, isEnabled: $root.isEditing, 'afterMove': function(event){var widget=event.item; var _r = $data.addEmptyRow(true); _r.addWidget(widget);$('.card-body').slideDown('fast', function(){$(window).scrollTop(lastWindowScrollPosition)}); columnDropAdditionalHandler(widget)}, options: {'placeholder': 'add-row-highlight', 'greedy': true, 'stop': function(event, ui){$('.card-body').slideDown('fast', function(){$(window).scrollTop(lastWindowScrollPosition)});}}}"></div>
     </div>
     <div data-bind="template: { name: 'row-template', foreach: rows}">
     </div>
-    <div class="container-fluid" data-bind="visible: $root.isEditing && rows().length > 0">
+    <div class="container-fluid" data-bind="visible: $root.isEditing() && rows().length > 0">
       <div data-bind="click: function(){$data.addEmptyRow()}, css: {'add-row': true, 'is-editing': $root.isEditing}, sortable: { data: drops, isEnabled: $root.isEditing, 'afterMove': function(event){var widget=event.item; var _r = $data.addEmptyRow(); _r.addWidget(widget);$('.card-body').slideDown('fast', function(){$(window).scrollTop(lastWindowScrollPosition)}); columnDropAdditionalHandler(widget)}, options: {'placeholder': 'add-row-highlight', 'greedy': true, 'stop': function(event, ui){$('.card-body').slideDown('fast', function(){$(window).scrollTop(lastWindowScrollPosition)});}}}"></div>
     </div>
   </div>
@@ -219,7 +225,7 @@
   <script src="/static/ext/js/leaflet/leaflet.js" type="text/javascript" charset="utf-8"></script>
 
   <script src="/static/ext/js/d3.v3.js" type="text/javascript" charset="utf-8"></script>
-  <script src="/static/ext/js/nv.d3.min.js" type="text/javascript" charset="utf-8"></script>
+  <script src="/static/js/nv.d3.js" type="text/javascript" charset="utf-8"></script>
   <script src="/static/ext/js/topojson.v1.min.js" type="text/javascript" charset="utf-8"></script>
   <script src="/static/ext/js/topo/world.topo.js" type="text/javascript" charset="utf-8"></script>
   <script src="/static/ext/js/topo/usa.topo.js" type="text/javascript" charset="utf-8"></script>

@@ -174,7 +174,6 @@
   left: inherit;
   right: 0;
 }
-
 .hoverMsg {
   background: #000;
   height: 100%;
@@ -202,10 +201,14 @@
   animation-fill-mode: both;
 }
 
-.destination {
-  background: #e5e5e5;
-  cursor: pointer;
-  font-weight: bold;
-  margin-right: 1em;
-  padding: 3px;
+#copyModal .modal-body, #moveModal .modal-body {
+  max-height: 300px;
+}
+
+#copyModal .modal-footer div, #moveModal .modal-footer div {
+  position: absolute;
+  left: 10px;
+  width: 400px;
+  text-align: left;
+  display: none;
 }

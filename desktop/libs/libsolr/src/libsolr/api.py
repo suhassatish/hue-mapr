@@ -63,6 +63,32 @@ class SolrApi(object):
     return 'OR'.join([q_template % (q['q'] or EMPTY_QUERY.get()) for q in query['qs']]).encode('utf-8')
 
 
+  def _get_fq(self, query):
+    params = ()
+
+    for fq in query['fqs']:
+      if fq['type'] == 'field':
+        # This does not work if spaces in Solr:
+        # params += (('fq', ' '.join([urllib.unquote(utf_quoter('{!tag=%s}{!field f=%s}%s' % (fq['field'], fq['field'], _filter))) for _filter in fq['filter']])),)
+        fields = fq['field'].split(':') # 2D facets support
+        for field in fields:
+          f = []
+          for _filter in fq['filter']:
+            values = _filter['value'].split(':')
+            if fields.index(field) < len(values): # Lowest common field denominator
+              value = values[fields.index(field)]
+              exclude = '-' if _filter['exclude'] else ''
+              if value is not None and ' ' in value:
+                f.append('%s%s:"%s"' % (exclude, field, value))
+              else:
+                f.append('%s{!field f=%s}%s' % (exclude, field, value))
+          _params ='{!tag=%s}' % field + ' '.join(f)
+          params += (('fq', urllib.unquote(utf_quoter(_params))),)
+      elif fq['type'] == 'range':
+        params += (('fq', '{!tag=%s}' % fq['field'] + ' '.join([urllib.unquote(
+                    utf_quoter('%s%s:[%s TO %s}' % ('-' if field['exclude'] else '', fq['field'], f['from'], f['to']))) for field, f in zip(fq['filter'], fq['properties'])])),)
+    return params
+
   def query(self, collection, query):
     solr_query = {}
 
@@ -109,7 +135,7 @@ class SolrApi(object):
               ('f.%s.facet.limit' % facet['field'], int(facet['properties'].get('limit', 10)) + 1),
               ('f.%s.facet.mincount' % facet['field'], int(facet['properties']['mincount'])),
           )
-        elif facet['type'] == 'pivot':  
+        elif facet['type'] == 'pivot':
           if facet['properties']['facets']:
             fields = facet['field']
             for f in facet['properties']['facets']:
@@ -117,26 +143,22 @@ class SolrApi(object):
               fields += ',' + f['field']
             params += (
                 ('facet.pivot', '{!ex=%s}%s' % (fields, fields)),
-                ('f.%s.facet.limit' % facet['field'], int(facet['properties'].get('limit', 10)) + 1),
+                ('f.%s.facet.limit' % facet['field'], int(facet['properties'].get('limit', 10))),
                 ('facet.pivot.mincount', int(facet['properties']['mincount'])),
             )
-    for fq in query['fqs']:
-      if fq['type'] == 'field':
-        # This does not work if spaces in Solr:
-        # params += (('fq', ' '.join([urllib.unquote(utf_quoter('{!tag=%s}{!field f=%s}%s' % (fq['field'], fq['field'], _filter))) for _filter in fq['filter']])),)
-        f = []
-        for _filter in fq['filter']:
-          if _filter is not None and ' ' in _filter:
-            f.append('%s:"%s"' % (fq['field'], _filter))
-          else:
-            f.append('{!field f=%s}%s' % (fq['field'], _filter))
-        params += (('fq', urllib.unquote(utf_quoter('{!tag=%s}' % fq['field'] + ' '.join(f)))),)
-      elif fq['type'] == 'range':
-        params += (('fq', '{!tag=%s}' % fq['field'] + ' '.join([urllib.unquote(utf_quoter('%s:[%s TO %s}' % (fq['field'], f['from'], f['to']))) for f in fq['properties']])),)
+
+    params += self._get_fq(query)
 
     if collection['template']['fieldsSelected'] and collection['template']['isGridLayout']:
-      fields = collection['template']['fieldsSelected'] + [collection['idField']] if collection['idField'] else []
-      params += (('fl', urllib.unquote(utf_quoter(','.join(fields)))),)
+      fields = set(collection['template']['fieldsSelected'] + [collection['idField']] if collection['idField'] else [])
+      # Add field if needed
+      if collection['template']['leafletmap'].get('latitudeField'):
+        fields.add(collection['template']['leafletmap']['latitudeField'])
+      if collection['template']['leafletmap'].get('longitudeField'):
+        fields.add(collection['template']['leafletmap']['longitudeField'])
+      if collection['template']['leafletmap'].get('labelField'):
+        fields.add(collection['template']['leafletmap']['labelField'])
+      params += (('fl', urllib.unquote(utf_quoter(','.join(list(fields))))),)
     else:
       params += (('fl', '*'),)
 
@@ -358,6 +380,10 @@ class SolrApi(object):
           ('rows', 0),
           ('stats', 'true'),
       )
+
+      if query is not None:
+        params += self._get_fq(query)
+
       if facet:
         params += (('stats.facet', facet),)
 

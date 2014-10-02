@@ -103,6 +103,14 @@ from django.utils.translation import ugettext as _
       user: "${ user.username }"
     };
 
+    jHueHdfsTreeGlobals = {
+      labels: {
+        CREATE_FOLDER: "${_('Create folder')}",
+        FOLDER_NAME: "${_('Folder name')}",
+        CANCEL: "${_('Cancel')}"
+      }
+    };
+
     jHueTableExtenderGlobals = {
       labels: {
         GO_TO_COLUMN: "${_('Go to column:')}",
@@ -156,6 +164,7 @@ from django.utils.translation import ugettext as _
   <script src="/static/ext/js/jquery/plugins/jquery.dataTables.1.8.2.min.js"></script>
   <script src="/static/js/jquery.datatables.sorting.js"></script>
   <script src="/static/ext/js/bootstrap.min.js"></script>
+  <script src="/static/ext/js/bootstrap-better-typeahead.min.js"></script>
   <script src="/static/ext/js/fileuploader.js"></script>
   <script src="/static/js/popover-extra-placements.js"></script>
 
@@ -233,7 +242,7 @@ from django.utils.translation import ugettext as _
           $(".navigator li.open").removeClass("open");
           $(".navigator ul.dropdown-menu").hide();
           $("[rel='navigator-tooltip']").tooltip("hide");
-          _this.find("ul.dropdown-menu").show();
+          _this.find("ul.dropdown-menu:eq(0)").show();
         }, _timeout);
       }
 
@@ -252,6 +261,12 @@ from django.utils.translation import ugettext as _
           $(".navigator li a:focus").blur();
           $(".navigator").find("ul.dropdown-menu").hide();
         }, 1000);
+      });
+      $(".navigator ul.nav li.dropdown-submenu").hover(function () {
+        $(this).find(".dropdown-menu").show();
+      },
+      function () {
+        $(this).find(".dropdown-menu").hide();
       });
 
       var _skew = -1;
@@ -384,8 +399,22 @@ from django.utils.translation import ugettext as _
        <li class="dropdown">
          <a title="${_('Schedule with Oozie')}" rel="navigator-tooltip" href="#" data-toggle="dropdown" class="dropdown-toggle">${_('Workflows')} <b class="caret"></b></a>
          <ul role="menu" class="dropdown-menu">
-           <li><a href="${ url('oozie:index') }"><img src="/oozie/static/art/icon_oozie_dashboard_48.png" class="app-icon" /> ${_('Dashboard')}</a></li>
-           <li><a href="${ url('oozie:list_workflows') }"><img src="/oozie/static/art/icon_oozie_editor_48.png" class="app-icon" /> ${_('Editor')}</a></li>
+           <li class="dropdown-submenu">
+             <a href="${ url('oozie:index') }"><img src="/oozie/static/art/icon_oozie_dashboard_48.png" class="app-icon" /> ${_('Dashboards')}</a>
+             <ul class="dropdown-menu">
+               <li><a href="${url('oozie:list_oozie_workflows')}"><img src="/oozie/static/art/icon_oozie_workflow_48.png" class="app-icon"/> ${_('Workflows')}</a></li>
+               <li><a href="${url('oozie:list_oozie_coordinators')}"><img src="/oozie/static/art/icon_oozie_coordinator_48.png" class="app-icon" /> ${_('Coordinators')}</a></li>
+               <li><a href="${url('oozie:list_oozie_bundles')}"><img src="/oozie/static/art/icon_oozie_bundle_48.png" class="app-icon" /> ${_('Bundles')}</a></li>
+             </ul>
+           </li>
+           <li class="dropdown-submenu">
+             <a href="${ url('oozie:list_workflows') }"><img src="/oozie/static/art/icon_oozie_editor_48.png" class="app-icon" /> ${_('Editors')}</a>
+             <ul class="dropdown-menu">
+               <li><a href="${url('oozie:list_workflows')}"><img src="/oozie/static/art/icon_oozie_workflow_48.png" class="app-icon"/> ${_('Workflows')}</a></li>
+               <li><a href="${url('oozie:list_coordinators')}"><img src="/oozie/static/art/icon_oozie_coordinator_48.png" class="app-icon" /> ${_('Coordinators')}</a></li>
+               <li><a href="${url('oozie:list_bundles')}"><img src="/oozie/static/art/icon_oozie_bundle_48.png" class="app-icon" /> ${_('Bundles')}</a></li>
+             </ul>
+           </li>
          </ul>
        </li>
        % endif
@@ -403,7 +432,7 @@ from django.utils.translation import ugettext as _
                % for collection in collections:
                <li><a href="${ url('search:index') }?collection=${ collection.id }"><img src="${ collection.icon }" class="app-icon"/> ${ collection.label }</a></li>
                % endfor
-               % if user.is_superuser:
+               % if 'indexer' in apps:
                  <li class="divider"></li>
                  <li><a href="${ url('indexer:collections') }"><i class="fa fa-database"></i> ${ _('Indexes') }</a></li>
                % endif
@@ -415,8 +444,8 @@ from django.utils.translation import ugettext as _
          <li class="dropdown">
            <a title="${_('Hadoop Security')}" rel="navigator-tooltip" href="#" data-toggle="dropdown" class="dropdown-toggle">${_('Security')} <b class="caret"></b></a>
            <ul role="menu" class="dropdown-menu">
-             <li><a href="${ url('security:hive') }">&nbsp;<i class="fa fa-database"></i>&nbsp;&nbsp;${_('Databases and Tables')}</a></li>
-             <li><a href="${ url('security:hdfs') }">&nbsp;<i class="fa fa-file"></i>&nbsp;&nbsp;${_('Files and Directories')}</a></li>
+             <li><a href="${ url('security:hive') }">&nbsp;<i class="fa fa-database"></i>&nbsp;&nbsp;${_('Sentry Tables')}</a></li>
+             <li><a href="${ url('security:hdfs') }">&nbsp;<i class="fa fa-file"></i>&nbsp;&nbsp;${_('Files ACLs')}</a></li>
            </ul>
          </li>
        % endif

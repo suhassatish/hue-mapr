@@ -272,12 +272,36 @@ em {
   float: left;
   margin-right: 10px;
   margin-bottom: 10px;
-  background-color: #F6F6F6;
+}
+
+.filter-box .title {
+  font-weight: bold;
+  color: #333;
   padding: 5px;
   border: 1px solid #d8d8d8;
-  -webkit-border-radius: 3px;
-  -moz-border-radius: 3px;
-  border-radius: 3px;
+  background-color: #F6F6F6;
+  border-bottom: none;
+  -webkit-border-radius: 3px 3px 0 0;
+  -moz-border-radius: 3px 3px 0 0;
+  border-radius: 3px 3px 0 0;
+}
+
+.filter-box .title a {
+  color: #333;
+}
+
+.filter-box .title.excluded {
+  background-color: #d84a38;
+}
+
+.filter-box .content {
+  padding: 8px;
+  background-color: #FFFFFF;
+  border: 1px solid #d8d8d8;
+  border-top: none;
+  -webkit-border-radius: 0 0 3px 3px;
+  -moz-border-radius: 0 0 3px 3px;
+  border-radius: 0 0 3px 3px;
 }
 
 .field-selector {
@@ -293,4 +317,168 @@ em {
 
 .field-selector.hoverable:hover {
   background-color: #DDD;
+}
+
+.mega-popover {
+  max-width: 1200px;
+}
+
+.mega-popover .popover-content {
+  min-width: 440px;
+  min-height: 360px;
+}
+
+.mega-popover .tab-pane {
+  height: 300px;
+  overflow-y: scroll;
+}
+
+.mega-popover input[type='text'] {
+  margin: 0;
+  width: 130px;
+  border-radius: 20px;
+  -webkit-border-radius: 20px;
+  -moz-border-radius: 20px;
+  min-height: 26px;
+  padding-left: 12px;
+}
+
+.fa.analysis {
+  margin-top: 3px;
+  margin-right: 3px;
+}
+
+.fa.analysis:hover {
+  color: #333;
+}
+
+.typeahead {
+  z-index: 10000;
+}
+
+.trigger-exclude .exclude {
+  display: none;
+  margin-left: 10px;
+}
+
+.trigger-exclude:hover {
+  text-decoration: none;
+}
+
+.trigger-exclude:hover .exclude {
+  display: inline-block;
+}
+
+.fa-sign-out.red {
+  color: #d84a38;
+}
+
+.hue-tree {
+  width: 100%;
+  overflow-y: scroll;
+  min-height: 100px;
+}
+
+.hue-tree ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+.tree {
+  margin: 20px;
+}
+
+.table tbody tr:hover > td,
+.table tbody tr:hover > th,
+.table tbody tr:hover td, .table tbody tr:hover th {
+  background-color: transparent!important;
+}
+
+.pivot-cell {
+  cursor: pointer;
+}
+
+.pivot-cell.selected {
+  border: 2px dashed #CCC;
+}
+
+.partitionChart {
+  display: block;
+  margin: auto;
+  margin-top: 10px;
+  font-size: 11px;
+}
+
+.partitionChart rect {
+  fill-opacity: .8;
+}
+
+.partitionChart rect.mouseover {
+  fill-opacity: 1!important;
+}
+
+.partitionChart rect.parent {
+  cursor: pointer;
+}
+
+.partitionChart text {
+  pointer-events: none;
+  fill: white;
+}
+
+.d3-tip {
+  line-height: 1;
+  font-weight: bold;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  border-radius: 2px;
+  pointer-events: none;
+  margin-top: 5px;
+}
+
+/* Creates a small triangle extender for the tooltip */
+.d3-tip:after {
+  box-sizing: border-box;
+  display: inline;
+  font-size: 10px;
+  width: 100%;
+  line-height: 1;
+  color: rgba(0, 0, 0, 0.8);
+  position: absolute;
+  pointer-events: none;
+}
+
+/* Northward tooltips */
+.d3-tip.n:after {
+  content: "\25BC";
+  margin: -3px 0 0 0;
+  top: 100%;
+  left: 0;
+  text-align: center;
+}
+
+/* Eastward tooltips */
+.d3-tip.e:after {
+  content: "\25C0";
+  margin: -4px 0 0 0;
+  top: 50%;
+  left: -8px;
+}
+
+/* Southward tooltips */
+.d3-tip.s:after {
+  content: "\25B2";
+  margin: 0 0 1px 0;
+  top: -8px;
+  left: 0;
+  text-align: center;
+}
+
+/* Westward tooltips */
+.d3-tip.w:after {
+  content: "\25B6";
+  margin: -4px 0 0 -1px;
+  top: 50%;
+  left: 100%;
 }

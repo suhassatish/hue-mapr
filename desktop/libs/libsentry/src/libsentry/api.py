@@ -25,9 +25,12 @@ LOG = logging.getLogger(__name__)
 
 
 class SentryException(Exception):
-  def __init__(self, e, message=''):
+  def __init__(self, e):
     super(SentryException, self).__init__(e)
-    self.message = message
+    self.message = e.status.message
+
+  def __str__(self):
+    return self.message
 
 
 def get_api(user):
@@ -102,7 +105,6 @@ class SentryApi(object):
       for role in response.roles:
         roles.append({
           'name': role.roleName,
-          'grantorPrincipal': role.grantorPrincipal,
           'groups': [group.groupName for group in role.groups]
         })
       return roles
@@ -114,7 +116,7 @@ class SentryApi(object):
     response = self.client.list_sentry_privileges_by_role(roleName, authorizableHierarchy)
 
     if response.status.value == 0:
-      return [self._massage_priviledges(privilege) for privilege in response.privileges]
+      return [self._massage_priviledge(privilege) for privilege in response.privileges]
     else:
       raise SentryException(response)
 
@@ -124,6 +126,23 @@ class SentryApi(object):
 
     if response.status.value == 0:
       return response
+    else:
+      raise SentryException(response)
+
+
+  def list_sentry_privileges_by_authorizable(self, authorizableSet, groups=None, roleSet=None):
+    response = self.client.list_sentry_privileges_by_authorizable(authorizableSet, groups, roleSet)
+
+    _privileges = []
+
+    for authorizable, roles in response.privilegesMapByAuth.iteritems():
+      _roles = {}
+      for role, privileges in roles.privilegeMap.iteritems():
+        _roles[role] = [self._massage_priviledge(privilege) for privilege in privileges]
+      _privileges.append((self._massage_authorizable(authorizable), _roles))
+
+    if response.status.value == 0:
+      return _privileges
     else:
       raise SentryException(response)
 
@@ -146,14 +165,23 @@ class SentryApi(object):
       raise SentryException(response)
 
 
-  def _massage_priviledges(self, privilege):
+  def _massage_priviledge(self, privilege):
     return {
         'scope': privilege.privilegeScope,
         'server': privilege.serverName,
         'database': privilege.dbName,
         'table': privilege.tableName,
         'URI': privilege.URI,
-        'action': privilege.action.upper(),
+        'action': 'ALL' if privilege.action == '*' else privilege.action.upper(),
         'timestamp': privilege.createTime,
-        'grantor': privilege.grantorPrincipal
+        'grantOption': privilege.grantOption == 1,
+    }
+
+
+  def _massage_authorizable(self, authorizable):
+    return {
+        'server': authorizable.server,
+        'database': authorizable.db,
+        'table': authorizable.table,
+        'URI': authorizable.uri,
     }

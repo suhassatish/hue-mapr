@@ -305,7 +305,7 @@ def list_query_history(request):
                           Default to "-date".
     auto_query=<bool>   - Show auto generated actions (drop table, read data, etc). Default True
   """
-  DEFAULT_PAGE_SIZE = 30
+  DEFAULT_PAGE_SIZE = 100
   prefix = 'q-'
 
   share_queries = request.user.is_superuser
@@ -339,7 +339,7 @@ def list_query_history(request):
 
 def massage_query_history_for_json(app_name, query_history):
   return {
-    'query': query_history.query,
+    'query': escape(query_history.query),
     'timeInMs': time.mktime(query_history.submission_date.timetuple()),
     'timeFormatted': query_history.submission_date.strftime("%x %X"),
     'designUrl': reverse(app_name + ':execute_design', kwargs={'design_id': query_history.design.id}),
@@ -406,6 +406,7 @@ def execute_query(request, design_id=None, query_history_id=None):
     'query': query_history, # Backward
     'query_history': query_history,
     'autocomplete_base_url': reverse(get_app_name(request) + ':api_autocomplete_databases', kwargs={}),
+    'autocomplete_base_url_hive': reverse('beeswax:api_autocomplete_databases', kwargs={}),
     'can_edit_name': design and design.id and not design.is_auto,
     'can_edit': design and design.id and design.doc.get().can_write(request.user),
     'action': action,

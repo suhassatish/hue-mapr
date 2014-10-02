@@ -40,11 +40,17 @@ ${ layout.menubar(section='oozie', dashboard=True) }
   </h1>
 
   <ul class="nav nav-tabs">
+    % if instrumentation:
     <li class="active"><a href="#instrumentation" data-toggle="tab">${ _('Instrumentation') }</a></li>
+    % else:
+    <li class="active"><a href="#metrics" data-toggle="tab">${ _('Metrics') }</a></li>
+    % endif
     <li><a href="#configuration" data-toggle="tab">${ _('Configuration') }</a></li>
   </ul>
 
   <div class="tab-content" style="padding-bottom:200px">
+
+    % if instrumentation:
     <div class="tab-pane active" id="instrumentation">
       <form class="form-search">
         <input type="text" class="searchFilter input-xlarge search-query" placeholder="${_('Text Filter')}">
@@ -107,8 +113,90 @@ ${ layout.menubar(section='oozie', dashboard=True) }
             % endfor
         </div>
       </div>
+    </div>
+    % endif
+
+    % if metrics:
+    <div class="tab-pane active" id="metrics">
+        <form class="form-search">
+          <input type="text" class="searchFilter input-xlarge search-query" placeholder="${_('Text Filter')}">
+        </form>
+        <ul class="nav nav-pills">
+        % for obj in metrics:
+          <li
+            % if loop.first:
+                class="active"
+            % endif
+          >
+          <a href="#metrics${ obj }" data-toggle="tab">${ obj }</a>
+          </li>
+        % endfor
+        </ul>
+        <div class="tab-content">
+        % for obj in metrics:
+            <div class="tab-pane
+            % if loop.first:
+              active
+            % endif
+            " id="metrics${obj}">
+                ${recurse(metrics[obj])}
+            </div>
+          % endfor
+        </div>
 
     </div>
+
+    <%def name="recurse(metric)">
+        % if metric:
+          % if isinstance(metric, basestring):
+            <table class="table table-striped">
+              <tr>
+                <th>${metric}</th>
+              </tr>
+            </table>
+          % else:
+            <table class="table table-striped metricsTable">
+            <thead>
+            <tr>
+              <th>${_('Name')}</th>
+              <th>${_('Value')}</th>
+            </tr>
+            </thead>
+           <tbody>
+            % for val in metric:
+            <tr>
+              <td width="30%">
+                <table class="table" style="margin-bottom: 0">
+                  <tr>
+                    <th style="border: none">${val}</th>
+                  </tr>
+                </table>
+              </td>
+              <td width="70%">
+                <table class="table" style="margin-bottom: 0">
+                % for prop in metric[val]:
+                  <tr>
+                    <th width="20%" style="border: none">${prop}</th>
+                    <td width="80%" style="border: none">${metric[val][prop]}</td>
+                  </tr>
+                % endfor
+                </table>
+              </td>
+            </tr>
+            % endfor
+              </tbody>
+            </table>
+          % endif
+        % else:
+          <table class="table table-striped">
+          <tr>
+            <td>${ _('No metrics available for this section.') }</td>
+          </tr>
+          </table>
+        % endif
+      </%def>
+
+    % endif
 
     <div class="tab-pane" id="configuration">
       <form class="form-search">
@@ -118,7 +206,7 @@ ${ layout.menubar(section='oozie', dashboard=True) }
     </div>
 
 
-    <div style="margin-bottom: 16px">
+    <div style="margin-bottom: 16px; margin-top: 10px">
       <a href="${ url('oozie:list_oozie_bundles') }" class="btn">${ _('Back') }</a>
     </div>
 
@@ -127,27 +215,46 @@ ${ layout.menubar(section='oozie', dashboard=True) }
     </div>
   </div>
 
-
 <script>
   $(document).ready(function(){
     $("a[data-row-selector='true']").jHueRowSelector();
 
     $("*[rel=tooltip]").tooltip();
 
-        var _metadataTable = $("#configurationTable").dataTable({
-            "bPaginate": false,
-            "bLengthChange": false,
-            "bInfo": false,
-            "bAutoWidth": false,
-            "aoColumns": [
-                { "sWidth": "30%" },
-                { "sWidth": "70%" }
-            ],
-            "oLanguage": {
-                "sEmptyTable": "${_('No data available')}",
-                "sZeroRecords": "${_('No matching records')}",
-            }
-        });
+    var _metadataTable = $("#configurationTable").dataTable({
+        "bPaginate": false,
+        "bLengthChange": false,
+        "bInfo": false,
+        "bAutoWidth": false,
+        "aoColumns": [
+            { "sWidth": "30%" },
+            { "sWidth": "70%" }
+        ],
+        "oLanguage": {
+           "sEmptyTable": "${_('No data available')}",
+           "sZeroRecords": "${_('No matching records')}",
+        }
+   });
+  var metricsTables = [];
+% if metrics:
+   $(".metricsTable").each(function(){
+     var _table = $(this).dataTable({
+        "bPaginate": false,
+        "bLengthChange": false,
+        "bInfo": false,
+        "bAutoWidth": false,
+        "aoColumns": [
+            { "sWidth": "30%" },
+            { "sWidth": "70%", "bSortable": false }
+        ],
+        "oLanguage": {
+           "sEmptyTable": "${_('No data available')}",
+           "sZeroRecords": "${_('No matching records')}",
+        }
+      });
+     metricsTables.push(_table);
+   });
+% endif
 
    var instrumentationTables = [];
 
@@ -176,6 +283,9 @@ ${ layout.menubar(section='oozie', dashboard=True) }
     $(".searchFilter").keyup(function(){
         _metadataTable.fnFilter($(this).val());
         $.each(instrumentationTables, function(index, item){
+          item.fnFilter($(".searchFilter").val());
+        });
+        $.each(metricsTables, function(index, item){
           item.fnFilter($(".searchFilter").val());
         });
     });

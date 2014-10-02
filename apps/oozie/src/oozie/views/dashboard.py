@@ -82,6 +82,27 @@ def manage_oozie_jobs(request, job_id, action):
 
   return HttpResponse(json.dumps(response), mimetype="application/json")
 
+def bulk_manage_oozie_jobs(request):
+  if request.method != 'POST':
+    raise PopupException(_('Use a POST request to manage the Oozie jobs.'))
+
+  response = {'status': -1, 'data': ''}
+
+  if 'job_ids' in request.POST and 'action' in request.POST:
+    jobs = request.POST.get('job_ids').split()
+    response = {'totalRequests': len(jobs), 'totalErrors': 0, 'messages': ''}
+
+    for job_id in jobs:
+      job = check_job_access_permission(request, job_id)
+      check_job_edition_permission(job, request.user)
+      try:
+        get_oozie(request.user).job_control(job_id, request.POST.get('action'))
+      except RestException, ex:
+        response['totalErrors'] = response['totalErrors'] + 1
+        response['messages'] += str(ex)
+
+  return HttpResponse(json.dumps(response), mimetype="application/json")
+
 
 def show_oozie_error(view_func):
   def decorate(request, *args, **kwargs):
@@ -375,12 +396,20 @@ def get_oozie_job_log(request, job_id):
 def list_oozie_info(request):
   api = get_oozie(request.user)
 
-  instrumentation = api.get_instrumentation()
   configuration = api.get_configuration()
   oozie_status = api.get_oozie_status()
+  instrumentation = {}
+  metrics = {}
+
+  if 'org.apache.oozie.service.MetricsInstrumentationService' in [c.strip() for c in configuration.get('oozie.services.ext', '').split(',')]:
+    api2 = get_oozie(request.user, api_version="v2")
+    metrics = api2.get_metrics()
+  else:
+    instrumentation = api.get_instrumentation()
 
   return render('dashboard/list_oozie_info.mako', request, {
     'instrumentation': instrumentation,
+    'metrics': metrics,
     'configuration': configuration,
     'oozie_status': oozie_status,
   })
@@ -783,7 +812,7 @@ def massaged_oozie_jobs_for_json(oozie_jobs, user, just_sla=False):
         'created': hasattr(job, 'createdTime') and job.createdTime and job.createdTime and ((job.type == 'Bundle' and job.createdTime) or format_time(job.createdTime)),
         'startTime': hasattr(job, 'startTime') and format_time(job.startTime) or None,
         'run': hasattr(job, 'run') and job.run or 0,
-        'frequency': hasattr(job, 'frequency') and job.frequency or None,
+        'frequency': hasattr(job, 'frequency') and Coordinator.CRON_MAPPING.get(job.frequency, job.frequency) or None,
         'timeUnit': hasattr(job, 'timeUnit') and job.timeUnit or None,
       }
       jobs.append(massaged_job)

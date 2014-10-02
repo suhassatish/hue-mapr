@@ -102,14 +102,12 @@ ko.bindingHandlers.hivechooser = {
   init: function(element, valueAccessor, allBindingsAccessor, vm) {
     var self = $(element);
     self.val(valueAccessor()());
+
     function setPathFromAutocomplete(path){
       self.val(path);
+      valueAccessor()(path);
       self.blur();
     }
-
-    self.on("blur", function(){
-      valueAccessor()(self.val());
-    });
 
     self.jHueHiveAutocomplete({
       skipColumns: true,
@@ -120,6 +118,12 @@ ko.bindingHandlers.hivechooser = {
       },
       onEnter: function (el) {
         setPathFromAutocomplete(el.val());
+      },
+      onBlur: function () {
+        if (self.val().lastIndexOf(".") == self.val().length - 1){
+          self.val(self.val().substr(0, self.val().length - 1));
+        }
+        valueAccessor()(self.val());
       }
     });
   }
@@ -128,11 +132,12 @@ ko.bindingHandlers.hivechooser = {
 ko.bindingHandlers.filechooser = {
   init: function(element, valueAccessor, allBindingsAccessor, vm) {
     var self = $(element);
-    self.after(getFileBrowseButton(self, true));
+    self.val(valueAccessor()());
+    self.after(getFileBrowseButton(self, true, valueAccessor));
   }
 };
 
-function getFileBrowseButton(inputElement, selectFolder) {
+function getFileBrowseButton(inputElement, selectFolder, valueAccessor) {
   return $("<button>").addClass("btn").addClass("fileChooserBtn").text("..").click(function (e) {
     e.preventDefault();
     // check if it's a relative path
@@ -168,6 +173,7 @@ function getFileBrowseButton(inputElement, selectFolder) {
     function handleChoice(filePath) {
       inputElement.val("hdfs://" + filePath);
       inputElement.change();
+      valueAccessor()(inputElement.val());
     }
   });
 }

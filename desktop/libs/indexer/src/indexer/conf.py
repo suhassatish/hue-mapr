@@ -21,7 +21,7 @@ from urlparse import urlparse
 
 from django.utils.translation import ugettext_lazy as _t
 
-from desktop.lib.conf import Config, coerce_bool
+from desktop.lib.conf import Config
 
 
 def solrctl():
@@ -39,9 +39,18 @@ def zkensemble():
   """
   ZooKeeper Ensemble
   """
+  try:
+    from zookeeper.conf import CLUSTERS
+    clusters = CLUSTERS.get()
+    if clusters['default'].HOST_PORTS.get() != 'localhost:2181':
+      return '%s/solr' % clusters['default'].HOST_PORTS.get()
+  except:
+    pass
+
   from search.conf import SOLR_URL
   parsed = urlparse(SOLR_URL.get())
   return "%s:2181/solr" % (parsed.hostname or 'localhost')
+
 
 
 # Unused
@@ -60,7 +69,6 @@ CORE_INSTANCE_DIR = Config(
 CONFIG_TEMPLATE_PATH = Config(
   key="config_template_path",
   help=_t("Default template used at collection creation."),
-  private=True,
   type=str,
   default=os.path.join(os.path.dirname(__file__), '..', 'data', 'solrconfigs'))
 

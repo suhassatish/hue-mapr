@@ -94,7 +94,6 @@ def new_search(request):
   })
 
 
-@allow_admin_only
 def browse(request, name):
   collections = SearchController(request.user).get_all_indexes()
   if not collections:
@@ -353,6 +352,7 @@ def get_terms(request):
 
     field = analysis['name']
     properties = {
+      'terms.limit': 25,
       'terms.prefix': analysis['terms']['prefix']
       # lower
       # limit
@@ -401,7 +401,7 @@ def get_timeline(request):
       # Only care about our current field:value filter
       for fq in query['fqs']:
         if fq['id'] == facet_id:
-          fq['filter'] = [qdata]
+          fq['filter'] = [{'value': qdata, 'exclude': False}]
 
     # Remove other facets from collection for speed
     collection['facets'] = filter(lambda f: f['widgetType'] == 'histogram-widget', collection['facets'])
@@ -451,7 +451,7 @@ def _create_facet(collection, user, facet_id, facet_label, facet_field, widget_t
     'andUp': False,  # Not used yet
   }
 
-  if widget_type == 'tree-widget':
+  if widget_type in ('tree-widget', 'heatmap-widget'):
     facet_type = 'pivot'
   else:
     solr_api = SolrApi(SOLR_URL.get(), user)
@@ -469,11 +469,11 @@ def _create_facet(collection, user, facet_id, facet_label, facet_field, widget_t
     properties['scope'] = 'world'
     properties['mincount'] = 1
     properties['limit'] = 100
-  elif widget_type == 'tree-widget':
+  elif widget_type in ('tree-widget', 'heatmap-widget'):
     properties['mincount'] = 1
     properties['facets'] = []
-    properties['facets_form'] = {'field': '', 'mincount': 1, 'limit': 10}
-    properties['graph'] = False
+    properties['facets_form'] = {'field': '', 'mincount': 1, 'limit': 5}
+    properties['scope'] = 'stack' if widget_type == 'heatmap-widget' else 'tree'
 
   return {
     'id': facet_id,
@@ -534,7 +534,11 @@ def get_collections(request):
     result['status'] = 0
 
   except Exception, e:
-    result['message'] = unicode(str(e), "utf8")
+    if 'does not have privileges' in str(e):
+      result['status'] = 0
+      result['collection'] = [json.loads(request.POST.get('collection'))['name']]
+    else:
+      result['message'] = unicode(str(e), "utf8")
 
   return HttpResponse(json.dumps(result), mimetype="application/json")
 

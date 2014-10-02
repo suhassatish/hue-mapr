@@ -1280,7 +1280,7 @@ a#advanced-btn:hover {
 
 .tooltip {
   border: 0;
-  z-index: 2000;
+  z-index: 1032;
 }
 
 .nav i {
@@ -1743,10 +1743,9 @@ border-bottom-left-radius: 0px;
   font-size: 1.5em;
 }
 
-input.no-margin {
+input.no-margin, select.no-margin {
   margin-bottom: 0;
 }
-
 /****************************************************
  *
  * Styles for opaque layover messages
@@ -1828,4 +1827,17 @@ input.no-margin {
 
 .break-word {
   word-wrap: break-word
+}
+
+.jHueHdfsTree .content {
+  margin-left: 14px;
+}
+
+.jHueHdfsTree a.selected {
+  font-weight: bold;
+}
+
+form .modal-header .close {
+  top: 0px;
+  right: -11px;
 }
