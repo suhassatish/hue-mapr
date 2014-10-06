@@ -246,7 +246,7 @@ var Role = function (vm, role) {
         var role = new Role(vm, data.role);
         role.showPrivileges(true);
         vm.originalRoles.unshift(role);
-        vm.assist.refreshTree();
+        vm.list_sentry_privileges_by_authorizable();
         $(document).trigger("created.role");
       } else {
         $(document).trigger("error", data.message);
@@ -264,7 +264,7 @@ var Role = function (vm, role) {
       if (data.status == 0) {
         $(document).trigger("info", data.message);
         vm.showCreateRole(false);
-        vm.assist.refreshTree();
+        vm.list_sentry_privileges_by_authorizable();
         $(document).trigger("created.role");
       } else {
         $(document).trigger("error", data.message);
@@ -281,7 +281,7 @@ var Role = function (vm, role) {
     }, function (data) {
       if (data.status == 0) {
         vm.removeRole(role.name());
-        vm.assist.refreshTree();
+        vm.list_sentry_privileges_by_authorizable();
         $(document).trigger("removed.role");
       } else {
         $(document).trigger("error", data.message);
@@ -326,10 +326,12 @@ var Assist = function (vm, initial) {
   });
   self.server = ko.observable(initial.sentry_provider);
   self.db = ko.computed(function () {
-    return self.path().split(/[.]/)[0];
+    var db = self.path().split(/[.]/)[0];
+    return db ? db : null;
   });
   self.table = ko.computed(function () {
-    return self.path().split(/[.]/)[1];
+    var table = self.path().split(/[.]/)[1];
+    return table ? table : null;
   });
   self.privileges = ko.observableArray();
   self.roles = ko.observableArray();
@@ -528,24 +530,30 @@ var Assist = function (vm, initial) {
             if (self.treeAdditionalData[path].loaded) {
               self.fetchHivePath(path, function () {
                 self.updatePathProperty(self.growingTree(), path, "isExpanded", self.treeAdditionalData[path].expanded);
+                var _withTable = false;
                 Object.keys(self.treeAdditionalData).forEach(function (ipath) {
                   if (ipath.split(".").length == 2 && ipath.split(".")[0] == path) {
                     self.fetchHivePath(ipath, function () {
+                      _withTable = true;
                       self.updatePathProperty(self.growingTree(), ipath, "isExpanded", self.treeAdditionalData[ipath].expanded);
                       self.loadData(self.growingTree());
                     });
                   }
                 });
+                if (! _withTable){
+                  self.loadData(self.growingTree());
+                }
               });
             }
           }
         }
       });
     });
+
     vm.list_sentry_privileges_by_authorizable();
   }
 
-  self.setPath = function (obj, toggle) {
+  self.setPath = function (obj, toggle, skipListAuthorizable) {
     if (self.getTreeAdditionalDataForPath(obj.path()).loaded || (!obj.isExpanded() && !self.getTreeAdditionalDataForPath(obj.path()).loaded)) {
       if (typeof toggle == "boolean" && toggle) {
         obj.isExpanded(!obj.isExpanded());
@@ -562,10 +570,14 @@ var Assist = function (vm, initial) {
       self.getTreeAdditionalDataForPath(obj.path()).expanded = obj.isExpanded();
       self.updatePathProperty(self.growingTree(), obj.path(), "isExpanded", obj.isExpanded());
     }
+
     self.path(obj.path());
     $(document).trigger("changed.path");
+
     if (self.getTreeAdditionalDataForPath(obj.path()).loaded){
-      vm.list_sentry_privileges_by_authorizable();
+      if (typeof skipListAuthorizable == "undefined" || !skipListAuthorizable) {
+        vm.list_sentry_privileges_by_authorizable();
+      }
     }
     else {
       self.fetchHivePath();
@@ -682,7 +694,12 @@ var Assist = function (vm, initial) {
     if (_originalPath.split(".").length < 3) {
       var _path = _originalPath.replace('.', '/');
       var request = {
-        url: '/beeswax/api/autocomplete/' + _path,
+        url: '/security/api/hive/fetch_hive_path',
+        data: {
+          'path': _path,
+          'doas': vm.doAs(),
+          'isDiffMode': self.isDiffMode()
+        },
         dataType: 'json',
         type: 'GET',
         success: function (data) {
@@ -694,7 +711,7 @@ var Assist = function (vm, initial) {
           if (data.databases) {
             self.addDatabases(_originalPath, data.databases, _hasCallback);
             if (vm.getPathHash() == ""){
-              self.setPath(self.treeData().nodes()[0]);
+              self.setPath(self.treeData().nodes()[0], false, true);
             }
           }
           else if (data.tables && data.tables.length > 0) {
@@ -742,6 +759,7 @@ var HiveViewModel = function (initial) {
 
   // Models
   self.roles = ko.observableArray();
+  self.tempRoles = ko.observableArray();
   self.originalRoles = ko.observableArray();
   self.roleFilter = ko.observable("");
   self.filteredRoles = ko.computed(function () {
@@ -799,7 +817,7 @@ var HiveViewModel = function (initial) {
 
   self.doAs = ko.observable(initial.user);
   self.doAs.subscribe(function () {
-    self.assist.fetchHivePath();
+    self.assist.refreshTree();
   });
   self.availableHadoopUsers = ko.observableArray();
 
@@ -979,16 +997,18 @@ var HiveViewModel = function (initial) {
 
   function _create_authorizable_from_ko(optionalPath) {
     if (optionalPath != null){
+      var paths = optionalPath.split(/[.]/);
       return {
         'server': self.assist.server(),
-        'db':  optionalPath.split(/[.]/)[0],
-        'table':  optionalPath.split(/[.]/)[1]
+        'db': paths[0] ? paths[0] : null,
+        'table': paths[1] ? paths[1] : null
       }
-    }
-    return {
-      'server': self.assist.server(),
-      'db': self.assist.db(),
-      'table': self.assist.table()
+    } else {
+      return {
+        'server': self.assist.server(),
+        'db': self.assist.db(),
+        'table': self.assist.table()
+      }
     }
   }
 
@@ -1005,6 +1025,7 @@ var HiveViewModel = function (initial) {
         if (data.status == 0) {
           $(document).trigger("info", data.message);
           self.assist.refreshTree();
+          self.clearTempRoles();
           $(document).trigger("created.role");
         } else {
           $(document).trigger("error", data.message);
@@ -1013,6 +1034,23 @@ var HiveViewModel = function (initial) {
     }).fail(function (xhr, textStatus, errorThrown) {
       $(document).trigger("error", xhr.responseText);
     });
+  }
+
+  self.clearTempRoles = function () {
+    var _roles = [];
+    self.roles().forEach(function(role){
+      var _found = false;
+      self.tempRoles().forEach(function(tempRole){
+        if (role.name() == tempRole.name()){
+          _found = true;
+        }
+      });
+      if (! _found){
+        _roles.push(role);
+      }
+    });
+    self.roles(_roles);
+    self.tempRoles([]);
   }
 
   self.list_sentry_privileges_by_authorizable = function (optionalPath, skipList) {
@@ -1035,9 +1073,6 @@ var HiveViewModel = function (initial) {
     	if (data.status == 0) {
           var _privileges = [];
           $.each(data.privileges, function (index, item) {
-            if (item.table != ""){
-              self.assist.updatePathProperty(self.assist.growingTree(), item.database + "." + item.table, "withPrivileges", true);
-            }
             if (typeof skipList == "undefined" || (skipList != null && typeof skipList == "Boolean" && !skipList)){
               var _role = null;
               self.assist.roles().forEach(function (role) {
@@ -1100,9 +1135,6 @@ var HiveViewModel = function (initial) {
       'recursive': false
     }, function (data) {
       if (data.status == 0) {
-        ko.utils.arrayForEach(self.assist.checkedItems(), function (item) {
-          self.assist.updatePathProperty(self.assist.growingTree(), item.path, "withPrivileges", false);
-        });
         if (norefresh == undefined) {
           self.list_sentry_privileges_by_authorizable(); // Refresh
           $(document).trigger("deleted.bulk.privileges");
@@ -1125,9 +1157,6 @@ var HiveViewModel = function (initial) {
       'recursive': false
     }, function (data) {
       if (data.status == 0) {
-        ko.utils.arrayForEach(self.assist.checkedItems(), function (item) {
-          self.assist.updatePathProperty(self.assist.growingTree(), item.path, "withPrivileges", true);
-        });
         self.list_sentry_privileges_by_authorizable(); // Refresh
         $(document).trigger("added.bulk.privileges");
       } else {
@@ -1145,11 +1174,15 @@ var HiveViewModel = function (initial) {
   };
 
   self.fetchUsers = function () {
-    $.getJSON('/desktop/api/users/autocomplete', {
+    var data = {
       'include_myself': true,
-      'extend_user': true,
-      'only_mygroups': ! self.is_sentry_admin
-    }, function (data) {
+      'extend_user': true
+    };
+    if (! self.is_sentry_admin) {
+      data['only_mygroups'] = true;
+    }
+
+    $.getJSON('/desktop/api/users/autocomplete', data, function (data) {
       self.availableHadoopUsers(data.users);
       self.availableHadoopGroups(data.groups);
       $(document).trigger("loaded.users");

@@ -47,10 +47,8 @@ ${ layout.menubar(section='hive') }
 <div data-bind="visible: status() != 'deleted' && status() != 'alreadydeleted'" class="acl-block acl-block-airy">
 
   <!-- ko if: editing() -->
-    <div class="pull-right">
-      <a title="${ _('Grant this privilege') }" class="pointer" style="margin-right: 4px" data-bind="visible: grantOption() || $root.is_sentry_admin, click: function(){ $root.grantToPrivilege($data); $('#grantPrivilegeModal').modal('show'); }">
-        <i class="fa fa-send"></i>
-      </a>
+    <div class="pull-right privilege-actions" data-bind="visible: grantOption() || $root.is_sentry_admin">
+      <a title="${ _('Grant this privilege') }" class="pointer" style="margin-right: 4px" data-bind="click: function(){ $root.grantToPrivilege($data); $('#grantPrivilegeModal').modal('show'); }"><i class="fa fa-send"></i></a>
       <a class="pointer" style="margin-right: 4px" data-bind="click: function() { if (editing()) { editing(false); }}"><i class="fa fa-eye"></i></a>
       <a class="pointer" style="margin-right: 4px" data-bind="click: remove"><i class="fa fa-times"></i></a>
     </div>
@@ -71,25 +69,23 @@ ${ layout.menubar(section='hive') }
 
     <select data-bind="options: $root.availableActions, select2: { update: $data.action, type: 'action'}" style="width: 100px"></select>
 
-    <div class="inline-block" style="vertical-align: middle">
-      <label>&nbsp;&nbsp;<input type="checkbox" data-bind="checked: grantOption"> ${ _('With grant') }</label>
+    <div class="new-line-if-small">
+      <label class="checkbox"><input type="checkbox" data-bind="checked: grantOption"> ${ _('With grant') }</label>
+      <a class="pointer showAdvanced" data-bind="click: function(){ showAdvanced(true); }, visible: ! showAdvanced()"><i class="fa fa-cog"></i> ${ _('Show advanced') }</a>
+      <a class="pointer showAdvanced" data-bind="click: function(){ showAdvanced(false); }, visible: showAdvanced()"><i class="fa fa-cog"></i> ${ _('Hide advanced') }</a>
+      <div class="clearfix"></div>
     </div>
 
-    <span class="showAdvancedSpace">&nbsp;&nbsp;</span>
-    <a class="pointer showAdvanced" data-bind="click: function(){ showAdvanced(true); }, visible: ! showAdvanced()"><i class="fa fa-cog"></i> ${ _('Advanced') }</a>
-
-    <div class="acl-block-section" data-bind="visible: showAdvanced">
-      <input type="text" data-bind="value: serverName" placeholder="serverName" style="margin-left: 29px">
+    <div class="acl-block-section" data-bind="visible: showAdvanced" style="margin-top: 0">
+      <input type="text" data-bind="value: serverName" placeholder="serverName" style="margin-left: 6px">
       <select data-bind="options: $root.availablePrivileges, select2: { update: $data.privilegeScope, type: 'scope'}" style="width: 100px"></select>
     </div>
   <!-- /ko -->
 
   <!-- ko ifnot: editing() -->
     <!-- ko ifnot: $root.isApplyingBulk() -->
-    <div class="pull-right">
-      <a title="${ _('Grant this privilege') }" class="pointer" style="margin-right: 4px" data-bind="visible: grantOption() || $root.is_sentry_admin, click: function(){ $root.grantToPrivilege($data); $('#grantPrivilegeModal').modal('show'); }">
-        <i class="fa fa-send"></i>
-      </a>
+    <div class="pull-right privilege-actions" data-bind="visible: grantOption() || $root.is_sentry_admin">
+      <a title="${ _('Grant this privilege') }" class="pointer" style="margin-right: 4px" data-bind="click: function(){ $root.grantToPrivilege($data); $('#grantPrivilegeModal').modal('show'); }"><i class="fa fa-send"></i></a>
       <a title="${ _('Edit this privilege') }" class="pointer" style="margin-right: 4px" data-bind="click: function() { if (! editing()) { editing(true); }}"><i class="fa fa-pencil"></i></a>
       <a title="${ _('Delete this privilege') }" class="pointer" style="margin-right: 4px" data-bind="click: remove"><i class="fa fa-times"></i></a>
     </div>
@@ -218,10 +214,10 @@ ${ layout.menubar(section='hive') }
                 <h4 style="margin-top: 4px" data-bind="visible: $root.assist.privileges().length > 0 && ! $root.isLoadingPrivileges()">${ _('Privileges') } &nbsp;</h4>
                 <div data-bind="visible: $root.assist.privileges().length == 0 && ! $root.isLoadingPrivileges()">
                   <div class="span10 offset1 center" style="cursor: pointer" data-bind="click: function(){ if ($root.is_sentry_admin) { $root.showCreateRole(true); $('#createRoleModal').modal('show'); } }">
-                    <i class="fa fa-plus-circle waiting"></i>
+                    <i data-bind="visible: $root.is_sentry_admin" class="fa fa-plus-circle waiting"></i>
                     <h1 class="emptyMessage">
                       ${ _('No privileges found for the selected item') }<br/>
-                      <a class="pointer" data-bind="visible: $root.is_sentry_admin">${ _('Click here to add a new role') }</a>
+                      <a class="pointer" data-bind="visible: $root.is_sentry_admin">${ _('Click here to add some') }</a>
                     </h1>
                   </div>
                 </div>
@@ -241,10 +237,11 @@ ${ layout.menubar(section='hive') }
         <div class="card-body">
           <h1 class="muted" data-bind="visible: $root.isLoadingRoles()"><i class="fa fa-spinner fa-spin"></i></h1>
           <div class="span10 offset1 center" style="cursor: pointer" data-bind="visible: $root.roles().length == 0 && ! $root.isLoadingRoles(), click: function(){ if ($root.is_sentry_admin) { $root.showCreateRole(true); $('#createRoleModal').modal('show'); } }">
-            <i class="fa fa-plus-circle waiting"></i>
+            <i data-bind="visible: $root.is_sentry_admin" class="fa fa-plus-circle waiting"></i>
             <h1 class="emptyMessage">
               ${ _('There are currently no roles defined') }<br/>
               <a class="pointer" data-bind="visible: $root.is_sentry_admin">${ _('Click here to add one') }</a>
+              <br/>
             </h1>
           </div>
           <div class="clearfix" data-bind="visible: $root.roles().length == 0 && ! $root.isLoadingRoles()"></div>
@@ -345,7 +342,7 @@ ${ layout.menubar(section='hive') }
 <div id="createRoleModal" class="modal hide fade in" role="dialog">
   <div class="modal-header">
     <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-    <h3 data-bind="visible: ! $root.role().isEditing()">${ _('Add role') }</h3>
+    <h3 data-bind="visible: ! $root.role().isEditing()">${ _('Add or select a role') }</h3>
     <h3 data-bind="visible: $root.role().isEditing()">${ _('Edit role') }</h3>
   </div>
   <div class="modal-body" data-bind="with: $root.role, visible: showCreateRole">
@@ -353,7 +350,7 @@ ${ layout.menubar(section='hive') }
     <div class="row-fluid">
       <div class="span6">
         <h4>${ _('Name') }</h4>
-        <input id="createRoleName" type="text" class="input-xlarge" data-bind="value: $data.name, visible: ! $data.isEditing()" placeholder="${ _('Required') }" style="width: 360px" />
+        <input id="createRoleName" type="text" class="input-xlarge" data-bind="value: $data.name, visible: ! $data.isEditing()" placeholder="${ _('New or existing role name') }" style="width: 360px" />
         <strong data-bind="text: $data.name, visible: $data.isEditing()"></strong>
       </div>
       <div class="span6">
@@ -387,9 +384,10 @@ ${ layout.menubar(section='hive') }
       <div data-bind="template: { name: 'privilege', data: $root.grantToPrivilege() }"></div>
     <!-- /ko -->
 
-    <h4>${ _('To') }</h4>
-    <select data-bind="options: $root.selectableRoles(), value: $root.grantToPrivilegeRole, select2: { update: $root.grantToPrivilegeRole, placeholder: '${ _("Select a role") }' }" style="width: 360px"></select>
-    </br>
+    <br/>
+    <span>${ _('To role') }&nbsp;&nbsp;</span>
+    <select data-bind="options: $root.selectableRoles(), value: $root.grantToPrivilegeRole, select2: { update: $root.grantToPrivilegeRole, placeholder: '${ _("Select a role") }', type: 'role' }" style="width: 360px"></select>
+    <br/>
 
   </div>
   <div class="modal-footer">
@@ -421,7 +419,7 @@ ${ layout.menubar(section='hive') }
   </div>
   <div class="modal-footer">
     <button class="btn" data-dismiss="modal" aria-hidden="true">${ _('Cancel') }</button>
-    <button data-loading-text="${ _('Deleting...') }" class="btn btn-danger" data-bind="click: function() { $root.role().savePrivileges($root.roleToUpdate()); }">${ _('Yes delete') }</button>
+    <button data-loading-text="${ _('Deleting...') }" class="btn btn-danger" data-bind="click: function() { $root.role().savePrivileges($root.roleToUpdate()); }">${ _('Yes, delete') }</button>
   </div>
 </div>
 
@@ -603,6 +601,7 @@ ${ tree.import_templates(itemClick='$root.assist.setPath', iconClick='$root.assi
         $("#createRoleModal").modal("hide");
         $("#grantPrivilegeModal").modal("hide");
         $("#deletePrivilegeModal").modal("hide");
+        viewModel.clearTempRoles();
         window.setTimeout(function(){
           viewModel.refreshExpandedRoles();
         }, 500);
@@ -671,6 +670,11 @@ ${ tree.import_templates(itemClick='$root.assist.setPath', iconClick='$root.assi
         $('#jHueHiveAutocomplete').hide();
         viewModel.resetCreateRole();
       });
+
+      $("#grantPrivilegeModal").on("hidden", function () {
+        viewModel.clearTempRoles();
+      });
+
 
       $("#deleteRoleModal").modal({
         show: false

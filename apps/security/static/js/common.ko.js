@@ -77,6 +77,11 @@ ko.bindingHandlers.select2 = {
                 if (_type == "scope") {
                   viewModel.availablePrivileges.push(_newVal);
                 }
+                if (_type == "role") {
+                  var _r = new Role(viewModel, { name: _newVal });
+                  viewModel.tempRoles.push(_r);
+                  viewModel.roles.push(_r);
+                }
                 if (_isArray){
                   var _vals = $(element).select2("val");
                   _vals.push(_newVal);
@@ -109,6 +114,10 @@ ko.bindingHandlers.hivechooser = {
       self.blur();
     }
 
+    self.on("blur", function () {
+      valueAccessor()(self.val());
+    });
+
     self.jHueHiveAutocomplete({
       skipColumns: true,
       showOnFocus: true,
@@ -133,6 +142,11 @@ ko.bindingHandlers.filechooser = {
   init: function(element, valueAccessor, allBindingsAccessor, vm) {
     var self = $(element);
     self.val(valueAccessor()());
+
+    self.on("blur", function () {
+      valueAccessor()(self.val());
+    });
+
     self.after(getFileBrowseButton(self, true, valueAccessor));
   }
 };
