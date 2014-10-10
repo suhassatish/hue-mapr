@@ -395,6 +395,34 @@ from django.utils.translation import ugettext as _
     </form>
   </div>
 
+  <!-- actions context menu -->
+  <ul class="context-menu dropdown-menu">
+  <!-- ko ifnot: $root.inTrash -->
+    <li><a href="#" title="${_('Rename')}" data-bind="visible: !$root.inTrash() && $root.selectedFiles().length == 1, click: $root.renameFile,
+    enable: $root.selectedFiles().length == 1 && isCurrentDirSelected().length == 0"><i class="fa fa-font"></i>
+    ${_('Rename')}</a></li>
+    <li><a href="#"title="${_('Move')}" data-bind="click: $root.move, enable: $root.selectedFiles().length > 0 &&
+    isCurrentDirSelected().length == 0"><i class="fa fa-random"></i> ${_('Move')}</a></li>
+    <li><a href="#" title="${_('Copy')}" data-bind="click: $root.copy, enable: $root.selectedFiles().length > 0 &&
+    isCurrentDirSelected().length == 0"><i class="fa fa-files-o"></i> ${_('Copy')}</a></li>
+    <li><a href="#" title="${_('Download')}" data-bind="visible: !$root.inTrash() && $root.selectedFiles().length == 1 && selectedFile().type == 'file', click: $root.downloadFile"><i class="fa fa-arrow-circle-o-down"></i> ${_('Download')}</a></li>
+    <li class="divider"></li>
+    %if is_fs_superuser:
+    <li><a href="#" title="${_('Change owner/group')}" data-bind="visible: !$root.inTrash(), click: $root.changeOwner, enable: $root.selectedFiles().length > 0"><i class="fa fa-user"></i> ${_('Change owner / group')}</a></li>
+    %endif
+    <li><a href="#" title="${_('Change permissions')}" data-bind="visible: !$root.inTrash(), click: $root.changePermissions, enable: $root.selectedFiles().length > 0"><i class="fa fa-list-alt"></i> ${_('Change permissions')}</a></li>
+    <li class="divider"></li>
+    <li><a href="#"  data-bind="enable: $root.selectedFiles().length > 0 && isCurrentDirSelected().length == 0,
+    click: $root.trashSelected"><i class="fa fa-times"></i> ${_('Move to trash')}</a></li>
+    <li><a href="#" class="delete-link" title="${_('Delete forever')}" data-bind="enable: $root.selectedFiles().length > 0, click: $root.deleteSelected"><i class="fa fa-bolt"></i> ${_('Delete forever')}</a></li>
+  <!-- /ko -->
+  <!-- ko if: $root.inTrash -->
+    <li><a href="#" title="${_('Restore from trash')}" data-bind="visible: inRestorableTrash() &&  selectedFiles().length > 0 && isCurrentDirSelected().length == 0, click: restoreTrashSelected"><i class="fa fa-cloud-upload"></i> ${_('Restore')}</a></li>
+    <li class="divider"></li>
+    <li><a href="#" title="${_('Empty trash')}" data-bind="visible: inTrash(), click: purgeTrash"><i class="fa fa-fire"></i> ${_('Empty trash')}</a></li>
+  <!-- /ko -->
+  </ul>
+
   <div id="submit-wf-modal" class="modal hide"></div>
 
   <div id="progressStatus" class="uploadstatus alert alert-info hide">
@@ -406,27 +434,43 @@ from django.utils.translation import ugettext as _
 </div>
 
   <script id="fileTemplate" type="text/html">
-    <tr style="cursor: pointer" data-bind="event: { mouseover: toggleHover, mouseout: toggleHover}">
+    <tr style="cursor: pointer" data-bind="event: { mouseover: toggleHover, mouseout: toggleHover, contextmenu: showContextMenu }, click: $root.viewFile, css: { 'row-selected': selected() }">
       <td class="center" data-bind="click: handleSelect" style="cursor: default">
-        <div data-bind="visible: name != '..', css: {hueCheckbox: name != '..', 'fa': name != '..', 'fa-check': selected}"></div>
+        <div data-bind="visible: name != '..', css: { hueCheckbox: name != '..', 'fa': name != '..', 'fa-check': selected }"></div>
       </td>
-      <td data-bind="click: $root.viewFile" class="left"><i data-bind="css: {'fa': true, 'fa-play': $.inArray(name, ['workflow.xml', 'coordinator.xml', 'bundle.xml']) > -1, 'fa-file-o': type == 'file', 'fa-folder': type != 'file', 'fa-folder-open': type != 'file' && hovered}"></i></td>
-      <td data-bind="click: $root.viewFile, attr: {'title': tooltip}" rel="tooltip">
+      <td class="left"><i data-bind="click: $root.viewFile, css: { 'fa': true, 'fa-play': $.inArray(name, ['workflow.xml', 'coordinator.xml', 'bundle.xml']) > -1, 'fa-file-o': type == 'file', 'fa-folder': type != 'file', 'fa-folder-open': type != 'file' && hovered }"></i></td>
+      <td data-bind="attr: {'title': tooltip}" rel="tooltip">
         <!-- ko if: name == '..' -->
         <a href="#" data-bind="click: $root.viewFile"><i class="fa fa-level-up"></i></a>
         <!-- /ko -->
         <!-- ko if: name != '..' -->
         <strong><a href="#" data-bind="click: $root.viewFile, text: name"></a></strong>
         <!-- /ko -->
-
       </td>
-      <td data-bind="click: $root.viewFile">
+      <td>
         <span data-bind="visible: type=='file', text: stats.size"></span>
       </td>
-      <td data-bind="click: $root.viewFile, text: stats.user"></td>
-      <td data-bind="click: $root.viewFile, text: stats.group"></td>
-      <td data-bind="click: $root.viewFile, text: permissions"></td>
-      <td data-bind="click: $root.viewFile, text: stats.mtime" style="white-space: nowrap;"></td>
+      <td>
+        %if is_fs_superuser:
+        <span data-bind="text: stats.user, visible: ! selected()"></span>
+        <a href="#" rel="tooltip" title="${_('Change owner')}" data-original-title="${_('Change owner')}" data-bind="text: stats.user, visible: ! $root.inTrash() && selected(), click: $root.changeOwner, enable: $root.selectedFiles().length > 0"></a>
+        %else:
+        <span data-bind="text: stats.user"></span>
+        %endif
+      </td>
+      <td>
+        %if is_fs_superuser:
+        <span data-bind="text: stats.group, visible: ! selected()"></span>
+        <a href="#" rel="tooltip" title="${_('Change group')}" data-original-title="${_('Change group')}" data-bind="text: stats.group, visible: ! $root.inTrash() && selected(), click: $root.changeOwner"></a>
+        %else:
+        <span data-bind="text: stats.group"></span>
+        %endif
+      </td>
+      <td>
+        <span data-bind="text: permissions, visible: ! selected()"></span>
+        <a href="#" rel="tooltip" title="${_('Change permissions')}" data-bind="text: permissions, visible: ! $root.inTrash() && selected(), click: $root.changePermissions" data-original-title="${_('Change permissions')}"></a>
+      </td>
+      <td data-bind="text: stats.mtime" style="white-space: nowrap;"></td>
     </tr>
   </script>
 
@@ -582,8 +626,29 @@ from django.utils.translation import ugettext as _
         },
         selected:ko.observable(false),
         handleSelect: function (row, e) {
+          e.preventDefault();
+          e.stopPropagation();
           this.selected(! this.selected());
           viewModel.allSelected(false);
+        },
+        // display the context menu when an item is right/context clicked
+        showContextMenu: function (row, e) {
+          var cm = $('.context-menu'),
+            actions = $('#ch-dropdown'),
+            rect = document.querySelector('body').getBoundingClientRect();
+
+          // close the actions menu from button area if open
+          if (actions.hasClass('open')) {
+            actions.removeClass('open');
+          }
+
+          // display context menu and ensure it is on-screen
+          if ($.inArray(row.name, ['..', '.']) === -1) {
+            this.selected(true);
+            cm.css({ display: 'block', top: e.pageY - 15, left: (e.pageX < rect.right - 200 ) ? e.pageX : e.pageX - 250 });
+          } else {
+            cm.css({ display: 'none' });
+          }
         },
         hovered:ko.observable(false),
         toggleHover: function (row, e) {
@@ -642,6 +707,8 @@ from django.utils.translation import ugettext as _
         return new File(file);
       }));
       self.files.sort(self.filesSorting)
+
+      self.homeDir = ko.observable("${home_directory}");
 
       self.breadcrumbs = ko.observableArray(ko.utils.arrayMap(breadcrumbs, function (breadcrumb) {
         return new Breadcrumb(breadcrumb);
@@ -920,8 +987,10 @@ from django.utils.translation import ugettext as _
 
       };
 
-      self.changeOwner = function () {
+      self.changeOwner = function (data, event) {
         var paths = [];
+        event.preventDefault();
+        event.stopPropagation();
 
         $(self.selectedFiles()).each(function (index, file) {
           paths.push(file.path);
@@ -948,9 +1017,12 @@ from django.utils.translation import ugettext as _
         });
       };
 
-      self.changePermissions = function () {
+      self.changePermissions = function (data, event) {
         var paths = [];
         var allFileType = true;
+
+        event.preventDefault();
+        event.stopPropagation();
 
         $(self.selectedFiles()).each(function (index, file) {
           if ("dir" == file.type){
@@ -1062,7 +1134,7 @@ from django.utils.translation import ugettext as _
 
         hiddenFields($("#purgeTrashForm"), 'path', paths);
 
-        $("#purgeTrashForm").attr("action", "/filebrowser/trash/purge?next=${url('filebrowser.views.view', path=urlencode('/'))}" + "." + self.currentPath());
+        $("#purgeTrashForm").attr("action", "/filebrowser/trash/purge?next=${url('filebrowser.views.view', path=urlencode('/'))}" + viewModel.homeDir().slice(1) + "/.Trash");
 
         $("#purgeTrashModal").modal({
           keyboard:true,
@@ -1189,10 +1261,47 @@ from django.utils.translation import ugettext as _
       };
     };
 
+    // hide the context menu based on specific events
+    var hideContextMenu = function () {
+      var cm = $('.context-menu');
+
+      if (cm.is(':visible')) {
+        cm.css({ display: 'none' });
+      }
+    };
+
     var viewModel = new FileBrowserModel([], null, [], "/");
     ko.applyBindings(viewModel);
 
     $(document).ready(function () {
+
+      if (getHistory().length == 0) {
+        $('.history').addClass('no-history');
+      }
+
+      $('.historyLink').on('click', function (e) {
+        if(getHistory().length > 0) {
+          showHistory();
+        } else {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+      });
+
+      // hide context menu
+      $('body').on('click', function (e) {
+        hideContextMenu();
+      });
+
+      $('body').on('contextmenu', function (e) {
+        if ($.inArray(e.toElement, $('.datatables *')) === -1) {
+          hideContextMenu();
+        }
+      });
+
+      $('body').on('contextmenu', '.context-menu', function (e) {
+        hideContextMenu();
+      });
 
       // Drag and drop uploads from anywhere on filebrowser screen
       if (window.FileReader) {
@@ -1206,19 +1315,6 @@ from django.utils.translation import ugettext as _
         };
 
         var _isDraggingOverText = false;
-
-        if (getHistory().length == 0) {
-          $('.history').addClass('no-history');
-        }
-
-        $('.historyLink').on('click', function (e) {
-          if(getHistory().length > 0) {
-            showHistory();
-          } else {
-            e.preventDefault();
-            e.stopPropagation();
-          }
-        });
 
         $('.card').on('dragenter', function (e) {
           e.preventDefault();

@@ -58,11 +58,13 @@ class WebHdfs(Hdfs):
                logical_name=None,
                hdfs_superuser=None,
                security_enabled=False,
-               temp_dir="/tmp"):
+               temp_dir="/tmp",
+               umask=01022):
     self._url = url
     self._superuser = hdfs_superuser
     self._security_enabled = security_enabled
     self._temp_dir = temp_dir
+    self._umask = umask
     self._fs_defaultfs = fs_defaultfs
     self._logical_name = logical_name
 
@@ -82,7 +84,8 @@ class WebHdfs(Hdfs):
                fs_defaultfs=fs_defaultfs,
                logical_name=hdfs_config.LOGICAL_NAME.get(),
                security_enabled=hdfs_config.SECURITY_ENABLED.get(),
-               temp_dir=hdfs_config.TEMP_DIR.get())
+               temp_dir=hdfs_config.TEMP_DIR.get(),
+               umask=hdfs_config.UMASK.get())
 
   def __str__(self):
     return "WebHdfs at %s" % self._url
@@ -105,6 +108,10 @@ class WebHdfs(Hdfs):
   @property
   def fs_defaultfs(self):
     return self._fs_defaultfs
+
+  @property
+  def umask(self):
+    return self._umask
 
   @property
   def security_enabled(self):
@@ -335,8 +342,11 @@ class WebHdfs(Hdfs):
     path = Hdfs.normpath(path)
     params = self._getparams()
     params['op'] = 'MKDIRS'
-    if mode is not None:
-      params['permission'] = safe_octal(mode)
+
+    if mode is None:
+      mode = self.getDefaultDirPerms()
+    params['permission'] = safe_octal(mode)
+
     success = self._root.put(path, params)
     if not success:
       raise IOError(_("Mkdir failed: %s") % path)
@@ -400,6 +410,7 @@ class WebHdfs(Hdfs):
     else:
       self._root.put(path, params)
 
+
   def get_home_dir(self):
     """get_home_dir() -> Home directory for the current user"""
     params = self._getparams()
@@ -440,8 +451,15 @@ class WebHdfs(Hdfs):
     return File(self, path, mode)
 
 
-  def create(self, path, overwrite=False, blocksize=None,
-             replication=None, permission=None, data=None):
+  def getDefaultFilePerms(self):
+    return 0666 & (01777 ^ self.umask)
+
+
+  def getDefaultDirPerms(self):
+    return 01777 & (01777 ^ self.umask)
+
+
+  def create(self, path, overwrite=False, blocksize=None, replication=None, permission=None, data=None):
     """
     create(path, overwrite=False, blocksize=None, replication=None, permission=None)
 
@@ -456,8 +474,9 @@ class WebHdfs(Hdfs):
       params['blocksize'] = long(blocksize)
     if replication is not None:
       params['replication'] = int(replication)
-    if permission is not None:
-      params['permission'] = safe_octal(permission)
+    if permission is None:
+      permission = self.getDefaultFilePerms()
+    params['permission'] = safe_octal(permission)
 
     self._invoke_with_redirect('PUT', path, params, data)
 
@@ -555,11 +574,14 @@ class WebHdfs(Hdfs):
       offset += cnt
 
 
-  def copy_remote_dir(self, source, destination, dir_mode=0755, owner=None):
+  def copy_remote_dir(self, source, destination, dir_mode=None, owner=None):
     if owner is None:
       owner = self.DEFAULT_USER
+
+    if dir_mode is None:
+      dir_mode = self.getDefaultDirPerms()
+
     self.do_as_user(owner, self.mkdir, destination, mode=dir_mode)
-    self.do_as_user(owner, self.chmod, destination, mode=dir_mode) # To remove after HDFS-3491
 
     for stat in self.listdir_stats(source):
       source_file = stat.path
@@ -571,7 +593,7 @@ class WebHdfs(Hdfs):
         self.do_as_superuser(self.chown, destination_file, owner, owner)
 
 
-  def copy(self, src, dest, recursive=False, dir_mode=0755, owner=None):
+  def copy(self, src, dest, recursive=False, dir_mode=None, owner=None):
     """
     Copy file, or directory, in HDFS to another location in HDFS.
 
@@ -590,6 +612,13 @@ class WebHdfs(Hdfs):
     """
     if owner is None:
       owner = self.user
+
+    # Hue was defauling permissions on copying files to the permissions
+    # of the original file, but was not doing the same for directories
+    # changed below for directories to remain consistent
+    if dir_mode is None:
+      sb = self._stats(src)
+      dir_mode=oct(stat.S_IMODE(sb.mode))
 
     src = self.abspath(src)
     dest = self.abspath(dest)
@@ -612,8 +641,8 @@ class WebHdfs(Hdfs):
           dest = self.join(dest, self.basename(src))
         else:
           raise IOError(errno.EEXIST, _("Destination file %s exists and is not a directory.") % dest)
-      self.do_as_user(owner, self.mkdir, dest)
-      self.do_as_user(owner, self.chmod, dest, mode=dir_mode)
+
+      self.do_as_user(owner, self.mkdir, dest, mode=dir_mode)
 
       # Copy files in 'src' directory to 'dest'.
       self.copy_remote_dir(src, dest, dir_mode, owner)

@@ -93,9 +93,14 @@ class ParquetOptions(object):
 
 def index(request):
   # Redirect to home directory by default
-  path = request.user.get_home_directory()
-  if not request.fs.isdir(path):
-    path = '/'
+  path = request.user.get_home_directory()  
+
+  try: 
+    if not request.fs.isdir(path):
+       path = '/'
+  except Exception:
+    pass
+
   return view(request, path)
 
 
@@ -162,7 +167,9 @@ def view(request, path):
         else:
             return display(request, path)
     except (IOError, WebHdfsException), e:
-        msg = _("Cannot access: %(path)s.") % {'path': escape(path)}
+        msg = _("Cannot access: %(path)s. ") % {'path': escape(path)}
+        if "Connection refused" in e.message:
+            msg += _(" The HDFS REST service is not available. ")
         if request.user.is_superuser and not request.user == request.fs.superuser:
             msg += _(' Note: You are a Hue admin but not a HDFS superuser (which is "%(superuser)s").') % {'superuser': request.fs.superuser}
         if request.is_ajax():
@@ -621,6 +628,7 @@ def read_contents(codec_type, path, fs, offset, length):
        Returns: A tuple of codec_type, offset, length and contents read.
     """
     contents = ''
+    fhandle = None
 
     try:
         fhandle = fs.open(path)
@@ -660,7 +668,8 @@ def read_contents(codec_type, path, fs, offset, length):
             contents = _read_simple(fhandle, path, offset, length, stats)
 
     finally:
-        fhandle.close()
+        if fhandle:
+            fhandle.close()
 
     return (codec_type, offset, length, contents)
 
