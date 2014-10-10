@@ -55,7 +55,7 @@ public class ThriftPluginServer implements Configurable, Runnable {
   static final int SOCKET_READ_TIMEOUT = 5000; // 5sec
 
   public ThriftPluginServer(InetSocketAddress address,
-                            TProcessorFactory processorFactory)
+                            TProcessorFactory processorFactory, Configuration conf)
     throws TTransportException {
     //options = new TThreadPoolServer.Options();
     port = address.getPort();
@@ -71,7 +71,7 @@ public class ThriftPluginServer implements Configurable, Runnable {
 
       this.processorFactory = authBridge.wrapProcessorFactory(
         processorFactory);
-      transportFactory = authBridge.createTransportFactory();
+      transportFactory = authBridge.createTransportFactory(conf);
     } else {
       this.processorFactory = processorFactory;
       transportFactory = new TTransportFactory();
